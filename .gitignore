@@ -1,0 +1,108 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Editor files
+*~
+*.bak
+*.sw[op]
+
+# Patch files
+*.diff
+*.orig
+*.patch
+*.rej
+
+# ScratchMUD binaries
+bin/.dirstamp
+bin/.libs/
+bin/scratch
+bin/scratch.exe
+
+# ScratchMUD log files
+log/*.log
+
+# ScratchMUD build files
+aclocal.m4
+autom4te.cache
+compile
+config.cache
+config.guess
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+m4/libtool.m4
+m4/ltoptions.m4
+m4/ltsugar.m4
+m4/ltversion.m4
+m4/lt~obsolete.m4
+missing
+ar-lib
+*.dirstamp
+
+# ScratchMUD source files
+Makefile
+Makefile.in
+src/include/conf.hpp
+src/include/conf.hpp.in
+src/include/stamp-h1
+src/**/.deps/
+src/**/Makefile
+src/**/Makefile.in
+src/**/*.o
+
+# Other ScratchMUD files
+.autorun.kill

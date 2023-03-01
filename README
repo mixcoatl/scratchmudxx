@@ -1,0 +1,14 @@
+ScratchMUD
+----------
+
+Welcome to ScratchMUD v0.1!
+
+This is a basic multiuser dungeon ("MUD") implementation based on the boost
+ASIO library and other free and portable C++ libraries within the boost.org
+family.
+
+More information about ScratchMUD can be found at the ScratchMUD homepage
+at http://scratchmud.org/.
+
+Geoffrey Davis
+gdavis@scratchmud.org
