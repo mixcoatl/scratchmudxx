@@ -15,6 +15,7 @@ AX_BOOST_FILESYSTEM
 AX_BOOST_SYSTEM
 AC_CHECK_HEADER([algorithm], [AC_DEFINE([HAVE_ALGORITHM], [1], [Define to 1 if you have the <algorithm> header file.])])
 AC_CHECK_HEADER([any], [AC_DEFINE([HAVE_ANY], [1], [Define to 1 if you have the <any> header file.])])
+AC_CHECK_HEADER([arpa/telnet.h], [AC_DEFINE([HAVE_ARPA_TELNET_H], [1], [Define to 1 if you have the <arpa/telnet.h> header file.])])
 AC_CHECK_HEADER([atomic], [AC_DEFINE([HAVE_ATOMIC], [1], [Define to 1 if you have the <atomic> header file.])])
 AC_CHECK_HEADER([bitset], [AC_DEFINE([HAVE_BITSET], [1], [Define to 1 if you have the <bitset> header file.])])
 AC_CHECK_HEADER([boost/algorithm/string.hpp], [AC_DEFINE([HAVE_BOOST_ALGORITH_STRING_HPP], [1], [Define to 1 if you have the <boost/algorithm/string.hpp> header file.])])
