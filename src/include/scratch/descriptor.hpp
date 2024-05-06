@@ -60,6 +60,12 @@ public:
     //! \sa #Close()
     bool Closed() const noexcept;
 
+    //! Gets the color bit.
+    //! \sa #SetColorBit(const bool)
+    bool GetColorBit() const noexcept {
+	return mColorBit;
+    }
+
     //! Gets the descriptor name.
     //! \sa #SetName(const String&)
     String GetName() const noexcept {
@@ -103,6 +109,12 @@ public:
 	this->PrintFormat("%c%c%c", IAC, (char) command, (char) option);
     }
 
+    //! Sets the color bit.
+    //! \sa #GetColorBit() const
+    void SetColorBit(const bool colorBit) noexcept {
+	mColorBit = colorBit;
+    }
+
     //! Sets the descriptor name.
     //! \sa #GetName() const
     void SetName(const String& name) {
@@ -130,6 +142,11 @@ public:
     void WritePrompt();
 
 protected:
+    //! The color bit.
+    //! \sa #GetColorBit() const
+    //! \sa #SetColorBit(const bool)
+    bool mColorBit;
+
     //! The game state.
     Game& mGame;
 
