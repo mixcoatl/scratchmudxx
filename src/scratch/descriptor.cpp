@@ -8,6 +8,9 @@
 
 #define _SCRATCH_DESCRIPTOR_CPP_
 
+#define TELCMDS
+#define TELOPTS
+
 #include <scratch/game.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/logger.hpp>
@@ -24,11 +27,18 @@ Descriptor::Descriptor(
 	Socket&& socket) :
 	mGame(game),
 	mInput(),
+	mLineInput(),
 	mName(),
 	mOutput(),
-	mSocket(std::move(socket)) {
-    // Initialize asynchronous read.
+	mPromptBit(true),
+	mSocket(std::move(socket)),
+	mTelnetCommand(/* None */ 0),
+	mTelnetOption(/* None */ 0),
+	mTelnetSb(),
+	mTelnetSbBit(false) {
+    // Initialize asynchronous operations.
     this->InitAsyncRead();
+    this->Write("");
 }
 
 //! Destructor.
@@ -61,25 +71,76 @@ bool Descriptor::Closed() const noexcept {
 }
 
 //! Writes to the descriptor.
+//! \param message the message to print
+void Descriptor::Print(const String& message) noexcept {
+    this->Write(message);
+}
+
+//! Writes to the descriptor.
+//! \param format the printf-style format specifier
+void Descriptor::PrintFormat(const String& format, ...) noexcept {
+    // Format message.
+    va_list args;
+    va_start(args, format);
+    char message[MaxString] = {'\0'};
+    const int N = std::vsnprintf(message, sizeof(message), format.c_str(), args);
+    va_end(args);
+
+    // Check return.
+    if (N < 0) {
+	LOGGER_MAIN() << "std::vsnprintf() failed: errno=" << errno;
+	return;
+    }
+
+    // Interrupt.
+    if (!mPromptBit && !mLineInput.str().length())
+	this->Write("\r\n");
+
+    // Write message.
+    this->Write(message);
+    if (std::find(std::begin(message), std::end(message), '\n') != std::end(message))
+	mPromptBit = true;
+}
+
+//! Writes to the descriptor.
 //! \param messsage the message to write
 void Descriptor::Write(const String& message) {
-    // Nothing to write.
-    if (!message.size())
-	return;
-
     // Post message.
-    boost::asio::post(mGame.GetIoContext(),
-	[this, message]() {
-	    // Are we writing right now?
-	    const bool inProgress = !mOutput.empty();
+    boost::asio::post(mGame.GetIoContext(), [this, message]() {
+	// Are we writing right now?
+	const bool inProgress = !mOutput.empty();
 
-	    // Enqueue message.
-	    mOutput.push_back(message);
+	// Enqueue message.
+	mOutput.push_back(message);
 
-	    // Configure asynchronous write.
-	    if (!mGame.GetShutdown() && !inProgress)
-		this->InitAsyncWrite();
-	});
+	// Configure asynchronous write.
+	if (!mGame.GetShutdown() && !inProgress)
+	    this->InitAsyncWrite();
+    });
+}
+
+//! Writes the prompt.
+void Descriptor::WritePrompt() {
+    this->PrintFormat(":ScratchMUD:> ");
+    mPromptBit = false;
+}
+
+//! Backspaces one character.
+//! \sa #BackspaceLine()
+void Descriptor::Backspace() {
+    auto const lineInput = mLineInput.str();
+    if (lineInput.length()) {
+	auto const lineInputN = lineInput.length();
+	auto const lineInputBackspaced = lineInput.substr(lineInputN - 1);
+	mLineInput.str(lineInputBackspaced);
+    }
+}
+
+//! Backspaces the entire line.
+//! \sa #Backspace()
+void Descriptor::BackspaceLine() {
+    mLineInput.str(String());
+    mLineInput.clear();
 }
 
 //! Configures an asynchronous read.
@@ -135,27 +196,118 @@ void Descriptor::InitAsyncWrite() {
 	    mOutput.pop_front();
 
 	    //  Configure asynchronouse write.
-	    if (!mOutput.empty() && !mGame.GetShutdown())
+	    if (!mGame.GetShutdown() && !mOutput.empty())
 		this->InitAsyncWrite();
+	    else if (!mGame.GetShutdown() && mPromptBit)
+		this->WritePrompt();
 	});
 }
 
 //! Processes one byte on input.
 //! \param byteReceived the byte to process
 void Descriptor::ReceiveByte(const int byteReceived) {
-    // Nothing.
+    switch (mTelnetCommand) {
+    case /* None */ 0:
+	if (byteReceived == IAC) {
+	    mTelnetCommand = IAC;
+	} else if (mTelnetSbBit) {
+	    this->ReceiveTelnetSbByte(byteReceived);
+	} else {
+	    this->ReceiveLineByte(byteReceived);
+	}
+	break;
+    case IAC:
+	this->ReceiveTelnetIac(byteReceived);
+	break;
+    case DO:   case DONT:
+    case WILL: case WONT:
+    case SB:
+	mTelnetOption = byteReceived;
+	LOGGER_NETWORK() << "Descriptor " << mName << " received IAC " << TELCMD(mTelnetCommand) << " " << TELOPT(mTelnetOption) << ".";
+	mTelnetCommand = /* None */ 0;
+	mTelnetOption  = /* none */ 0;
+	break;
+    default:
+	LOGGER_NETWORK() << "Descriptor " << mName << " has unknown TELNET state IAC " << TELCMD(mTelnetCommand) << ".";
+	mTelnetCommand = /* None */ 0;
+	mTelnetOption  = /* none */ 0;
+	break;
+    }
 }
 
 //! Processes line input.
 //! \param lineReceived the line input to process
 void Descriptor::ReceiveLine(const String& lineReceived) {
-    // Nothing.
+    if (this->Closed()) {
+	LOGGER_NETWORK() << "Descriptor " << mName << " already closed.";
+    } else {
+	for (auto d: mGame.GetDescriptors()) {
+	    d->PrintFormat("[%s]: %s\r\n", mName.c_str(), lineReceived.c_str());
+	}
+    }
 }
 
 //! Processes one byte of line input.
 //! \param lineByteReceived the line byte to process
 void Descriptor::ReceiveLineByte(const int lineByteReceived) {
-    // Nothing.
+    if (this->Closed()) {
+	LOGGER_NETWORK() << "Descriptor " << mName << " already closed.";
+    } else if (std::strchr("\b\x7f", lineByteReceived) != nullptr) {
+	this->Backspace();
+    } else if (lineByteReceived == '\n') {
+	this->ReceiveLine(mLineInput.str());
+	this->BackspaceLine();
+    } else if (std::isprint(lineByteReceived) && lineByteReceived != '\r') {
+	mLineInput << (char) lineByteReceived;
+    }
+}
+
+//! Processes TELNET-IAC input.
+//! \param byteReceived the byte to process
+void Descriptor::ReceiveTelnetIac(const std::uint8_t byteReceived) {
+    switch (byteReceived) {
+    case EC:
+	this->Backspace();
+	break;
+    case EL:
+	this->BackspaceLine();
+	break;
+    case IAC:
+	if (mTelnetSbBit) {
+	    this->ReceiveTelnetSbByte(byteReceived);
+	    mTelnetCommand = SB;
+	} else {
+	    this->ReceiveLineByte(byteReceived);
+	    mTelnetCommand = /* None */ 0;
+	}
+	return;
+    case SE:
+	this->ReceiveTelnetSb(mTelnetSb.str());
+	break;
+    default:
+	mTelnetCommand = byteReceived;
+	return;
+    }
+
+    mTelnetCommand = /* None */ 0;
+    mTelnetOption  = /* None */ 0;
+}
+
+//! Processes TELNET-SB input.
+//! \param sbReceived the TELNET-SB input to process
+void Descriptor::ReceiveTelnetSb(const String& sbReceived) {
+    mTelnetCommand = /* None */ 0;
+    mTelnetOption  = /* None */ 0;
+}
+
+//! Processes one byte of TELNET-SB byte.
+//! \param sbByteReceived the TELNET-SB byte to process
+void Descriptor::ReceiveTelnetSbByte(const int sbByteReceived) {
+    if (this->Closed()) {
+	LOGGER_NETWORK() << "Descriptor " << mName << " already closed.";
+    } else {
+	mTelnetSb << (char) sbByteReceived;
+    }
 }
 
 }; // namespace Net
