@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# ScratchMUD autorun script.
+#
+# \par Copyright
+# Copyright (C) 1999-2025 scratchmud.org
+# All rights reserved.
+#
+# \author Geoffrey Davis (gdavis@scratchmud.org)
+#
+
+AutorunKillFile=".autorun.kill"
+while ( : ) do
+  ./bin/scratch
+  if [ -r $AutorunKillFile ]; then
+    rm -f $AutorunKillFile
+    exit
+  fi
+  sleep 60
+done

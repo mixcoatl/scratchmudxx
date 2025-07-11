@@ -1,0 +1,19 @@
+*			text=auto
+
+# build files
+bootstrap		text eol=lf
+configure.ac		text
+**/Makefile.am		text
+
+# data files
+data/**/*.dat		text
+data/*.dat		text
+
+# documentation files
+**/README		text
+
+# other files
+autorun			text eol=lf
+
+# source files
+src/**/*.[ch]pp		text

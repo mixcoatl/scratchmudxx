@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# ScratchMUD bootstrap script.
+# This script configures the build environment.
+#
+# \par Copyright
+# Copyright (C) 1999-2025 scratchmud.org
+# All rights reserved.
+#
+# \author Geoffrey Davis (gdavis@scratchmud.org)
+
+# Echo commands we're executing.
+set -x
+
+# Remove files.
+if [ -d .git ]; then
+    git clean -fx -e data
+fi
+
+# Autotools.
+aclocal -I m4
+libtoolize --automake --copy --force
+autoconf --force
+autoheader
+automake --add-missing --copy --foreign -Woverride
+
+# Configure.
+chmod +x configure
+./configure
