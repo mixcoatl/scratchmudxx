@@ -11,6 +11,7 @@
 #define TELCMDS
 #define TELOPTS
 
+#include <scratch/color.hpp>
 #include <scratch/game.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/logger.hpp>
@@ -25,6 +26,7 @@ namespace Net {
 Descriptor::Descriptor(
 	Game& game,
 	Socket&& socket) :
+	colorBit_(true),
 	game_(game),
 	input_(),
 	lineInput_(),
@@ -121,7 +123,7 @@ void Descriptor::Write(const String& message) {
 
 //! Writes the prompt.
 void Descriptor::WritePrompt() {
-    this->PrintFormat(":ScratchMUD:> ");
+    this->PrintFormat("%s:ScratchMUD:> %s", QT_RED, QT_NORMAL);
     promptBit_ = false;
 }
 
@@ -242,7 +244,7 @@ void Descriptor::ReceiveLine(const String& lineReceived) {
 	LOGGER_NETWORK() << "Descriptor " << name_ << " already closed.";
     } else {
 	for (auto d: game_.GetDescriptors()) {
-	    d->PrintFormat("[%s]: %s\r\n", name_.c_str(), lineReceived.c_str());
+	    d->PrintFormat("%s[%s%s%s]: %s%s%s\r\n", QT_WHITE, QT_GREEN, name_.c_str(), QT_WHITE, QT_GREEN, lineReceived.c_str(), QT_NORMAL);
 	}
     }
 }
