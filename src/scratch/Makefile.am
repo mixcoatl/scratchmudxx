@@ -10,7 +10,9 @@ __top_builddir__bin_scratch_LDADD = \
 	$(BOOST_FILESYSTEM_LIB) \
 	$(BOOST_SYSTEM_LIB)
 __top_builddir__bin_scratch_SOURCES = \
+	logger.cpp \
 	main.cpp
 
 noinst_HEADERS = \
+	../include/scratch/logger.hpp \
 	../include/scratch/scratch.hpp
