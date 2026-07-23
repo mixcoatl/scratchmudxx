@@ -203,6 +203,12 @@ public:
 	return entries_.size();
     }
 
+    //! Gets the child entries.
+    //! \sa #Size() const
+    const DataPtrMap& GetEntries() const noexcept {
+	return entries_;
+    }
+
 protected:
     //! Searches for a data node.
     //! \param key the key that identifies the data node
