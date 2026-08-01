@@ -23,7 +23,8 @@ __top_builddir__bin_scratch_SOURCES = \
 	protocol_telnet.cpp \
 	random.cpp \
 	server.cpp \
-	string.cpp
+	string.cpp \
+	thing.cpp
 
 noinst_HEADERS = \
 	../include/scratch/color.hpp \
@@ -44,4 +45,5 @@ noinst_HEADERS = \
 	../include/scratch/storage_file.hpp \
 	../include/scratch/storage_file_multi.hpp \
 	../include/scratch/storage_null.hpp \
-	../include/scratch/string.hpp
+	../include/scratch/string.hpp \
+	../include/scratch/thing.hpp
