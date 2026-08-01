@@ -39,6 +39,10 @@
 #include <boost/chrono.hpp>
 #endif // HAVE_BOOST_CHRONO_HPP
 
+#ifdef HAVE_BOOST_ENDIAN_CONVERSION_HPP
+#include <boost/endian/conversion.hpp>
+#endif // HAVE_BOOST_ENDIAN_CONVERSION_HPP
+
 #ifdef HAVE_BOOST_FILESYSTEM_HPP
 #include <boost/filesystem.hpp>
 #endif // HAVE_BOOST_FILESYSTEM_HPP
@@ -192,6 +196,10 @@ extern "C" {
 namespace Scratch {
 //! The maximum length of a user input buffer.
 const std::size_t MaxInput = 256;
+
+//! Maximum pending output bytes per descriptor (wire queue).
+//! \remark Candidate for a future system-wide configuration parameter.
+const std::size_t MaxOutput = 16 * 1024;
 
 //! The maximum length of a static buffer.
 const std::size_t MaxString = 8192;
