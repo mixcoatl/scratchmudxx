@@ -20,9 +20,9 @@ namespace Core {
 
 //! Default constructor.
 Game::Game() :
+	ioContext_(),
 	config_(std::make_shared<Config>()),
 	descriptors_(),
-	ioContext_(),
 	server_(),
 	shutdown_(false),
 	signals_(ioContext_) {
@@ -84,7 +84,34 @@ DescriptorPtr Game::MakeDescriptor(Socket&& socket) noexcept {
     }
 
     // Store descriptor into descriptor index.
-    return descriptors_[d->GetName()] = d;
+    descriptors_[d->GetName()] = d;
+
+    // Start descriptor I/O.
+    d->Start();
+
+    return d;
+}
+
+//! Closes a descriptor if needed and removes it from the index.
+//! \param descriptorName the descriptor name to erase
+//! \remark Safe to call for an already-closed or unknown name; idempotent.
+void Game::EraseDescriptor(const String& descriptorName) noexcept {
+    auto it = descriptors_.find(descriptorName);
+    if (it == std::end(descriptors_))
+	return;
+
+    // Hold reference across close so cancelled completions stay valid
+    // when this path closes socket itself (not via Descriptor::Close).
+    DescriptorPtr d = it->second;
+    descriptors_.erase(it);
+
+    if (d->Closed())
+	return;
+
+    d->Close();
+    // Close() posts another EraseDescriptor (no-op). Keep |d| alive
+    // until after that post and any aborted handlers already queued.
+    boost::asio::post(ioContext_, [d]() mutable {});
 }
 
 //! Parses command line arguments.
@@ -121,6 +148,7 @@ void Game::Run() {
 	    ioContext_.run();
     }
 
+    // Stop acceotr.
     if (server_) {
 	server_->StopAcceptor();
 	server_.reset();
@@ -157,6 +185,8 @@ void Game::Shutdown() noexcept {
     for (auto d: this->GetDescriptors())
 	d->Close();
 
+    // Maps; Close() defers EraseDescriptor via post.
+    descriptors_.clear();
     ioContext_.stop();
 }
 
