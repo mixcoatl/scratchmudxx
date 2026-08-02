@@ -22,5 +22,10 @@ noinst_HEADERS = \
 	../include/scratch/game.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/random.hpp \
+	../include/scratch/repository.hpp \
 	../include/scratch/scratch.hpp \
+	../include/scratch/storage.hpp \
+	../include/scratch/storage_file.hpp \
+	../include/scratch/storage_file_multi.hpp \
+	../include/scratch/storage_null.hpp \
 	../include/scratch/string.hpp
