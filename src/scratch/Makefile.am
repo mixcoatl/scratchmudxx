@@ -26,7 +26,9 @@ __top_builddir__bin_scratch_SOURCES = \
 	state.cpp \
 	state_bindings.cpp \
 	string.cpp \
-	thing.cpp
+	thing.cpp \
+	user.cpp \
+	user_bindings.cpp
 
 noinst_HEADERS = \
 	../include/scratch/color.hpp \
@@ -50,4 +52,6 @@ noinst_HEADERS = \
 	../include/scratch/storage_file_multi.hpp \
 	../include/scratch/storage_null.hpp \
 	../include/scratch/string.hpp \
-	../include/scratch/thing.hpp
+	../include/scratch/thing.hpp \
+	../include/scratch/user.hpp \
+	../include/scratch/user_bindings.hpp

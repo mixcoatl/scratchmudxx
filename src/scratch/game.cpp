@@ -16,6 +16,7 @@
 #include <scratch/server.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file_multi.hpp>
+#include <scratch/user.hpp>
 
 namespace Scratch {
 namespace Core {
@@ -30,7 +31,10 @@ Game::Game() :
 	signals_(ioContext_),
 	states_(std::make_shared<StateRepository>(
 		Scratch::Storage::MultiFileStorage<State>(
-			"data", "state", ".dat"))) {
+			"data", "state", ".dat"))),
+	users_(std::make_shared<UserRepository>(
+		Scratch::Storage::MultiFileStorage<User>(
+			"data", "user", ".dat"))) {
     // Nothing.
 }
 
@@ -39,7 +43,7 @@ Game::Game() :
 Game::~Game() noexcept {
     if (server_)
 	server_.reset();
-    // Close Lua before states_ tears down.
+    // Close Lua before states_ / users_ tear down.
     lua_.reset();
 }
 
@@ -73,6 +77,16 @@ const StateRepository& Game::GetStates() const noexcept {
 //! Gets a weak handle to the connection-state repository.
 std::weak_ptr<StateRepository> Game::GetStatesWeak() const noexcept {
     return states_;
+}
+
+//! Gets the user repository.
+UserRepository& Game::GetUsers() noexcept {
+    return *users_;
+}
+
+//! Gets the user repository.
+const UserRepository& Game::GetUsers() const noexcept {
+    return *users_;
 }
 
 //! Applies Quiet and Prompt bits to descriptors in \p state.
@@ -157,12 +171,16 @@ void Game::EraseDescriptor(const String& descriptorName) noexcept {
 //! Loads game repositories from disk.
 //! \throw std::runtime_error if a required repository cannot be loaded
 //! \sa #GetStates() const
+//! \sa #GetUsers() const
 //! \sa #Run()
 void Game::LoadRepositories() {
     if (!states_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load state index.");
     } else if (!states_->Get("Login")) {
 	throw std::runtime_error("Couldn't resolve Login state.");
+    }
+    if (!users_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load user index.");
     }
 }
 

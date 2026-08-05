@@ -17,6 +17,7 @@
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
+#include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -71,12 +72,52 @@ static int GetDescriptorProxy(lua_State* L) {
 }
 
 //! Handles lua get_states.
-//! \param L the lua state
+//! \param L the \c lua_State
 static int GetStatesProxy(lua_State* L) {
     if (lua_gettop(L) != 0)
 	return luaL_error(L, "get_states expects no arguments");
     auto& lua = Lua::CheckLua(L);
     StateBindings::PushRepository(lua);
+    return 1;
+}
+
+//! Handles lua get_users.
+//! \param L the \c lua_State
+static int GetUsersProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_users expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    UserBindings::PushRepository(lua);
+    return 1;
+}
+
+//! Handles lua now — current Unix time.
+//! \param L the \c lua_State
+static int NowProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "now expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    lua.PushInt(static_cast<lua_Integer>(std::time(nullptr)));
+    return 1;
+}
+
+//! Handles lua date(timestamp) — formats a Unix time for display.
+//! \param L the \c lua_State
+static int DateProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "date expects 1 argument");
+    const auto value = static_cast<std::time_t>(luaL_checkinteger(L, 1));
+    auto& lua = Lua::CheckLua(L);
+
+    struct tm time;
+    if (localtime_r(&value, &time) != &time) {
+	LOGGER_ASSERT() << "localtime_r() failed: errno=" << errno << ".";
+	lua.PushString(String());
+	return 1;
+    }
+    char buffer[32];
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &time);
+    lua.PushString(String(buffer));
     return 1;
 }
 
@@ -131,9 +172,12 @@ static int CryptProxy(lua_State* L) {
 void GameBindings::Register(Lua& lua) {
     lua.Register("broadcast", BroadcastProxy);
     lua.Register("crypt", CryptProxy);
+    lua.Register("date", DateProxy);
     lua.Register("get_descriptor", GetDescriptorProxy);
     lua.Register("get_descriptor_names", DescriptorNamesProxy);
     lua.Register("get_states", GetStatesProxy);
+    lua.Register("get_users", GetUsersProxy);
+    lua.Register("now", NowProxy);
     lua.Register("print", PrintProxy);
     lua.Register("shutdown", ShutdownProxy);
 }

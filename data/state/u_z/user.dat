@@ -1,0 +1,108 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_user();
+    if not edit then
+      d:print("No user draft; returning.\r\n");
+      local edit_name = d:get_edit_name();
+      local ret = "LoginUser";
+      if edit_name ~~= "" then
+        ret = "Playing";
+      end
+      d:set_state(ret);
+      return;
+    end
+    local function blank(v, empty, shown)
+      if v == nil or v == "" then
+        return empty or "<Blank>";
+      end
+      return shown or v;
+    end
+    d:print(string.format(
+      "User Menu: %s\r\n" ..
+      "  01) Name ....... : %s\r\n" ..
+      "  02) Password ... : %s\r\n" ..
+      "  03) Gender ..... : %s\r\n" ..
+      "  04) Email ...... : %s\r\n" ..
+      "   Q) Save and quit.\r\n" ..
+      "   X) Abort without saving.\r\n" ..
+      "Choice: ",
+      blank(d:get_edit_name(), "<New>"),
+      blank(edit:get_name()),
+      blank(edit:get_password(), "<Blank>", "<Set>"),
+      blank(edit:get_gender()),
+      blank(edit:get_email())));
+    ~
+  Received:-
+    local edit = d:get_edit_user();
+    if not edit then
+      local edit_name = d:get_edit_name();
+      local ret = "LoginUser";
+      if edit_name ~~= "" then
+        ret = "Playing";
+      end
+      d:set_state(ret);
+      return;
+    end
+    local word = line:match("%S+") or "";
+    local choice = word:lower();
+    if choice == "1" or choice == "name" then
+      d:set_state("UserName");
+    elseif choice == "2" or choice == "password" then
+      if edit:get_password() ~~= "" then
+        d:set_state("UserPasswordCurrent");
+      else
+        d:set_state("UserPassword");
+      end
+    elseif choice == "3" or choice == "gender" then
+      d:set_state("UserGender");
+    elseif choice == "4" or choice == "email" then
+      d:set_state("UserEmail");
+    elseif choice == "q" or choice == "quit" then
+      local name = edit:get_name();
+      if name == "" then
+        d:print("Name is required before saving.\r\n");
+        d:set_state("User");
+      elseif name:lower() == "new" then
+        d:print("That username is reserved.\r\n");
+        d:set_state("User");
+      elseif edit:get_password() == "" then
+        d:print("Password is required before saving.\r\n");
+        d:set_state("User");
+      else
+        local modified = now();
+        local modified_by = name;
+        if d:get_user() then
+          modified_by = d:get_user():get_name();
+        end
+        if d:get_edit_name() == "" then
+          edit:set_created(modified);
+          edit:set_created_by(modified_by);
+        end
+        edit:set_modified(modified);
+        edit:set_modified_by(modified_by);
+        get_users():store(name, edit);
+        local original = d:get_edit_name();
+        if original ~~= "" and original:lower() ~~= name:lower() then
+          get_users():erase(original);
+        end
+        d:login(get_users():get(name));
+        d:clear_edit_user();
+        d:set_edit_string("");
+        d:set_state("Playing");
+      end
+    elseif choice == "x" or choice == "abort" then
+      local edit_name = d:get_edit_name();
+      local ret = "LoginUser";
+      if edit_name ~~= "" then
+        ret = "Playing";
+      end
+      d:clear_edit_user();
+      d:set_state(ret);
+    else
+      d:print("Unknown choice.\r\n");
+      d:set_state("User");
+    end
+    ~
+  ~
+Name: User~
+~

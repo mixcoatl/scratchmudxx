@@ -1,0 +1,25 @@
+Hooks:
+  Focus:-
+    d:print("Username (or \"NEW\"): ");
+    ~
+  Received:-
+    local name = line:match("%S+") or "";
+    local name_lower = name:lower();
+    local user = get_users():get(name);
+    if name_lower == "" then
+      d:print("Please enter a username.\r\n");
+      d:set_state("LoginUser");
+    elseif name_lower == "new" then
+      d:set_edit_user();
+      d:set_state("User");
+    elseif user then
+      d:set_edit_string(name);
+      d:set_state("LoginPassword");
+    else
+      d:print("Unknown user.\r\n");
+      d:set_state("LoginUser");
+    end
+    ~
+  ~
+Name: LoginUser~
+~

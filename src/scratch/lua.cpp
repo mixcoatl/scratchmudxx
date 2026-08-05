@@ -16,6 +16,7 @@
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
+#include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -58,6 +59,7 @@ Lua::Lua(Game& game) :
 
     DescriptorBindings::Register(*this);
     StateBindings::Register(*this);
+    UserBindings::Register(*this);
     GameBindings::Register(*this);
 }
 

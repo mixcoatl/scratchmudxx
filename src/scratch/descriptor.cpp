@@ -18,6 +18,7 @@
 #include <scratch/protocol_telnet.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file_multi.hpp>
+#include <scratch/user.hpp>
 
 namespace Scratch {
 namespace Net {
@@ -32,7 +33,10 @@ Descriptor::Descriptor(
 	Game& game,
 	Socket&& socket) :
 	colorBit_(true),
+	editName_(),
 	editState_(),
+	editString_(),
+	editUser_(),
 	game_(game),
 	input_(),
 	lineInput_(),
@@ -43,6 +47,7 @@ Descriptor::Descriptor(
 	socket_(std::move(socket)),
 	state_(),
 	terminalType_(),
+	user_(),
 	windowHeight_(24),
 	windowWidth_(80),
 	writeFlushPosted_(false),
@@ -77,11 +82,21 @@ void Descriptor::BackspaceLine() {
 
 //! Closes the descriptor.
 //! \sa #Closed() const
+//! \sa #Login(const UserPtr&)
 void Descriptor::Close() noexcept {
     if (!socket_.is_open())
 	return;
 
     LOGGER_NETWORK() << "Descriptor " << name_ << " disconnected.";
+
+    if (user_) {
+	user_->SetLastLogout(std::time(nullptr));
+	game_.GetUsers().Save(user_->GetName());
+    }
+    user_.reset();
+    editUser_.reset();
+    editString_.clear();
+    editName_.clear();
 
     // Close Boost socket. Outstanding async ops are cancelled and their
     // completion handlers are queued on IO context before close returns.
@@ -150,6 +165,27 @@ void Descriptor::DeliverByte(const std::uint8_t byteReceived) {
     } else if (std::isprint(byteReceived) && byteReceived != '\r') {
 	if (lineInput_.str().size() < MaxInput)
 	    lineInput_ << static_cast<char>(byteReceived);
+    }
+}
+
+//! Logs in the specified user, setting LastLogin and persisting.
+//! \param user the user to log in
+//! \sa #Close()
+//! \sa #GetUser() const
+void Descriptor::Login(const UserPtr& user) noexcept {
+    if (!user) {
+	LOGGER_ASSERT() << "Descriptor " << name_ << " login with null user.";
+    } else if (user_ != user) {
+	// Log out whoever was previously attached before logging in the
+	// newly-specified user; both edges get their own timestamp and save.
+	if (user_) {
+	    user_->SetLastLogout(std::time(nullptr));
+	    game_.GetUsers().Save(user_->GetName());
+	}
+
+	user_ = user;
+	user_->SetLastLogin(std::time(nullptr));
+	game_.GetUsers().Save(user_->GetName());
     }
 }
 

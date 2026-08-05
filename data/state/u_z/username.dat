@@ -1,0 +1,33 @@
+Hooks:
+  Focus:-
+    d:print("New username: ");
+    ~
+  Received:-
+    local edit = d:get_edit_user();
+    if not edit then
+      d:set_state("User");
+    else
+      local name = line:match("%S+") or "";
+      local original = d:get_edit_name();
+      local existing = get_users():get(name);
+      if name == "" then
+        d:print("Username entry cancelled.\r\n");
+        d:set_state("User");
+      elseif name:lower() == "new" then
+        d:print("That username is reserved.\r\n");
+        d:set_state("UserName");
+      elseif not name:match("^[%w_]+$") then
+        d:print("Usernames may contain only letters, digits, and underscores.\r\n");
+        d:set_state("UserName");
+      elseif existing and (original == "" or original:lower() ~~= name:lower()) then
+        d:print("That username is already taken.\r\n");
+        d:set_state("UserName");
+      else
+        edit:set_name(name);
+        d:set_state("User");
+      end
+    end
+    ~
+  ~
+Name: UserName~
+~

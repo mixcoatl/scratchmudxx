@@ -1,0 +1,18 @@
+Hooks:
+  Focus:-
+    d:print("Gender: ");
+    ~
+  Received:-
+    if line == "" then
+      d:print("Gender entry cancelled.\r\n");
+    else
+      local edit = d:get_edit_user();
+      if edit then
+        edit:set_gender(line);
+      end
+    end
+    d:set_state("User");
+    ~
+  ~
+Name: UserGender~
+~
