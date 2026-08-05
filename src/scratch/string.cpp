@@ -142,6 +142,29 @@ String StringSanitizeCopy(const String& str) {
     return StringSanitize(strCopy);
 }
 
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStripCopy(const String&)
+String& StringStrip(String& str) noexcept {
+    return str = StringStripCopy(str);
+}
+
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStrip(String&)
+String StringStripCopy(const String& str) noexcept {
+    std::ostringstream oss("");
+    for (auto ptr = std::begin(str); ptr != std::end(str); ++ptr) {
+	if (*ptr == '\x1b') {
+	    while (ptr != std::end(str) && !std::isalpha(*ptr))
+		++ptr;
+	} else {
+	    oss << *ptr;
+	}
+    }
+    return oss.str();
+}
+
 //! Hashes a plaintext string.
 //! \param plaintext the string to hash
 //! \param salt the crypt salt; empty generates a new salt

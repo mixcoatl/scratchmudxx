@@ -86,6 +86,16 @@ String& StringSanitize(String& str);
 //! \sa StringSanitize(String&)
 String StringSanitizeCopy(const String& str);
 
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStripCopy(const String&)
+String& StringStrip(String& str) noexcept;
+
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStrip(String&)
+String StringStripCopy(const String& str) noexcept;
+
 //! Hashes a plaintext string.
 //! \param plaintext the string to hash
 //! \param salt the crypt salt; empty generates a new salt

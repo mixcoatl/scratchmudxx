@@ -75,6 +75,16 @@ public:
     //! \param byteReceived the byte to deliver
     void DeliverByte(const std::uint8_t byteReceived);
 
+    //! Returns the color code.
+    //! \param color the color code: C_x
+    const char *GetColor(const int color) noexcept;
+
+    //! Gets the color bit.
+    //! \sa #SetColorBit(const bool)
+    bool GetColorBit() const noexcept {
+	return colorBit_;
+    }
+
     //! Gets the descriptor name.
     //! \sa #SetName(const String&)
     String GetName() const noexcept {
@@ -112,6 +122,12 @@ public:
     //! Writes to the descriptor.
     //! \param format the printf-style format specifier
     void PrintFormat(const String& format, ...) noexcept;
+
+    //! Sets the color bit.
+    //! \sa #GetColorBit() const
+    void SetColorBit(const bool colorBit) noexcept {
+	colorBit_ = colorBit;
+    }
 
     //! Sets the descriptor name.
     //! \sa #GetName() const
@@ -158,6 +174,11 @@ public:
     void WriteRaw(const String& message);
 
 protected:
+    //! The color bit.
+    //! \sa #GetColorBit() const
+    //! \sa #SetColorBit(const bool)
+    bool colorBit_;
+
     //! The game state.
     Game& game_;
 
