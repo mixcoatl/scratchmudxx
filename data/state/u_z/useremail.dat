@@ -1,6 +1,6 @@
 Hooks:
   Focus:-
-    d:print("Email: ");
+    d:print(string.format("%sEmail:%s ", Q.PROMPT, Q.NORMAL));
     ~
   Received:-
     if line == "" then

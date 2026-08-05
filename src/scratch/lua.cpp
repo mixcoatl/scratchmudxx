@@ -8,6 +8,7 @@
 
 #define _SCRATCH_LUA_CPP_
 
+#include <scratch/color_bindings.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
@@ -57,10 +58,11 @@ Lua::Lua(Game& game) :
 	lua_pop(lua_, 1);
     }
 
+    ColorBindings::Register(*this);
     DescriptorBindings::Register(*this);
+    GameBindings::Register(*this);
     StateBindings::Register(*this);
     UserBindings::Register(*this);
-    GameBindings::Register(*this);
 }
 
 //! Destructor.

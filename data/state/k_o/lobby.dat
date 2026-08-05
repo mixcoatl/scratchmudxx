@@ -2,22 +2,28 @@ Hooks:
   Focus:-
     local user = d:get_user();
     if not user then
-      d:print("Not logged in.\r\n");
+      d:print(string.format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("LoginUser");
       return;
     end
     d:print(string.format(
-      "Lobby:\r\n" ..
-      "  01) Enter game.\r\n" ..
-      "  02) Edit user record.\r\n" ..
-      "  03) Delete user record.\r\n" ..
-      "  04) Quit.\r\n" ..
-      "Choice: "));
+      "%sLobby%s:%s\r\n" ..
+      "  %s01%s) %sEnter game.%s\r\n" ..
+      "  %s02%s) %sEdit user record.%s\r\n" ..
+      "  %s03%s) %sDelete user record.%s\r\n" ..
+      "  %s04%s) %sQuit.%s\r\n" ..
+      "%sChoice%s:%s ",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.NORMAL,
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL));
     ~
   Received:-
     local user = d:get_user();
     if not user then
-      d:print("Not logged in.\r\n");
+      d:print(string.format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("LoginUser");
       return;
     end
@@ -35,7 +41,7 @@ Hooks:
       d:close();
       broadcast(who .. " has disconnected.\r\n");
     else
-      d:print("Unknown choice.\r\n");
+      d:print(string.format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("Lobby");
     end
     ~

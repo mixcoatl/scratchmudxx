@@ -2,7 +2,7 @@ Hooks:
   Focus:-
     local edit = d:get_edit_user();
     if not edit then
-      d:print("No user draft; returning.\r\n");
+      d:print(string.format("%sNo user draft; returning.%s\r\n", Q.FAILED, Q.NORMAL));
       local edit_name = d:get_edit_name();
       local ret = "LoginUser";
       if edit_name ~~= "" then
@@ -18,19 +18,22 @@ Hooks:
       return shown or v;
     end
     d:print(string.format(
-      "User Menu: %s\r\n" ..
-      "  01) Name ....... : %s\r\n" ..
-      "  02) Password ... : %s\r\n" ..
-      "  03) Gender ..... : %s\r\n" ..
-      "  04) Email ...... : %s\r\n" ..
-      "   Q) Save and quit.\r\n" ..
-      "   X) Abort without saving.\r\n" ..
-      "Choice: ",
-      blank(d:get_edit_name(), "<New>"),
-      blank(edit:get_name()),
-      blank(edit:get_password(), "<Blank>", "<Set>"),
-      blank(edit:get_gender()),
-      blank(edit:get_email())));
+      "%sUser Menu%s: %s%s%s\r\n" ..
+      "  %s01%s) %sName %s....... : %s%s%s\r\n" ..
+      "  %s02%s) %sPassword %s... : %s%s%s\r\n" ..
+      "  %s03%s) %sGender %s..... : %s%s%s\r\n" ..
+      "  %s04%s) %sEmail %s...... : %s%s%s\r\n" ..
+      "   %sQ%s) %sSave and quit.%s\r\n" ..
+      "   %sX%s) %sAbort without saving.%s\r\n" ..
+      "%sChoice%s:%s ",
+      Q.PROMPT, Q.PUNCTUATION, Q.NAME, blank(d:get_edit_name(), "<New>"), Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.PUNCTUATION, Q.TEXT, blank(edit:get_name()), Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.PUNCTUATION, Q.TEXT, blank(edit:get_password(), "<Blank>", "<Set>"), Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.PUNCTUATION, Q.TEXT, blank(edit:get_gender()), Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.PUNCTUATION, Q.TEXT, blank(edit:get_email()), Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.NORMAL,
+      Q.KEY, Q.PUNCTUATION, Q.PROMPT, Q.NORMAL,
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL));
     ~
   Received:-
     local edit = d:get_edit_user();
@@ -61,13 +64,13 @@ Hooks:
     elseif choice == "q" then
       local name = edit:get_name();
       if name == "" then
-        d:print("Name is required before saving.\r\n");
+        d:print(string.format("%sName is required before saving.%s\r\n", Q.FAILED, Q.NORMAL));
         d:set_state("User");
       elseif name:lower() == "new" then
-        d:print("That username is reserved.\r\n");
+        d:print(string.format("%sThat username is reserved.%s\r\n", Q.FAILED, Q.NORMAL));
         d:set_state("User");
       elseif edit:get_password() == "" then
-        d:print("Password is required before saving.\r\n");
+        d:print(string.format("%sPassword is required before saving.%s\r\n", Q.FAILED, Q.NORMAL));
         d:set_state("User");
       else
         local modified = now();
@@ -100,7 +103,7 @@ Hooks:
       d:clear_edit_user();
       d:set_state(ret);
     else
-      d:print("Unknown choice.\r\n");
+      d:print(string.format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("User");
     end
     ~

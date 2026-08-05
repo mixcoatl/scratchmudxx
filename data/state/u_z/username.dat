@@ -1,6 +1,6 @@
 Hooks:
   Focus:-
-    d:print("New username: ");
+    d:print(string.format("%sNew username:%s ", Q.PROMPT, Q.NORMAL));
     ~
   Received:-
     local edit = d:get_edit_user();
@@ -14,13 +14,13 @@ Hooks:
         d:print("Username entry cancelled.\r\n");
         d:set_state("User");
       elseif name:lower() == "new" then
-        d:print("That username is reserved.\r\n");
+        d:print(string.format("%sThat username is reserved.%s\r\n", Q.FAILED, Q.NORMAL));
         d:set_state("UserName");
       elseif not name:match("^[%w_]+$") then
-        d:print("Usernames may contain only letters, digits, and underscores.\r\n");
+        d:print(string.format("%sUsernames may contain only letters, digits, and underscores.%s\r\n", Q.FAILED, Q.NORMAL));
         d:set_state("UserName");
       elseif existing and (original == "" or original:lower() ~~= name:lower()) then
-        d:print("That username is already taken.\r\n");
+        d:print(string.format("%sThat username is already taken.%s\r\n", Q.FAILED, Q.NORMAL));
         d:set_state("UserName");
       else
         edit:set_name(name);

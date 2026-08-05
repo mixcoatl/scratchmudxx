@@ -9,6 +9,7 @@
 #ifndef _SCRATCH_USER_HPP_
 #define _SCRATCH_USER_HPP_
 
+#include <scratch/color.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 #include <scratch/thing.hpp>
@@ -24,6 +25,7 @@ namespace Scratch {
 namespace Core {
 
 // ScratchMUD types.
+using Color = Scratch::Net::Color;
 using Data = Scratch::Utility::Data;
 using DataPtr = std::shared_ptr<Data>;
 
@@ -43,6 +45,11 @@ public:
     //! Default assignment.
     //! \param other the \sa user to assign
     User& operator=(const User& other) noexcept;
+
+    //! Clears the metacolor.
+    //! \param meta the metacolor
+    //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
+    void ClearMetaColor(Color::ColorEnum meta) noexcept;
 
     //! Gets the email address.
     //! \sa #SetEmail(const String&)
@@ -68,11 +75,24 @@ public:
 	return lastLogout_;
     }
 
+    //! Gets the metacolor overrides.
+    //! \sa #ClearMetaColor(Color::ColorEnum)
+    //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
+    const std::map<Color::ColorEnum, Color::ColorEnum>& GetMetaColors() const noexcept {
+	return metaColors_;
+    }
+
     //! Gets the password.
     //! \sa #SetPassword(const String&)
     String GetPassword() const noexcept {
 	return password_;
     }
+
+    //! Reads colors from a data node.
+    //! \param data the Colors data node to read
+    //! \sa #ReadData(const DataPtr&)
+    //! \sa #WriteColorsData(const DataPtr&) const
+    void ReadColorsData(const DataPtr& data) noexcept;
 
     //! Reads login tracking from a data node.
     //! \param data the Time data node to read
@@ -109,10 +129,26 @@ public:
 	lastLogout_ = lastLogout;
     }
 
+    //! Sets the metacolor.
+    //! \param meta the metacolor
+    //! \param color the real color
+    //! \return \c true if the metacolor was set
+    //! \sa #ClearMetaColor(Color::ColorEnum)
+    //! \sa #GetMetaColors() const
+    bool SetMetaColor(
+	Color::ColorEnum meta,
+	Color::ColorEnum color) noexcept;
+
     //! Sets the password.
     //! \param plain the plaintext password to hash and store
     //! \sa #GetPassword() const
     bool SetPassword(const String& plain) noexcept;
+
+    //! Writes colors to a data node.
+    //! \param data the Colors data node to write
+    //! \sa #ReadColorsData(const DataPtr&)
+    //! \sa #WriteData(const DataPtr&) const
+    void WriteColorsData(const DataPtr& data) const noexcept;
 
     //! Writes login tracking to a data node.
     //! \param data the Time data node to write
@@ -145,6 +181,11 @@ protected:
     //! \sa #GetLastLogout() const
     //! \sa #SetLastLogout(const std::time_t)
     std::time_t lastLogout_;
+
+    //! The metacolor overrides.
+    //! \sa #GetMetaColors() const
+    //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
+    std::map<Color::ColorEnum, Color::ColorEnum> metaColors_;
 
     //! The password.
     //! \sa #GetPassword() const

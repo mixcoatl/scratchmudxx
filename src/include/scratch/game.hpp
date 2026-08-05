@@ -73,7 +73,7 @@ public:
     //! Gets the IO context.
     IoContext& GetIoContext() noexcept;
 
-    //! Gets the Lua state.
+    //! Gets the Lua facade.
     Lua& GetLua() noexcept;
 
     //! Gets the server.
@@ -152,7 +152,7 @@ protected:
     //! \sa #GetDescriptors() const
     StringMapCi<DescriptorPtr> descriptors_;
 
-    //! The Lua state.
+    //! The Lua facade.
     //! \sa #GetLua()
     LuaPtr lua_;
 

@@ -8,6 +8,7 @@
 
 #define _SCRATCH_DESCRIPTOR_BINDINGS_CPP_
 
+#include <scratch/color_bindings.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/lua.hpp>
@@ -195,9 +196,14 @@ static int DescriptorIsPrompt(lua_State* L) {
 static int DescriptorLogin(lua_State* L) {
     if (lua_gettop(L) != 2)
 	return luaL_error(L, "login expects 1 argument");
+    auto& lua = Lua::CheckLua(L);
     auto self = DescriptorBindings::Check(L);
     auto user = UserBindings::Check(L, 2);
     self->Login(user);
+    user.reset();
+    Descriptor& desc = *self;
+    self.reset();
+    ColorBindings::RefillGlobalQ(L, lua, desc);
     return 0;
 }
 
@@ -237,7 +243,12 @@ static int DescriptorPrint(lua_State* L) {
 static int DescriptorSetColor(lua_State* L) {
     if (lua_gettop(L) != 2)
 	return luaL_error(L, "set_color expects 1 argument");
-    DescriptorBindings::Check(L)->SetColorBit(lua_toboolean(L, 2) != 0);
+    auto& lua = Lua::CheckLua(L);
+    auto self = DescriptorBindings::Check(L);
+    self->SetColorBit(lua_toboolean(L, 2) != 0);
+    Descriptor& desc = *self;
+    self.reset();
+    ColorBindings::RefillGlobalQ(L, lua, desc);
     return 0;
 }
 
@@ -354,13 +365,19 @@ static int DescriptorSetState(lua_State* L) {
     return 0;
 }
 
-//! Pushes a Descriptor userdata, or nil.
+//! Pushes a Descriptor userdata, or nil, and assigns global \c Q.
 //! \param lua the Lua facade
 //! \param d the descriptor to push
 void DescriptorBindings::Push(
 	Lua& lua,
 	DescriptorPtr d) {
+    if (!d) {
+	lua.PushUserdata(std::move(d), MetaName);
+	return;
+    }
+    const auto keep = d;
     lua.PushUserdata(std::move(d), MetaName);
+    ColorBindings::AssignQ(lua, *keep);
 }
 
 //! Registers the Descriptor metatable.

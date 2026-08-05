@@ -1,6 +1,6 @@
 Hooks:
   Focus:-
-    d:print("Enable ANSI color? [Y/n]: ");
+    d:print(string.format("%sEnable ANSI color?%s [Y/n]: ", Q.PROMPT, Q.NORMAL));
     ~
   Received:-
     local word = line:match("%w+") or "";
@@ -12,7 +12,7 @@ Hooks:
       d:set_color(false);
       d:set_state("LoginUser");
     else
-      d:print("Please answer Y or N.\r\n");
+      d:print(string.format("%sPlease answer Y or N.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("Login");
     end
     ~

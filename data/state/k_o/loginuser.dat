@@ -1,13 +1,15 @@
 Hooks:
   Focus:-
-    d:print("Username (or \"NEW\"): ");
+    d:print(string.format("%sUsername %s(%sor \"%sNEW%s\"%s):%s ",
+      Q.PROMPT, Q.PUNCTUATION, Q.PROMPT, Q.EMPHASIS,
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL));
     ~
   Received:-
     local name = line:match("%S+") or "";
     local name_lower = name:lower();
     local user = get_users():get(name);
     if name_lower == "" then
-      d:print("Please enter a username.\r\n");
+      d:print(string.format("%sPlease enter a username.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("LoginUser");
     elseif name_lower == "new" then
       d:set_edit_user();
@@ -16,7 +18,7 @@ Hooks:
       d:set_edit_string(name);
       d:set_state("LoginPassword");
     else
-      d:print("Unknown user.\r\n");
+      d:print(string.format("%sUnknown user.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("LoginUser");
     end
     ~

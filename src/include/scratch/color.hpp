@@ -11,19 +11,8 @@
 
 #include <scratch/scratch.hpp>
 
-// Forward declarations.
 namespace Scratch {
 namespace Net {
-class Descriptor;
-}; // namespace Net
-}; // namespace Scratch
-
-
-namespace Scratch {
-namespace Net {
-
-// ScratchMUD types.
-using Descriptor = Scratch::Net::Descriptor;
 
 //! The color class. \{
 class Color {
@@ -48,8 +37,21 @@ public:
 	C_AQUA		= 14,	//!< Bright cyan.
 	C_SNOW		= 15,	//!< Bright white.
 	C_NORMAL	= 16,	//!< Color is normal.
+	C_EMPHASIS	= 17,	//!< Color is emphasis.
+	C_ENUM		= 18,	//!< Color is enum.
+	C_FAILED	= 19,	//!< Color is failed.
+	C_KEY		= 20,	//!< Color is key.
+	C_NUMBER	= 21,	//!< Color is number.
+	C_OKAY		= 22,	//!< Color is okay.
+	C_NAME		= 23,	//!< Color is name.
+	C_PERCENT	= 24,	//!< Color is percent.
+	C_PROMPT	= 25,	//!< Color is prompt.
+	C_PUNCTUATION	= 26,	//!< Color is punctuation.
+	C_TEXT		= 27,	//!< Color is text.
+	C_YESNO		= 28,	//!< Color is yesno.
 	C_FIRST_REAL	= C_CHARCOAL, //!< First real color.
-	MAX_C_TYPES	= 17	//!< How many color types.
+	C_FIRST_META	= C_EMPHASIS, //!< First metacolor.
+	MAX_C_TYPES	= 29	//!< How many color types.
     };
     //! \}
 
@@ -57,6 +59,12 @@ public:
     //! \param name the color name
     //! \sa #ToString(ColorEnum)
     static ColorEnum ByName(const String& name) noexcept;
+
+    //! Returns whether the value is a metacolor.
+    //! \param value the color
+    static constexpr bool IsMeta(ColorEnum value) noexcept {
+	return value >= C_FIRST_META && value < MAX_C_TYPES;
+    }
 
     //! Returns whether the value is a real color.
     //! \param value the color

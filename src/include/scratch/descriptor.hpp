@@ -84,7 +84,7 @@ public:
 
     //! Returns the color code.
     //! \param color the color
-    const char *GetColor(const int color) noexcept;
+    const char *GetColor(const int color) const noexcept;
 
     //! Gets the color bit.
     //! \sa #SetColorBit(const bool)
@@ -377,7 +377,7 @@ protected:
     //! \param lineReceived the line input to process
     void ReceiveLine(const String& lineReceived);
 
-    //! Runs a connection-state Lua hook with \c d injected.
+    //! Runs a connection-state Lua hook with \c d, \c line, and \c Q.
     //! \param hook the Lua source to execute
     //! \param hookName hook label appended to the Execute caller (\c Focus, \c FocusLost, \c Received)
     //! \param line the input line to inject as global \c line

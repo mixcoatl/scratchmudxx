@@ -29,23 +29,35 @@ Color::ColorEnum Color::ByName(const String& name) noexcept {
 	colors["Charcoal"] = C_CHARCOAL;
 	colors["Crimson"] = C_CRIMSON;
 	colors["Cyan"] = C_TEAL;
+	colors["Emphasis"] = C_EMPHASIS;
+	colors["Enum"] = C_ENUM;
+	colors["Failed"] = C_FAILED;
 	colors["Forest"] = C_FOREST;
 	colors["Gray"] = C_GRAY;
 	colors["Green"] = C_FOREST;
 	colors["Indigo"] = C_INDIGO;
+	colors["Key"] = C_KEY;
 	colors["Lime"] = C_LIME;
 	colors["Magenta"] = C_PURPLE;
+	colors["Name"] = C_NAME;
 	colors["Normal"] = C_NORMAL;
+	colors["Number"] = C_NUMBER;
 	colors["Ochre"] = C_OCHRE;
+	colors["Okay"] = C_OKAY;
+	colors["Percent"] = C_PERCENT;
 	colors["Pink"] = C_PINK;
+	colors["Prompt"] = C_PROMPT;
+	colors["Punctuation"] = C_PUNCTUATION;
 	colors["Purple"] = C_PURPLE;
 	colors["Red"] = C_CRIMSON;
 	colors["Silver"] = C_SILVER;
 	colors["Snow"] = C_SNOW;
 	colors["Teal"] = C_TEAL;
+	colors["Text"] = C_TEXT;
 	colors["Violet"] = C_VIOLET;
 	colors["White"] = C_SILVER;
 	colors["Yellow"] = C_OCHRE;
+	colors["YesNo"] = C_YESNO;
     }
 
     auto const found = colors.find(name);
@@ -76,6 +88,18 @@ String Color::ToString(ColorEnum value) noexcept {
     case C_AQUA:	return String("Aqua");
     case C_SNOW:	return String("Snow");
     case C_NORMAL:	return String("Normal");
+    case C_EMPHASIS:	return String("Emphasis");
+    case C_ENUM:	return String("Enum");
+    case C_FAILED:	return String("Failed");
+    case C_KEY:		return String("Key");
+    case C_NUMBER:	return String("Number");
+    case C_OKAY:	return String("Okay");
+    case C_NAME:	return String("Name");
+    case C_PERCENT:	return String("Percent");
+    case C_PROMPT:	return String("Prompt");
+    case C_PUNCTUATION:	return String("Punctuation");
+    case C_TEXT:	return String("Text");
+    case C_YESNO:	return String("YesNo");
     default:		return String();
     }
 }

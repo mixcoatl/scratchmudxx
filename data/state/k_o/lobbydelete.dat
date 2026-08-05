@@ -2,18 +2,18 @@ Hooks:
   Focus:-
     local user = d:get_user();
     if not user then
-      d:print("Not logged in.\r\n");
+      d:print(string.format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("LoginUser");
       return;
     end
     d:print(string.format(
-      "Type %s to permanently delete this user record: ",
-      user:get_name()));
+      "%sType %s%s%s to permanently delete this user record:%s ",
+      Q.PROMPT, Q.NAME, user:get_name(), Q.PROMPT, Q.NORMAL));
     ~
   Received:-
     local user = d:get_user();
     if not user then
-      d:print("Not logged in.\r\n");
+      d:print(string.format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("LoginUser");
       return;
     end
@@ -29,7 +29,7 @@ Hooks:
       d:close();
       get_users():erase(name);
     else
-      d:print("Username did not match.\r\n");
+      d:print(string.format("%sUsername did not match.%s\r\n", Q.FAILED, Q.NORMAL));
       d:set_state("LobbyDelete");
     end
     ~

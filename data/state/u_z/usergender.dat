@@ -1,6 +1,6 @@
 Hooks:
   Focus:-
-    d:print("Gender: ");
+    d:print(string.format("%sGender:%s ", Q.PROMPT, Q.NORMAL));
     ~
   Received:-
     if line == "" then

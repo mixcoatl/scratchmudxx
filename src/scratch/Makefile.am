@@ -12,6 +12,7 @@ __top_builddir__bin_scratch_LDADD = \
 	$(LUA_LIB)
 __top_builddir__bin_scratch_SOURCES = \
 	color.cpp \
+	color_bindings.cpp \
 	data.cpp \
 	descriptor.cpp \
 	descriptor_bindings.cpp \
@@ -32,6 +33,7 @@ __top_builddir__bin_scratch_SOURCES = \
 
 noinst_HEADERS = \
 	../include/scratch/color.hpp \
+	../include/scratch/color_bindings.hpp \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
 	../include/scratch/descriptor_bindings.hpp \

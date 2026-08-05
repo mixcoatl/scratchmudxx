@@ -23,6 +23,7 @@ User::User() noexcept :
 	gender_(),
 	lastLogin_(0),
 	lastLogout_(0),
+	metaColors_(),
 	password_() {
     // Nothing.
 }
@@ -35,6 +36,7 @@ User::User(const User& other) noexcept :
 	gender_(other.gender_),
 	lastLogin_(other.lastLogin_),
 	lastLogout_(other.lastLogout_),
+	metaColors_(other.metaColors_),
 	password_(other.password_) {
     // Nothing.
 }
@@ -52,8 +54,29 @@ User& User::operator=(const User& other) noexcept {
     gender_ = other.gender_;
     lastLogin_ = other.lastLogin_;
     lastLogout_ = other.lastLogout_;
+    metaColors_ = other.metaColors_;
     password_ = other.password_;
     return *this;
+}
+
+//! Clears the metacolor.
+//! \param meta the metacolor
+//! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
+void User::ClearMetaColor(Color::ColorEnum meta) noexcept {
+    metaColors_.erase(meta);
+}
+
+//! Reads colors from a data node.
+//! \param data the Colors data node to read
+//! \sa #ReadData(const DataPtr&)
+//! \sa #WriteColorsData(const DataPtr&) const
+void User::ReadColorsData(const DataPtr& data) noexcept {
+    metaColors_.clear();
+    for (const auto& entry: data->GetEntries()) {
+	auto meta = Color::ByName(entry.first);
+	auto assigned = Color::ByName(data->GetString(entry.first));
+	this->SetMetaColor(meta, assigned);
+    }
 }
 
 //! Reads login tracking from a data node.
@@ -77,16 +100,38 @@ void User::ReadData(const DataPtr& data) noexcept {
     gender_ = data->GetString("Gender");
     password_ = data->GetString("Password");
 
+    // Read colors.
+    auto colorsData = data->Get("Colors");
+    if (!colorsData)
+	colorsData = std::make_shared<Data>();
+    this->ReadColorsData(colorsData);
+
     // Read login tracking.
     auto timeData = data->Get("Time");
     if (!timeData)
 	timeData = std::make_shared<Data>();
     this->ReadTimeData(timeData);
 
+    // Read metadata.
     auto metadataData = data->Get("Metadata");
     if (!metadataData)
 	metadataData = std::make_shared<Data>();
     this->ReadMetadataData(metadataData);
+}
+
+//! Sets the metacolor.
+//! \param meta the metacolor
+//! \param color the real color
+//! \return \c true if the metacolor was set
+//! \sa #ClearMetaColor(Color::ColorEnum)
+//! \sa #GetMetaColors() const
+bool User::SetMetaColor(
+	Color::ColorEnum meta,
+	Color::ColorEnum color) noexcept {
+    if (!Color::IsMeta(meta) || !Color::IsReal(color))
+	return false;
+    metaColors_[meta] = color;
+    return true;
 }
 
 //! Sets the password.
@@ -99,6 +144,18 @@ bool User::SetPassword(const String& plain) noexcept {
     }
     password_ = Scratch::Algorithm::StringCryptCopy(plain);
     return true;
+}
+
+//! Writes colors to a data node.
+//! \param data the Colors data node to write
+//! \sa #ReadColorsData(const DataPtr&)
+//! \sa #WriteData(const DataPtr&) const
+void User::WriteColorsData(const DataPtr& data) const noexcept {
+    for (const auto& entry: metaColors_) {
+	data->PutString(
+	    Color::ToString(entry.first),
+	    Color::ToString(entry.second));
+    }
 }
 
 //! Writes login tracking to a data node.
@@ -128,12 +185,19 @@ void User::WriteData(const DataPtr& data) const noexcept {
     if (!password_.empty())
 	data->PutString("Password", password_);
 
+    // Write colors.
+    auto colorsData = std::make_shared<Data>();
+    this->WriteColorsData(colorsData);
+    if (colorsData->Size())
+	data->Put("Colors", colorsData);
+
     // Write login tracking.
     auto timeData = std::make_shared<Data>();
     this->WriteTimeData(timeData);
     if (timeData->Size())
 	data->Put("Time", timeData);
 
+    // Write metadata.
     auto metadataData = std::make_shared<Data>();
     this->WriteMetadataData(metadataData);
     if (metadataData->Size())

@@ -113,7 +113,7 @@ IoContext& Game::GetIoContext() noexcept {
     return ioContext_;
 }
 
-//! Gets the Lua state.
+//! Gets the Lua facade.
 Lua& Game::GetLua() noexcept {
     return *lua_;
 }

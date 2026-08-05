@@ -5,12 +5,15 @@ Hooks:
     if user then
       who = user:get_name();
     end
-    d:print("Welcome to ScratchMUD, " .. who .. "!\r\n");
+
+    d:print(string.format("%sWelcome to ScratchMUD, %s%s%s!%s\r\n",
+      Q.PROMPT, Q.EMPHASIS, who, Q.PROMPT, Q.NORMAL));
+
     if user then
       local last_logout = user:get_last_logout();
       if last_logout and last_logout > 0 then
-        d:print(string.format("Your last visit ended %s.\r\n",
-          date(last_logout)));
+        d:print(string.format("%sYour last visit ended %s%s%s.%s\r\n",
+          Q.PROMPT, Q.EMPHASIS, date(last_logout), Q.PROMPT, Q.NORMAL));
       end
     end
     ~
