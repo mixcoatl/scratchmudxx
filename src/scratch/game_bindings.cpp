@@ -15,6 +15,7 @@
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
+#include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
 
 namespace Scratch {
@@ -66,6 +67,16 @@ static int GetDescriptorProxy(lua_State* L) {
     auto& game = Lua::CheckGame(L);
     auto descriptor = game.GetDescriptor(Lua::CheckString(L, 1));
     DescriptorBindings::Push(lua, std::move(descriptor));
+    return 1;
+}
+
+//! Handles lua get_states.
+//! \param L the lua state
+static int GetStatesProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_states expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    StateBindings::PushRepository(lua);
     return 1;
 }
 
@@ -122,6 +133,7 @@ void GameBindings::Register(Lua& lua) {
     lua.Register("crypt", CryptProxy);
     lua.Register("get_descriptor", GetDescriptorProxy);
     lua.Register("get_descriptor_names", DescriptorNamesProxy);
+    lua.Register("get_states", GetStatesProxy);
     lua.Register("print", PrintProxy);
     lua.Register("shutdown", ShutdownProxy);
 }

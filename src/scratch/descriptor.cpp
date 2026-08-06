@@ -11,9 +11,13 @@
 #include <scratch/color.hpp>
 #include <scratch/game.hpp>
 #include <scratch/descriptor.hpp>
+#include <scratch/descriptor_bindings.hpp>
 #include <scratch/logger.hpp>
+#include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/protocol_telnet.hpp>
+#include <scratch/state.hpp>
+#include <scratch/storage_file_multi.hpp>
 
 namespace Scratch {
 namespace Net {
@@ -28,6 +32,7 @@ Descriptor::Descriptor(
 	Game& game,
 	Socket&& socket) :
 	colorBit_(true),
+	editState_(),
 	game_(game),
 	input_(),
 	lineInput_(),
@@ -36,9 +41,11 @@ Descriptor::Descriptor(
 	promptBit_(true),
 	protocol_(),
 	socket_(std::move(socket)),
+	state_(),
 	terminalType_(),
 	windowHeight_(24),
 	windowWidth_(80),
+	writeFlushPosted_(false),
 	writePending_(false) {
     // Default to TELNET.
     protocol_ = std::make_unique<TelnetProtocol>(*this);
@@ -137,8 +144,9 @@ void Descriptor::DeliverByte(const std::uint8_t byteReceived) {
     } else if (std::strchr("\b\x7f", byteReceived) != nullptr) {
 	this->Backspace();
     } else if (byteReceived == '\n') {
-	this->ReceiveLine(lineInput_.str());
+	const auto line = lineInput_.str();
 	this->BackspaceLine();
+	this->ReceiveLine(line);
     } else if (std::isprint(byteReceived) && byteReceived != '\r') {
 	if (lineInput_.str().size() < MaxInput)
 	    lineInput_ << static_cast<char>(byteReceived);
@@ -148,12 +156,21 @@ void Descriptor::DeliverByte(const std::uint8_t byteReceived) {
 //! Writes to the descriptor.
 //! \param message the message to print
 void Descriptor::Print(const String& message) noexcept {
+    if (this->Closed())
+	return;
+
+    this->EndLine();
     this->Write(message);
+    if (!message.empty())
+	promptBit_ = message.back() == '\n';
 }
 
 //! Writes to the descriptor.
 //! \param format the printf-style format specifier
 void Descriptor::PrintFormat(const String& format, ...) noexcept {
+    if (this->Closed())
+	return;
+
     // Format message.
     va_list args;
     va_start(args, format);
@@ -167,37 +184,84 @@ void Descriptor::PrintFormat(const String& format, ...) noexcept {
 	return;
     }
 
-    // Interrupt the prompt line so \r in the message cannot overwrite it.
-    if (!promptBit_)
-	this->Write("\r\n");
-
-    // Write message.
+    this->EndLine();
     this->Write(message);
-    if (std::find(std::begin(message), std::end(message), '\n') != std::end(message))
-	promptBit_ = true;
+    if (N > 0)
+	promptBit_ = message[N - 1] == '\n';
 }
 
 //! Sets the prompt bit.
 //! \param promptBit the prompt bit value
 //! \sa #GetPromptBit() const
 void Descriptor::SetPromptBit(const bool promptBit) noexcept {
-    promptBit_ = promptBit;
     if (!promptBit)
 	return;
 
-    // Show the prompt now if the connection is idle; otherwise the
-    // write completion handler shows it once output drains.
     const auto self = this->shared_from_this();
     boost::asio::post(game_.GetIoContext(), std::function<void()>([self]() {
 	if (!self->Closed() && !self->game_.GetShutdown() &&
-	    self->promptBit_ && !self->writePending_ && !self->output_.size())
+	    self->state_ && self->state_->GetPromptBit() &&
+	    !self->writePending_ && !self->output_.size())
 	    self->WritePrompt();
     }));
+}
+
+//! Enables or disables Quiet (server echo / hidden client local echo).
+//! \param quiet whether Quiet is enabled
+void Descriptor::SetQuiet(bool quiet) {
+    protocol_->SetQuiet(quiet);
+}
+
+//! Sets the connection state.
+//! \param state the state to enter
+//! \sa #GetState() const
+//! \sa #SetStateByName(const String&)
+void Descriptor::SetState(const StatePtr& state) {
+    const auto lastState = state_;
+    const bool lastQuiet = lastState && lastState->GetQuietBit();
+
+    // Run focus lost hook.
+    if (lastState) {
+	if (!this->RunStateHook(lastState->GetFocusLost(), "FocusLost"))
+	    return;
+	if (state_ != lastState)
+	    return;
+    }
+
+    state_ = state;
+
+    // Run focus hook.
+    if (state_)
+	this->RunStateHook(state_->GetFocus(), "Focus");
+    if (state_ != state)
+	return;
+
+    // Set quiet and prompt bits as needed.
+    const bool quiet = state_ && state_->GetQuietBit();
+    if (lastQuiet != quiet)
+	this->SetQuiet(quiet);
+    if (state_ && state_->GetPromptBit() &&
+	!writePending_ && !output_.size())
+	this->WritePrompt();
+}
+
+//! Sets the connection state by name.
+//! \param stateName the repository name of the state to enter
+//! \sa #GetState() const
+//! \sa #SetState(const StatePtr&)
+void Descriptor::SetStateByName(const String& stateName) {
+    auto state = game_.GetStates().Get(stateName);
+    if (!state) {
+	LOGGER_NETWORK() << "Unknown connection state '" << stateName << "'.";
+    } else {
+	this->SetState(state);
+    }
 }
 
 //! Begins asynchronous I/O after the descriptor is indexed by the game.
 void Descriptor::Start() {
     protocol_->OnStart();
+    this->SetState(game_.GetStates().Get("Login"));
     this->InitAsyncRead();
     this->Write("");
 }
@@ -205,17 +269,25 @@ void Descriptor::Start() {
 //! Writes application output through the protocol.
 //! \param message the message to write
 void Descriptor::Write(const String& message) {
+    if (this->Closed())
+	return;
     protocol_->Send(message);
 }
 
 //! Writes the prompt.
 void Descriptor::WritePrompt() {
-    this->PrintFormat("%s:ScratchMUD:> %s",
+    if (!state_ || !state_->GetPromptBit())
+	return;
+
+    this->EndLine();
+
+    char message[MaxString] = {'\0'};
+    std::snprintf(message, sizeof(message), "%s:ScratchMUD:> %s",
 	this->GetColor(Color::C_CRIMSON),
 	this->GetColor(Color::C_NORMAL));
+    this->Write(message);
 
-    // Restore in-progress input that local echo already
-    // showed on the prompt line that we interrupted.
+    // Restore interrupted input.
     const auto pendingInput = lineInput_.str();
     if (!pendingInput.empty())
 	this->Write(pendingInput);
@@ -254,9 +326,27 @@ void Descriptor::WriteRaw(const String& message) {
 	if (!self->Closed() && !message.empty())
 	    self->output_.sputn(message.data(), static_cast<std::streamsize>(message.size()));
 
-	if (!self->Closed() && !self->writePending_ && self->output_.size())
-	    self->InitAsyncWrite();
+	// Coalesce queued WriteRaw posts before async_write.
+	// Must not mutate streambuf during in-flight write.
+	if (!self->Closed() && !self->writePending_ &&
+	    self->output_.size() && !self->writeFlushPosted_) {
+	    self->writeFlushPosted_ = true;
+	    boost::asio::post(self->game_.GetIoContext(), std::function<void()>([self]() {
+		self->writeFlushPosted_ = false;
+		if (!self->Closed() && !self->game_.GetShutdown() &&
+		    !self->writePending_ && self->output_.size())
+		    self->InitAsyncWrite();
+	    }));
+	}
     }));
+}
+
+//! Ends the current line if needed.
+void Descriptor::EndLine() {
+    if (promptBit_)
+	return;
+    this->Write("\r\n");
+    promptBit_ = true;
 }
 
 //! Configures an asynchronous read.
@@ -325,10 +415,11 @@ void Descriptor::InitAsyncWrite() {
 	    // Advance the output buffer past bytes written.
 	    self->output_.consume(nBytes);
 
-	    // Continue draining, or show the prompt when idle.
+	    // Continue draining, or show the prompt.
 	    if (!self->game_.GetShutdown() && !self->Closed() && self->output_.size())
 		self->InitAsyncWrite();
-	    else if (!self->game_.GetShutdown() && !self->Closed() && self->promptBit_)
+	    else if (!self->game_.GetShutdown() && !self->Closed() &&
+		     self->state_ && self->state_->GetPromptBit() && self->promptBit_)
 		self->WritePrompt();
 	}));
 }
@@ -338,14 +429,45 @@ void Descriptor::InitAsyncWrite() {
 void Descriptor::ReceiveLine(const String& lineReceived) {
     if (this->Closed()) {
 	LOGGER_NETWORK() << "Descriptor " << name_ << " already closed.";
+    } else if (!state_) {
+	LOGGER_NETWORK() << "Descriptor " << name_ << " has no connection state; closing.";
+	this->Close();
     } else {
-	for (auto d: game_.GetDescriptors()) {
-	    d->PrintFormat("%s[%s%s%s]: %s%s%s\r\n",
-		this->GetColor(Color::C_SILVER), this->GetColor(Color::C_FOREST), name_.c_str(),
-		this->GetColor(Color::C_SILVER), this->GetColor(Color::C_FOREST), lineReceived.c_str(),
-		this->GetColor(Color::C_NORMAL));
-	}
+	const auto received = state_->GetReceived();
+	if (!received.empty())
+	    this->RunStateHook(received, "Received", lineReceived);
+	if (!this->Closed() && state_->GetPromptBit())
+	    this->SetPromptBit(true);
     }
+}
+
+//! Runs a connection-state Lua hook with \c d injected.
+//! \param hook the Lua source to execute
+//! \param hookName hook label appended to the Execute caller (\c Focus, \c FocusLost, \c Received)
+//! \param line the input line to inject as global \c line
+//! \return \c true if the hook is empty or executed successfully
+bool Descriptor::RunStateHook(
+	const String& hook,
+	const String& hookName,
+	const String& line) {
+    if (hook.empty())
+	return true;
+
+    auto& lua = game_.GetLua();
+    // Save previous globals so nested hooks restore the outer hook's values.
+    lua.GetGlobal("d");
+    lua.GetGlobal("line");
+    Scratch::Scripting::DescriptorBindings::Push(
+	lua,
+	this->shared_from_this());
+    lua.SetGlobal("d");
+    lua.PushString(line);
+    lua.SetGlobal("line");
+    const bool ok = lua.Execute(name_ + ":" + hookName, hook);
+    // Restore in reverse push order; SetGlobal pops the saved values.
+    lua.SetGlobal("line");
+    lua.SetGlobal("d");
+    return ok;
 }
 
 }; // namespace Net

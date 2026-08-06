@@ -9,7 +9,9 @@
 #ifndef _SCRATCH_GAME_HPP_
 #define _SCRATCH_GAME_HPP_
 
+#include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
+#include <scratch/state.hpp>
 #include <scratch/string.hpp>
 
 // Forward declarations.
@@ -21,6 +23,10 @@ class Server;
 namespace Scripting {
 class Lua;
 }; // namespace Scripting
+namespace Storage {
+template<typename ThingT>
+class MultiFileStorage;
+}; // namespace Storage
 }; // namespace Scratch
 
 namespace Scratch {
@@ -39,6 +45,9 @@ using Lua = Scratch::Scripting::Lua;
 using LuaPtr = std::unique_ptr<Lua>;
 using Server = Scratch::Net::Server;
 using ServerPtr = std::shared_ptr<Server>;
+using StateRepository = Scratch::Storage::Repository<
+	State, Scratch::Storage::MultiFileStorage<State>>;
+using StateRepositoryPtr = std::shared_ptr<StateRepository>;
 
 //! The game class. \{
 class Game {
@@ -70,6 +79,22 @@ public:
     //! \sa #SetShutdown(const bool)
     bool GetShutdown() const noexcept;
 
+    //! Gets the connection-state repository.
+    StateRepository& GetStates() noexcept;
+
+    //! Gets the connection-state repository.
+    const StateRepository& GetStates() const noexcept;
+
+    //! Gets a weak handle to the connection-state repository.
+    //! \sa #GetStates() const
+    std::weak_ptr<StateRepository> GetStatesWeak() const noexcept;
+
+    //! Applies Quiet and Prompt bits to descriptors in \p state.
+    //! \param state the connection state
+    //! \sa #GetDescriptors() const
+    //! \sa Descriptor::SetState(const StatePtr&)
+    void ApplyStateBits(const StatePtr& state) noexcept;
+
     //! Constructs and returns a new descriptor.
     //! \param socket the Boost socket
     DescriptorPtr MakeDescriptor(Socket&& socket) noexcept;
@@ -78,6 +103,12 @@ public:
     //! \param descriptorName the descriptor name to erase
     //! \remark Safe to call for an already-closed or unknown name; idempotent.
     void EraseDescriptor(const String& descriptorName) noexcept;
+
+    //! Loads game repositories from disk.
+    //! \throw std::runtime_error if a required repository cannot be loaded
+    //! \sa #GetStates() const
+    //! \sa #Run()
+    void LoadRepositories();
 
     //! Parses command line arguments.
     //! \param argc the number of command line arguments
@@ -122,6 +153,11 @@ protected:
     //! \sa #InitSignals()
     SignalSet signals_;
 
+    //! The connection-state repository.
+    //! \sa #GetStates() const
+    //! \sa #GetStatesWeak() const
+    StateRepositoryPtr states_;
+
     //! Begins waiting for process termination signals.
     void InitSignals();
 };
@@ -130,4 +166,4 @@ protected:
 }; // namespace Core
 }; // namespace Scratch
 
-#endif // _SCRATCH_GAME_HXX_
+#endif // _SCRATCH_GAME_HPP_

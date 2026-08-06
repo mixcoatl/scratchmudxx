@@ -23,6 +23,8 @@ __top_builddir__bin_scratch_SOURCES = \
 	protocol_telnet.cpp \
 	random.cpp \
 	server.cpp \
+	state.cpp \
+	state_bindings.cpp \
 	string.cpp \
 	thing.cpp
 
@@ -41,6 +43,8 @@ noinst_HEADERS = \
 	../include/scratch/repository.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
+	../include/scratch/state.hpp \
+	../include/scratch/state_bindings.hpp \
 	../include/scratch/storage.hpp \
 	../include/scratch/storage_file.hpp \
 	../include/scratch/storage_file_multi.hpp \

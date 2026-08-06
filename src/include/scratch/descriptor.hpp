@@ -15,6 +15,7 @@
 namespace Scratch {
 namespace Core {
 class Game;
+class State;
 }; // namespace Core
 }; // namespace Scratch
 
@@ -32,6 +33,8 @@ using StreamBuf = boost::asio::streambuf;
 
 // ScratchMUD types.
 using Game = Scratch::Core::Game;
+using State = Scratch::Core::State;
+using StatePtr = std::shared_ptr<State>;
 
 //! The descriptor class. \{
 class Descriptor: public std::enable_shared_from_this<Descriptor> {
@@ -85,6 +88,12 @@ public:
 	return colorBit_;
     }
 
+    //! Gets the connection state being edited.
+    //! \sa #SetEditState(const StatePtr&)
+    StatePtr GetEditState() const noexcept {
+	return editState_;
+    }
+
     //! Gets the descriptor name.
     //! \sa #SetName(const String&)
     String GetName() const noexcept {
@@ -95,6 +104,13 @@ public:
     //! \sa #SetPromptBit(const bool)
     bool GetPromptBit() const noexcept {
 	return promptBit_;
+    }
+
+    //! Gets the connection state.
+    //! \sa #SetState(const StatePtr&)
+    //! \sa #SetStateByName(const String&)
+    StatePtr GetState() const noexcept {
+	return state_;
     }
 
     //! Gets the TELNET terminal type.
@@ -131,6 +147,13 @@ public:
 	colorBit_ = colorBit;
     }
 
+    //! Sets the connection state being edited.
+    //! \param editState the connection state being edited
+    //! \sa #GetEditState() const
+    void SetEditState(const StatePtr& editState) {
+	editState_ = editState;
+    }
+
     //! Sets the descriptor name.
     //! \sa #GetName() const
     void SetName(const String& name) {
@@ -141,6 +164,22 @@ public:
     //! \param promptBit the prompt bit value
     //! \sa #GetPromptBit() const
     void SetPromptBit(const bool promptBit) noexcept;
+
+    //! Enables or disables Quiet (server echo / hidden client local echo).
+    //! \param quiet whether Quiet is enabled
+    void SetQuiet(bool quiet);
+
+    //! Sets the connection state.
+    //! \param state the state to enter
+    //! \sa #GetState() const
+    //! \sa #SetStateByName(const String&)
+    void SetState(const StatePtr& state);
+
+    //! Sets the connection state by name.
+    //! \param stateName the repository name of the state to enter
+    //! \sa #GetState() const
+    //! \sa #SetState(const StatePtr&)
+    void SetStateByName(const String& stateName);
 
     //! Sets the TELNET terminal type.
     //! \param terminalType the terminal type string
@@ -181,6 +220,11 @@ protected:
     //! \sa #SetColorBit(const bool)
     bool colorBit_;
 
+    //! The connection state being edited.
+    //! \sa #GetEditState() const
+    //! \sa #SetEditState(const StatePtr&)
+    StatePtr editState_;
+
     //! The game state.
     Game& game_;
 
@@ -210,6 +254,12 @@ protected:
     //! The Boost socket.
     Socket socket_;
 
+    //! The connection state.
+    //! \sa #GetState() const
+    //! \sa #SetState(const StatePtr&)
+    //! \sa #SetStateByName(const String&)
+    StatePtr state_;
+
     //! The TELNET terminal type.
     //! \sa #GetTerminalType() const
     //! \sa #SetTerminalType(const String&)
@@ -227,8 +277,15 @@ protected:
     //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
     std::uint16_t windowWidth_;
 
+    //! Whether deferred output flush is already posted.
+    //! \remark Coalesces WriteRaw posts before async_write.
+    bool writeFlushPosted_;
+
     //! Whether an asynchronous write is pending.
     bool writePending_;
+
+    //! Ends the current line if needed.
+    void EndLine();
 
     //! Configures an asynchronous read.
     void InitAsyncRead();
@@ -239,6 +296,16 @@ protected:
     //! Processes line input.
     //! \param lineReceived the line input to process
     void ReceiveLine(const String& lineReceived);
+
+    //! Runs a connection-state Lua hook with \c d injected.
+    //! \param hook the Lua source to execute
+    //! \param hookName hook label appended to the Execute caller (\c Focus, \c FocusLost, \c Received)
+    //! \param line the input line to inject as global \c line
+    //! \return \c true if the hook is empty or executed successfully
+    bool RunStateHook(
+	const String& hook,
+	const String& hookName,
+	const String& line = String());
 };
 //! \}
 

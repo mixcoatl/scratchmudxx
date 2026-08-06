@@ -1,0 +1,23 @@
+Hooks:
+  Focus:-
+    d:print("Welcome to ScratchMUD, " .. d:get_name() .. "!\r\n");
+    ~
+  Received:-
+    local word = line:match("%w+") or "";
+    local word_lower = word:lower();
+    if word_lower == "quit" then
+      d:close();
+      broadcast(d:get_name() .. " has disconnected.\r\n");
+    elseif word_lower == "shutdown" then
+      broadcast("Game is shutting down.\r\n");
+      shutdown();
+    elseif word ~~= "" then
+      broadcast("From " .. d:get_name() .. ": " .. line .. "\r\n");
+    end
+    ~
+  ~
+Name: Playing~
+StateBits:
+  Prompt: Yes~
+  ~
+~

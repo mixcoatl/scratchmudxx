@@ -14,6 +14,7 @@
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
+#include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
 
 namespace Scratch {
@@ -56,6 +57,7 @@ Lua::Lua(Game& game) :
     }
 
     DescriptorBindings::Register(*this);
+    StateBindings::Register(*this);
     GameBindings::Register(*this);
 }
 
