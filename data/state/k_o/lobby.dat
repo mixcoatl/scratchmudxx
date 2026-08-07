@@ -1,0 +1,44 @@
+Hooks:
+  Focus:-
+    local user = d:get_user();
+    if not user then
+      d:print("Not logged in.\r\n");
+      d:set_state("LoginUser");
+      return;
+    end
+    d:print(string.format(
+      "Lobby:\r\n" ..
+      "  01) Enter game.\r\n" ..
+      "  02) Edit user record.\r\n" ..
+      "  03) Delete user record.\r\n" ..
+      "  04) Quit.\r\n" ..
+      "Choice: "));
+    ~
+  Received:-
+    local user = d:get_user();
+    if not user then
+      d:print("Not logged in.\r\n");
+      d:set_state("LoginUser");
+      return;
+    end
+    local word = line:match("%S+") or "";
+    local choice = word:match("^%d+$") and tonumber(word);
+    if choice == 1 then
+      d:set_state("Playing");
+    elseif choice == 2 then
+      d:set_edit_user(user);
+      d:set_state("User");
+    elseif choice == 3 then
+      d:set_state("LobbyDelete");
+    elseif choice == 4 then
+      local who = user:get_name();
+      d:close();
+      broadcast(who .. " has disconnected.\r\n");
+    else
+      d:print("Unknown choice.\r\n");
+      d:set_state("Lobby");
+    end
+    ~
+  ~
+Name: Lobby~
+~

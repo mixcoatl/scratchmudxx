@@ -6,7 +6,7 @@ Hooks:
       local edit_name = d:get_edit_name();
       local ret = "LoginUser";
       if edit_name ~~= "" then
-        ret = "Playing";
+        ret = "Lobby";
       end
       d:set_state(ret);
       return;
@@ -38,26 +38,27 @@ Hooks:
       local edit_name = d:get_edit_name();
       local ret = "LoginUser";
       if edit_name ~~= "" then
-        ret = "Playing";
+        ret = "Lobby";
       end
       d:set_state(ret);
       return;
     end
     local word = line:match("%S+") or "";
     local choice = word:lower();
-    if choice == "1" or choice == "name" then
+    local n = word:match("^%d+$") and tonumber(word);
+    if n == 1 then
       d:set_state("UserName");
-    elseif choice == "2" or choice == "password" then
+    elseif n == 2 then
       if edit:get_password() ~~= "" then
         d:set_state("UserPasswordCurrent");
       else
         d:set_state("UserPassword");
       end
-    elseif choice == "3" or choice == "gender" then
+    elseif n == 3 then
       d:set_state("UserGender");
-    elseif choice == "4" or choice == "email" then
+    elseif n == 4 then
       d:set_state("UserEmail");
-    elseif choice == "q" or choice == "quit" then
+    elseif choice == "q" then
       local name = edit:get_name();
       if name == "" then
         d:print("Name is required before saving.\r\n");
@@ -88,13 +89,13 @@ Hooks:
         d:login(get_users():get(name));
         d:clear_edit_user();
         d:set_edit_string("");
-        d:set_state("Playing");
+        d:set_state("Lobby");
       end
-    elseif choice == "x" or choice == "abort" then
+    elseif choice == "x" then
       local edit_name = d:get_edit_name();
       local ret = "LoginUser";
       if edit_name ~~= "" then
-        ret = "Playing";
+        ret = "Lobby";
       end
       d:clear_edit_user();
       d:set_state(ret);
