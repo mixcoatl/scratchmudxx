@@ -11,6 +11,7 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
 #include <scratch/logger.hpp>
+#include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/server.hpp>
 
@@ -21,6 +22,7 @@ namespace Core {
 Game::Game() :
 	ioContext_(),
 	descriptors_(),
+	lua_(std::make_unique<Lua>(*this)),
 	server_(),
 	shutdown_(false),
 	signals_(ioContext_) {
@@ -53,6 +55,11 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
 //! Returns the IO context.
 IoContext& Game::GetIoContext() noexcept {
     return ioContext_;
+}
+
+//! Gets the Lua state.
+Lua& Game::GetLua() noexcept {
+    return *lua_;
 }
 
 //! Gets the shutdown flag.

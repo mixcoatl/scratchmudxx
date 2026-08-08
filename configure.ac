@@ -18,6 +18,20 @@ AX_BOOST_CHRONO
 AX_BOOST_FILESYSTEM
 AX_BOOST_SYSTEM
 
+dnl Lua 5.3 or 5.4 (required).
+AM_CONDITIONAL([LUAJIT], [false])
+AX_PROG_LUA([5.3], [5.5])
+AX_LUA_HEADERS
+AX_LUA_LIBS
+
+dnl Temporarily add LUA_INCLUDE so AC_CHECK_HEADERS can find lua.hpp, then
+dnl restore CPPFLAGS; the build gets LUA_INCLUDE via AM_CPPFLAGS instead.
+save_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="$CPPFLAGS $LUA_INCLUDE"
+AC_CHECK_HEADERS([lua.hpp], [],
+    [AC_MSG_ERROR([Lua C++ header lua.hpp not found])])
+CPPFLAGS=$save_CPPFLAGS
+
 dnl Probe headers used by the project; results drive the HAVE_* guards in scratch.hpp.
 AC_CHECK_HEADER([algorithm], [AC_DEFINE([HAVE_ALGORITHM], [1], [Define to 1 if you have the <algorithm> header file.])])
 AC_CHECK_HEADER([arpa/telnet.h], [AC_DEFINE([HAVE_ARPA_TELNET_H], [1], [Define to 1 if you have the <arpa/telnet.h> header file.])])

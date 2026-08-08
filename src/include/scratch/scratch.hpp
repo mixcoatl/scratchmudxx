@@ -141,6 +141,10 @@ extern "C" {
 #include <list>
 #endif // HAVE_LIST
 
+#ifdef HAVE_LUA_HPP
+#include <lua.hpp>
+#endif // HAVE_LUA_HPP
+
 #ifdef HAVE_MAP
 #include <map>
 #endif // HAVE_MAP
