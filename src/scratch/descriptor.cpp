@@ -38,8 +38,8 @@ Descriptor::Descriptor(
 	protocol_(),
 	socket_(std::move(socket)),
 	terminalType_(),
-	windowHeight_(0),
-	windowWidth_(0),
+	windowHeight_(24),
+	windowWidth_(80),
 	writePending_(false) {
     // Default to TELNET.
     protocol_ = std::make_unique<TelnetProtocol>(*this);
