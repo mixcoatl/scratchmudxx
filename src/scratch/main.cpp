@@ -8,6 +8,7 @@
 
 #define _SCRATCH_MAIN_CPP_
 
+#include <scratch/logger.hpp>
 #include <scratch/scratch.hpp>
 
 //! Program entry point.
@@ -15,6 +16,10 @@
 //! \param argv an array containing the command line arguments
 //! \return zero for normal program termination; non-zero otherwise
 int main(int argc, const char** argv) {
-    std::cout << "Starting " << PACKAGE_STRING << '!' << std::endl;
+    // Run game
+    LOGGER_MAIN() << "Starting " << PACKAGE_STRING << '!';
+
+    // Exit.
+    LOGGER_MAIN() << "Exiting.";
     return EXIT_SUCCESS;
 }
