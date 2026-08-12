@@ -37,6 +37,8 @@ Descriptor::Descriptor(
 	Game& game,
 	Socket&& socket) :
 	colorBit_(true),
+	editName_(),
+	editEnumeration_(),
 	editState_(),
 	game_(game),
 	input_(),
@@ -108,6 +110,8 @@ void Descriptor::Close() noexcept {
     this->ClearEditor();
     stateStack_.clear();
     state_.reset();
+
+    editEnumeration_.reset();
 
     // Close Boost socket. Outstanding async ops are cancelled and their
     // completion handlers are queued on IO context before close returns.

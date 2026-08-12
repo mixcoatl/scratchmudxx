@@ -11,11 +11,13 @@
 #include <scratch/config.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
+#include <scratch/enumeration.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/server.hpp>
 #include <scratch/state.hpp>
+#include <scratch/storage_file.hpp>
 #include <scratch/storage_file_multi.hpp>
 
 namespace Scratch {
@@ -30,6 +32,9 @@ Game::Game() :
 	server_(),
 	shutdown_(false),
 	signals_(ioContext_),
+	enumerations_(std::make_shared<EnumerationRepository>(
+		Scratch::Storage::FileStorage<Enumeration>(
+			"data", "enumeration", ".dat"))),
 	states_(std::make_shared<StateRepository>(
 		Scratch::Storage::MultiFileStorage<State>(
 			"data", "state", ".dat"))) {
@@ -43,7 +48,7 @@ Game::~Game() noexcept {
     this->Shutdown();
     if (server_)
 	server_.reset();
-    // Close Lua before states_ tears down.
+    // Close Lua before enumerations_ / states_ tear down.
     lua_.reset();
 }
 
@@ -68,6 +73,12 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
     }
     return descriptorSet;
 }
+
+//! Gets the enumeration repository.
+EnumerationRepositoryPtr Game::GetEnumerations() const noexcept {
+    return enumerations_;
+}
+
 
 //! Gets the connection-state repository.
 StateRepositoryPtr Game::GetStates() const noexcept {
@@ -155,6 +166,7 @@ void Game::EraseDescriptor(const String& descriptorName) noexcept {
 
 //! Loads game repositories from disk.
 //! \throw std::runtime_error if a required repository cannot be loaded
+//! \sa #GetEnumerations() const
 //! \sa #GetStates() const
 //! \sa #Run()
 void Game::LoadRepositories() {
@@ -165,6 +177,9 @@ void Game::LoadRepositories() {
 	throw std::runtime_error("Couldn't load state index.");
     } else if (!states_->Get(config_->GetBootstrapState())) {
 	throw std::runtime_error("Couldn't resolve bootstrap state.");
+    }
+    if (!enumerations_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load enumeration index.");
     }
 }
 

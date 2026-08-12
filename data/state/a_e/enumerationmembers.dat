@@ -1,0 +1,56 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_enumeration();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local members = edit:get_members();
+    d:clear_menu();
+    d:menu_title("Members", edit:get_name(), "name", "<New>");
+    d:menu_choices();
+    d:menu_item("a", "Add member.");
+    if #members > 0 then
+      d:menu_named_choices("Current");
+      for i, member in ipairs(members) do
+        d:menu_item(tostring(i), member);
+      end
+    end
+    d:menu_choices();
+    d:menu_item("x", "Return.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_enumeration();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local key = d:menu_match(line);
+    if key == "a" then
+      d:push_state("EnumerationMemberAdd");
+    elseif key == "x" then
+      d:pop_state();
+    elseif key then
+      local members = edit:get_members();
+      local member = members[tonumber(key)];
+      if member then
+        edit:erase_member(member);
+        d:print_format("%sRemoved member %s.%s\r\n", Q.OKAY, member, Q.NORMAL);
+      else
+        d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+      end
+      d:set_state("EnumerationMembers");
+    else
+      if line:match("%S+") then
+        d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("EnumerationMembers");
+      else
+        d:pop_state();
+      end
+    end
+    ~
+  ~
+Name: EnumerationMembers~
+~

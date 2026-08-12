@@ -21,6 +21,8 @@ __top_builddir__bin_scratch_SOURCES = \
 	editor.cpp \
 	editor_bindings.cpp \
 	editor_verbs.cpp \
+	enumeration.cpp \
+	enumeration_bindings.cpp \
 	game.cpp \
 	game_bindings.cpp \
 	logger.cpp \
@@ -46,6 +48,8 @@ noinst_HEADERS = \
 	../include/scratch/editor.hpp \
 	../include/scratch/editor_bindings.hpp \
 	../include/scratch/editor_verbs.hpp \
+	../include/scratch/enumeration.hpp \
+	../include/scratch/enumeration_bindings.hpp \
 	../include/scratch/game.hpp \
 	../include/scratch/game_bindings.hpp \
 	../include/scratch/logger.hpp \

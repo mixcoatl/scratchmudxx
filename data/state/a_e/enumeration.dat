@@ -1,0 +1,66 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_enumeration();
+    if not edit then
+      d:print_format("%sNo enumeration draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("Login");
+      return;
+    end
+    local members = edit:get_members();
+    local preview = table.concat(members, ", ");
+    d:clear_menu();
+    d:menu_title("Enumeration", edit:get_name(), "name", "<New>");
+    d:menu_choices();
+    d:menu_field("1", "Name", edit:get_name(), "name");
+    d:menu_field("2", "Members", preview, "enum", "<Empty>");
+    d:menu_choices();
+    d:menu_item("q", "Save and quit.");
+    d:menu_item("x", "Abort without saving.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_enumeration();
+    if not edit then
+      d:print_format("%sNo enumeration draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("Login");
+      return;
+    end
+    local key = d:menu_match(line);
+    if key == "1" then
+      d:push_state("EnumerationName");
+    elseif key == "2" then
+      d:push_state("EnumerationMembers");
+    elseif key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        d:print_format("%sName is required before saving.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("Enumeration");
+      else
+        local modified = os.time();
+        local modified_by = "system";
+        if d:get_edit_name() == "" then
+          edit:set_created(modified);
+          edit:set_created_by(modified_by);
+        end
+        edit:set_modified(modified);
+        edit:set_modified_by(modified_by);
+        get_enumerations():store(name, edit);
+        local original = d:get_edit_name();
+        if original ~~= "" and original:lower() ~~= name:lower() then
+          get_enumerations():erase(original);
+        end
+        d:clear_edit_enumeration();
+        d:set_state("Login");
+      end
+    elseif key == "x" then
+      d:clear_edit_enumeration();
+      d:set_state("Login");
+    else
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("Enumeration");
+    end
+    ~
+  ~
+Name: Enumeration~
+~

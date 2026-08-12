@@ -1,0 +1,14 @@
+Permission:
+  Members:
+    0001: Builder~
+    0002: Owner~
+    0003: Wizard~
+    ~
+  ~
+Preference:
+  Members:
+    0001: AutoSay~
+    0002: NoRepeat~
+    ~
+  ~
+~

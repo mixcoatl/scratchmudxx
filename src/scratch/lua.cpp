@@ -12,6 +12,7 @@
 #include <scratch/config_bindings.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor_bindings.hpp>
+#include <scratch/enumeration_bindings.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
 #include <scratch/logger.hpp>
@@ -100,6 +101,7 @@ Lua::Lua(Game& game) :
     ConfigBindings::Register(*this);
     DescriptorBindings::Register(*this);
     EditorBindings::Register(*this);
+    EnumerationBindings::Register(*this);
     GameBindings::Register(*this);
     StateBindings::Register(*this);
 

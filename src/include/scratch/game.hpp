@@ -9,6 +9,7 @@
 #ifndef _SCRATCH_GAME_HPP_
 #define _SCRATCH_GAME_HPP_
 
+#include <scratch/enumeration.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
@@ -24,6 +25,8 @@ namespace Scripting {
 class Lua;
 }; // namespace Scripting
 namespace Storage {
+template<typename ThingT>
+class FileStorage;
 template<typename ThingT>
 class MultiFileStorage;
 }; // namespace Storage
@@ -44,6 +47,9 @@ using Socket = boost::asio::ip::tcp::socket;
 using ConfigPtr = std::shared_ptr<Config>;
 using Descriptor = Scratch::Net::Descriptor;
 using DescriptorPtr = std::shared_ptr<Descriptor>;
+using EnumerationRepository = Scratch::Storage::Repository<
+	Enumeration, Scratch::Storage::FileStorage<Enumeration>>;
+using EnumerationRepositoryPtr = std::shared_ptr<EnumerationRepository>;
 using Lua = Scratch::Scripting::Lua;
 using LuaPtr = std::unique_ptr<Lua>;
 using Server = Scratch::Net::Server;
@@ -72,6 +78,10 @@ public:
 
     //! Gets the descriptors.
     std::set<DescriptorPtr> GetDescriptors() const noexcept;
+
+    //! Gets the enumeration repository.
+    EnumerationRepositoryPtr GetEnumerations() const noexcept;
+
 
     //! Gets the IO context.
     IoContext& GetIoContext() noexcept;
@@ -106,6 +116,7 @@ public:
 
     //! Loads game repositories from disk.
     //! \throw std::runtime_error if a required repository cannot be loaded
+    //! \sa #GetEnumerations() const
     //! \sa #GetStates() const
     //! \sa #Run()
     void LoadRepositories();
@@ -156,6 +167,11 @@ protected:
     //! The process signal set.
     //! \sa #InitSignals()
     SignalSet signals_;
+
+    //! The enumeration repository.
+    //! \sa #GetEnumerations() const
+    EnumerationRepositoryPtr enumerations_;
+
 
     //! The connection-state repository.
     //! \sa #GetStates() const

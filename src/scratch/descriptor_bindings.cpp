@@ -14,6 +14,8 @@
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor.hpp>
 #include <scratch/editor_bindings.hpp>
+#include <scratch/enumeration.hpp>
+#include <scratch/enumeration_bindings.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/menu.hpp>
 #include <scratch/scratch.hpp>
@@ -360,6 +362,16 @@ static int DescriptorPrintMenu(lua_State* L) {
     return 0;
 }
 
+//! Handles Descriptor:clear_edit_enumeration().
+static int DescriptorClearEditEnumeration(lua_State* L) {
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    d->SetEditEnumeration(nullptr);
+    d->SetEditName(String());
+    return 0;
+}
+
+
 //! Handles Descriptor:clear_edit_state().
 static int DescriptorClearEditState(lua_State* L) {
     auto d = DescriptorBindings::Check(L);
@@ -387,6 +399,23 @@ static int DescriptorGc(lua_State* L) {
     static_cast<WeakDescriptorPtr*>(
 	luaL_checkudata(L, 1, DescriptorBindings::MetaName))->~WeakDescriptorPtr();
     return 0;
+}
+
+//! Handles Descriptor:get_edit_enumeration().
+static int DescriptorGetEditEnumeration(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    EnumerationBindings::Push(
+	lua, DescriptorBindings::Check(L)->GetEditEnumeration());
+    return 1;
+}
+
+
+//! Handles Descriptor:get_edit_name().
+static int DescriptorGetEditName(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto name = DescriptorBindings::Check(L)->GetEditName();
+    lua.PushString(std::move(name));
+    return 1;
 }
 
 //! Handles Descriptor:get_edit_state().
@@ -651,6 +680,43 @@ static int DescriptorSetColor(lua_State* L) {
     return 0;
 }
 
+//! Handles Descriptor:set_edit_enumeration([enumeration]).
+//! \remark Draft copy of \p enumeration, or blank when omitted.
+static int DescriptorSetEditEnumeration(lua_State* L) {
+    const int argc = lua_gettop(L);
+    if (argc != 1 && argc != 2)
+	return luaL_error(L, "set_edit_enumeration expects 0 or 1 arguments");
+    const auto weakD = CheckWeakDescriptorPtr(L);
+    if (weakD.expired())
+	return luaL_error(L, "invalid descriptor");
+    {
+	auto d = weakD.lock();
+	RequireNoEditorActive(L, d);
+    }
+    auto& lua = Lua::CheckLua(L);
+    EnumerationPtr editEnumeration;
+    String originalName;
+    if (argc == 2) {
+	auto source = EnumerationBindings::Check(L, 2);
+	originalName = source->GetName();
+	editEnumeration = std::make_shared<Enumeration>(*source);
+	source.reset();
+    } else {
+	editEnumeration = std::make_shared<Enumeration>();
+    }
+    auto d = weakD.lock();
+    if (!d) {
+	editEnumeration.reset();
+	return luaL_error(L, "invalid descriptor");
+    }
+    d->SetEditEnumeration(editEnumeration);
+    d->SetEditName(originalName);
+    d.reset();
+    EnumerationBindings::Push(lua, std::move(editEnumeration));
+    return 1;
+}
+
+
 //! Handles Descriptor:set_edit_state([state]).
 //! \remark Draft copy of \p state, or blank when omitted.
 static int DescriptorSetEditState(lua_State* L) {
@@ -776,10 +842,13 @@ void DescriptorBindings::Register(Lua& lua) {
 
     static const luaL_Reg methods[] = {
 	{"__gc", DescriptorGc},
+	{"clear_edit_enumeration", DescriptorClearEditEnumeration},
 	{"clear_edit_state", DescriptorClearEditState},
 	{"clear_editor", DescriptorClearEditor},
 	{"clear_menu", DescriptorClearMenu},
 	{"close", DescriptorClose},
+	{"get_edit_enumeration", DescriptorGetEditEnumeration},
+	{"get_edit_name", DescriptorGetEditName},
 	{"get_edit_state", DescriptorGetEditState},
 	{"get_editor", DescriptorGetEditor},
 	{"get_name", DescriptorGetName},
@@ -808,6 +877,7 @@ void DescriptorBindings::Register(Lua& lua) {
 	{"print_menu", DescriptorPrintMenu},
 	{"push_state", DescriptorPushState},
 	{"set_color", DescriptorSetColor},
+	{"set_edit_enumeration", DescriptorSetEditEnumeration},
 	{"set_edit_state", DescriptorSetEditState},
 	{"set_prompt", DescriptorSetPrompt},
 	{"set_state", DescriptorSetState},

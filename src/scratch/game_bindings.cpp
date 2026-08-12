@@ -11,6 +11,7 @@
 #include <scratch/config_bindings.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/descriptor_bindings.hpp>
+#include <scratch/enumeration_bindings.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
 #include <scratch/logger.hpp>
@@ -81,6 +82,17 @@ static int GetDescriptorProxy(lua_State* L) {
     return 1;
 }
 
+//! Handles lua get_enumerations.
+//! \param L the lua state
+static int GetEnumerationsProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_enumerations expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    EnumerationBindings::PushRepository(lua);
+    return 1;
+}
+
+
 //! Handles lua get_states.
 //! \param L the lua state
 static int GetStatesProxy(lua_State* L) {
@@ -150,6 +162,8 @@ void GameBindings::Register(Lua& lua) {
     lua.SetSafe("get_descriptor");
     lua.PushFunction(DescriptorNamesProxy);
     lua.SetSafe("get_descriptor_names");
+    lua.PushFunction(GetEnumerationsProxy);
+    lua.SetSafe("get_enumerations");
     lua.PushFunction(GetStatesProxy);
     lua.SetSafe("get_states");
     lua.PushFunction(PrintProxy);

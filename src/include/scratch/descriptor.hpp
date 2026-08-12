@@ -15,6 +15,7 @@
 // Forward declarations.
 namespace Scratch {
 namespace Core {
+class Enumeration;
 class Game;
 class State;
 }; // namespace Core
@@ -36,6 +37,8 @@ using StreamBuf = boost::asio::streambuf;
 
 // ScratchMUD types.
 using EditorPtr = std::shared_ptr<Editor>;
+using Enumeration = Scratch::Core::Enumeration;
+using EnumerationPtr = std::shared_ptr<Enumeration>;
 using Game = Scratch::Core::Game;
 using MenuPtr = std::shared_ptr<Menu>;
 using State = Scratch::Core::State;
@@ -116,6 +119,20 @@ public:
     bool GetColorBit() const noexcept {
 	return colorBit_;
     }
+
+    //! Gets the repository key of the thing being edited, if any.
+    //! \remark Empty when the edit draft is new (not cloned from a named thing).
+    //! \sa #SetEditName(const String&)
+    String GetEditName() const noexcept {
+	return editName_;
+    }
+
+    //! Gets the enumeration being edited.
+    //! \sa #SetEditEnumeration(const EnumerationPtr&)
+    EnumerationPtr GetEditEnumeration() const noexcept {
+	return editEnumeration_;
+    }
+
 
     //! Gets the connection state being edited.
     //! \sa #SetEditState(const StatePtr&)
@@ -203,6 +220,20 @@ public:
     void SetColorBit(const bool colorBit) noexcept {
 	colorBit_ = colorBit;
     }
+
+    //! Sets the repository key of the thing being edited.
+    //! \sa #GetEditName() const
+    void SetEditName(const String& editName) {
+	editName_ = editName;
+    }
+
+    //! Sets the enumeration being edited.
+    //! \param editEnumeration the enumeration draft being edited
+    //! \sa #GetEditEnumeration() const
+    void SetEditEnumeration(const EnumerationPtr& editEnumeration) {
+	editEnumeration_ = editEnumeration;
+    }
+
 
     //! Sets the connection state being edited.
     //! \param editState the connection state being edited
@@ -308,6 +339,18 @@ protected:
     //! \sa #GetColorBit() const
     //! \sa #SetColorBit(const bool)
     bool colorBit_;
+
+    //! The repository key of the thing being edited, if any.
+    //! \remark Empty when the edit draft is new (not cloned from a named thing).
+    //! \sa #GetEditName() const
+    //! \sa #SetEditName(const String&)
+    String editName_;
+
+    //! The enumeration being edited.
+    //! \sa #GetEditEnumeration() const
+    //! \sa #SetEditEnumeration(const EnumerationPtr&)
+    EnumerationPtr editEnumeration_;
+
 
     //! The connection state being edited.
     //! \sa #GetEditState() const
