@@ -54,6 +54,18 @@ static int ConfigGetAddress(lua_State* L) {
     return 1;
 }
 
+//! Handles Config:get_bootstrap_state().
+static int ConfigGetBootstrapState(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "get_bootstrap_state expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    auto config = ConfigBindings::Check(L, 1);
+    auto bootstrapState = config->GetBootstrapState();
+    config.reset();
+    lua.PushString(std::move(bootstrapState));
+    return 1;
+}
+
 //! Handles Config:get_metacolor(name).
 static int ConfigGetMetaColor(lua_State* L) {
     if (lua_gettop(L) != 2)
@@ -144,6 +156,7 @@ void ConfigBindings::Register(Lua& lua) {
     static const luaL_Reg methods[] = {
 	{"__gc", ConfigGc},
 	{"get_address", ConfigGetAddress},
+	{"get_bootstrap_state", ConfigGetBootstrapState},
 	{"get_metacolor", ConfigGetMetaColor},
 	{"get_metacolors", ConfigGetMetaColors},
 	{"get_port", ConfigGetPort},

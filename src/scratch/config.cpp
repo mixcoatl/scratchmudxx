@@ -26,6 +26,7 @@ static const char configFileName[] = "data/config.dat";
 //! Default constructor.
 Config::Config() noexcept :
 	address_(),
+	bootstrapState_("Login"),
 	metaColors_(),
 	port_(6767) {
     // Nothing.
@@ -53,9 +54,21 @@ bool Config::Load() noexcept {
 
     for (const auto& entry: root->GetEntries()) {
 	if (!KeyIs(entry.first, "Colors") &&
+		!KeyIs(entry.first, "Game") &&
 		!KeyIs(entry.first, "Network"))
 	    return false;
     }
+
+    auto game = root->Get("Game");
+    if (!game)
+	return false;
+    for (const auto& entry: game->GetEntries()) {
+	if (!KeyIs(entry.first, "BootstrapState"))
+	    return false;
+    }
+    const auto bootstrapState = game->GetString("BootstrapState");
+    if (bootstrapState.empty())
+	return false;
 
     String address;
     auto port = port_;
@@ -87,6 +100,7 @@ bool Config::Load() noexcept {
     }
 
     address_ = std::move(address);
+    bootstrapState_ = bootstrapState;
     metaColors_ = std::move(metaColors);
     port_ = port;
     return true;
@@ -107,6 +121,11 @@ bool Config::Save() const noexcept {
 		Color::ToString(entry.second));
 	}
     }
+
+    auto game = root->Put("Game");
+    if (!game)
+	return false;
+    game->PutString("BootstrapState", bootstrapState_);
 
     auto network = root->Put("Network");
     if (!network)

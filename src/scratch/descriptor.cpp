@@ -9,12 +9,17 @@
 #define _SCRATCH_DESCRIPTOR_CPP_
 
 #include <scratch/color.hpp>
+#include <scratch/color_bindings.hpp>
 #include <scratch/config.hpp>
 #include <scratch/game.hpp>
 #include <scratch/descriptor.hpp>
+#include <scratch/descriptor_bindings.hpp>
 #include <scratch/logger.hpp>
+#include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/protocol_telnet.hpp>
+#include <scratch/state.hpp>
+#include <scratch/storage_file_multi.hpp>
 
 namespace Scratch {
 namespace Net {
@@ -29,6 +34,7 @@ Descriptor::Descriptor(
 	Game& game,
 	Socket&& socket) :
 	colorBit_(true),
+	editState_(),
 	game_(game),
 	input_(),
 	lineInput_(),
@@ -37,9 +43,12 @@ Descriptor::Descriptor(
 	promptBit_(true),
 	protocol_(),
 	socket_(std::move(socket)),
+	state_(),
+	stateStack_(),
 	terminalType_(),
 	windowHeight_(24),
 	windowWidth_(80),
+	writeFlushPosted_(false),
 	writePending_(false) {
     // Default to TELNET.
     protocol_ = std::make_unique<TelnetProtocol>(*this);
@@ -76,6 +85,9 @@ void Descriptor::Close() noexcept {
 	return;
 
     LOGGER_NETWORK() << "Descriptor " << name_ << " disconnected.";
+
+    stateStack_.clear();
+    state_.reset();
 
     // Close Boost socket. Outstanding async ops are cancelled and their
     // completion handlers are queued on IO context before close returns.
@@ -161,8 +173,9 @@ void Descriptor::DeliverByte(const std::uint8_t byteReceived) {
     } else if (std::strchr("\b\x7f", byteReceived) != nullptr) {
 	this->Backspace();
     } else if (byteReceived == '\n') {
-	this->ReceiveLine(lineInput_.str());
+	const auto line = lineInput_.str();
 	this->BackspaceLine();
+	this->ReceiveLine(line);
     } else if (std::isprint(byteReceived) && byteReceived != '\r') {
 	if (lineInput_.str().size() < MaxInput)
 	    lineInput_ << static_cast<char>(byteReceived);
@@ -172,12 +185,21 @@ void Descriptor::DeliverByte(const std::uint8_t byteReceived) {
 //! Writes to the descriptor.
 //! \param message the message to print
 void Descriptor::Print(const String& message) noexcept {
+    if (this->Closed())
+	return;
+
+    this->EndLine();
     this->Write(message);
+    if (!message.empty())
+	promptBit_ = message.back() == '\n';
 }
 
 //! Writes to the descriptor.
 //! \param format the printf-style format specifier
 void Descriptor::PrintFormat(const String& format, ...) noexcept {
+    if (this->Closed())
+	return;
+
     // Format message.
     va_list args;
     va_start(args, format);
@@ -191,37 +213,288 @@ void Descriptor::PrintFormat(const String& format, ...) noexcept {
 	return;
     }
 
-    // Interrupt the prompt line so \r in the message cannot overwrite it.
-    if (!promptBit_)
-	this->Write("\r\n");
-
-    // Write message.
+    this->EndLine();
     this->Write(message);
-    if (std::find(std::begin(message), std::end(message), '\n') != std::end(message))
-	promptBit_ = true;
+    if (N > 0)
+	promptBit_ = message[N - 1] == '\n';
 }
 
 //! Sets the prompt bit.
 //! \param promptBit the prompt bit value
 //! \sa #GetPromptBit() const
 void Descriptor::SetPromptBit(const bool promptBit) noexcept {
-    promptBit_ = promptBit;
     if (!promptBit)
 	return;
 
-    // Show the prompt now if the connection is idle; otherwise the
-    // write completion handler shows it once output drains.
     const auto self = this->shared_from_this();
     boost::asio::post(game_.GetIoContext(), std::function<void()>([self]() {
 	if (!self->Closed() && !self->game_.GetShutdown() &&
-	    self->promptBit_ && !self->writePending_ && !self->output_.size())
+	    self->state_ && self->state_->GetPromptBit() &&
+	    !self->writePending_ && !self->output_.size())
 	    self->WritePrompt();
     }));
+}
+
+//! Enables or disables Quiet (server echo / hidden client local echo).
+//! \param quiet whether Quiet is enabled
+void Descriptor::SetQuiet(bool quiet) {
+    protocol_->SetQuiet(quiet);
+}
+
+//! Pops the connection state.
+//! \remark Leaves a null state when the stack becomes empty.
+//! \sa #PushState(const StatePtr&)
+//! \sa #PopStateUntil(const StatePtr&)
+//! \sa #SetState(const StatePtr&)
+void Descriptor::PopState() {
+    if (stateStack_.empty())
+	return;
+
+    const bool lastQuiet = state_ && state_->GetQuietBit();
+    const auto leaving = stateStack_.front();
+    if (!this->RunStateHook(leaving->GetFocusLost(), "FocusLost"))
+	return;
+    if (state_ != leaving)
+	return;
+
+    stateStack_.pop_front();
+    state_ = stateStack_.empty() ? StatePtr() : stateStack_.front();
+
+    if (state_) {
+	const auto expected = state_;
+	this->RunStateHook(expected->GetFocus(), "Focus");
+	if (state_ != expected)
+	    return;
+    }
+
+    const bool quiet = state_ && state_->GetQuietBit();
+    if (lastQuiet != quiet)
+	this->SetQuiet(quiet);
+    if (state_ && state_->GetPromptBit() &&
+	!writePending_ && !output_.size())
+	this->WritePrompt();
+}
+
+//! Pops connection states until \a target is current.
+//! \param target the state to resume
+//! \remark Logs and leaves a null state if \a target is missing.
+//! \sa #PopState()
+void Descriptor::PopStateUntil(const StatePtr& target) {
+    // Repository canonical.
+    const auto wanted = target ?
+	game_.GetStates()->Get(target->GetName()) : StatePtr();
+    if (!wanted) {
+	LOGGER_NETWORK() << "Descriptor " << name_
+	    << " pop_state_until with unknown target.";
+	return;
+    }
+
+    const bool lastQuiet = state_ && state_->GetQuietBit();
+
+    // Same-state reentry.
+    if (!stateStack_.empty() && stateStack_.front() == wanted) {
+	const auto leaving = stateStack_.front();
+	if (!this->RunStateHook(leaving->GetFocusLost(), "FocusLost"))
+	    return;
+	if (state_ != leaving)
+	    return;
+	this->RunStateHook(wanted->GetFocus(), "Focus");
+	if (state_ != wanted)
+	    return;
+	const bool quiet = state_ && state_->GetQuietBit();
+	if (lastQuiet != quiet)
+	    this->SetQuiet(quiet);
+	if (state_ && state_->GetPromptBit() &&
+	    !writePending_ && !output_.size())
+	    this->WritePrompt();
+	return;
+    }
+
+    while (!stateStack_.empty() && stateStack_.front() != wanted) {
+	const auto leaving = stateStack_.front();
+	if (!this->RunStateHook(leaving->GetFocusLost(), "FocusLost"))
+	    return;
+	if (state_ != leaving)
+	    return;
+	stateStack_.pop_front();
+	state_ = stateStack_.empty() ? StatePtr() : stateStack_.front();
+    }
+
+    if (stateStack_.empty()) {
+	LOGGER_NETWORK() << "Descriptor " << name_
+	    << " pop_state_until missed '" << wanted->GetName() << "'.";
+	if (lastQuiet)
+	    this->SetQuiet(false);
+	return;
+    }
+
+    this->RunStateHook(wanted->GetFocus(), "Focus");
+    if (state_ != wanted)
+	return;
+
+    const bool quiet = state_ && state_->GetQuietBit();
+    if (lastQuiet != quiet)
+	this->SetQuiet(quiet);
+    if (state_ && state_->GetPromptBit() &&
+	!writePending_ && !output_.size())
+	this->WritePrompt();
+}
+
+//! Pops connection states until the named state is current.
+//! \param stateName the repository name to resume
+//! \sa #PopStateUntil(const StatePtr&)
+void Descriptor::PopStateUntilByName(const String& stateName) {
+    auto state = game_.GetStates()->Get(stateName);
+    if (!state) {
+	LOGGER_NETWORK() << "Unknown connection state '" << stateName << "'.";
+	return;
+    }
+    this->PopStateUntil(state);
+}
+
+//! Pushes a connection state.
+//! \param state the state to enter
+//! \remark Does not run FocusLost on the covered state.
+//! \sa #PopState()
+//! \sa #SetState(const StatePtr&)
+void Descriptor::PushState(const StatePtr& state) {
+    // Repository canonical.
+    const auto next = state ?
+	game_.GetStates()->Get(state->GetName()) : StatePtr();
+    if (!next) {
+	if (state)
+	    LOGGER_NETWORK() << "Unknown connection state '"
+		<< state->GetName() << "'.";
+	return;
+    }
+
+    const bool lastQuiet = state_ && state_->GetQuietBit();
+
+    // Same-state reentry.
+    if (!stateStack_.empty() && stateStack_.front() == next) {
+	this->RunStateHook(next->GetFocus(), "Focus");
+	if (state_ != next)
+	    return;
+	const bool quiet = state_ && state_->GetQuietBit();
+	if (lastQuiet != quiet)
+	    this->SetQuiet(quiet);
+	if (state_ && state_->GetPromptBit() &&
+	    !writePending_ && !output_.size())
+	    this->WritePrompt();
+	return;
+    }
+
+    stateStack_.push_front(next);
+    state_ = next;
+    this->RunStateHook(next->GetFocus(), "Focus");
+    if (state_ != next)
+	return;
+
+    const bool quiet = state_ && state_->GetQuietBit();
+    if (lastQuiet != quiet)
+	this->SetQuiet(quiet);
+    if (state_ && state_->GetPromptBit() &&
+	!writePending_ && !output_.size())
+	this->WritePrompt();
+}
+
+//! Pushes a connection state by name.
+//! \param stateName the repository name of the state to enter
+//! \sa #PushState(const StatePtr&)
+void Descriptor::PushStateByName(const String& stateName) {
+    auto state = game_.GetStates()->Get(stateName);
+    if (!state) {
+	LOGGER_NETWORK() << "Unknown connection state '" << stateName << "'.";
+    } else {
+	this->PushState(state);
+    }
+}
+
+//! Sets the connection state.
+//! \param state the state to enter
+//! \remark Drains the connection-state stack first.
+//! \sa #GetState() const
+//! \sa #PushState(const StatePtr&)
+//! \sa #SetStateByName(const String&)
+void Descriptor::SetState(const StatePtr& state) {
+    // Repository canonical. Null drains stack.
+    const auto next = state ?
+	game_.GetStates()->Get(state->GetName()) : StatePtr();
+    if (state && !next) {
+	LOGGER_NETWORK() << "Unknown connection state '"
+	    << state->GetName() << "'.";
+	return;
+    }
+
+    const bool lastQuiet = state_ && state_->GetQuietBit();
+
+    // Same-state reentry.
+    if (next && !stateStack_.empty() && stateStack_.front() == next) {
+	const auto leaving = stateStack_.front();
+	if (!this->RunStateHook(leaving->GetFocusLost(), "FocusLost"))
+	    return;
+	if (state_ != leaving)
+	    return;
+	this->RunStateHook(next->GetFocus(), "Focus");
+	if (state_ != next)
+	    return;
+	const bool quiet = state_ && state_->GetQuietBit();
+	if (lastQuiet != quiet)
+	    this->SetQuiet(quiet);
+	if (state_ && state_->GetPromptBit() &&
+	    !writePending_ && !output_.size())
+	    this->WritePrompt();
+	return;
+    }
+
+    while (!stateStack_.empty()) {
+	const auto leaving = stateStack_.front();
+	if (!this->RunStateHook(leaving->GetFocusLost(), "FocusLost"))
+	    return;
+	if (state_ != leaving)
+	    return;
+	stateStack_.pop_front();
+	state_ = stateStack_.empty() ? StatePtr() : stateStack_.front();
+    }
+
+    if (!next) {
+	if (lastQuiet)
+	    this->SetQuiet(false);
+	return;
+    }
+
+    stateStack_.push_front(next);
+    state_ = next;
+    this->RunStateHook(next->GetFocus(), "Focus");
+    if (state_ != next)
+	return;
+
+    const bool quiet = state_ && state_->GetQuietBit();
+    if (lastQuiet != quiet)
+	this->SetQuiet(quiet);
+    if (state_ && state_->GetPromptBit() &&
+	!writePending_ && !output_.size())
+	this->WritePrompt();
+}
+
+//! Sets the connection state by name.
+//! \param stateName the repository name of the state to enter
+//! \sa #GetState() const
+//! \sa #SetState(const StatePtr&)
+void Descriptor::SetStateByName(const String& stateName) {
+    auto state = game_.GetStates()->Get(stateName);
+    if (!state) {
+	LOGGER_NETWORK() << "Unknown connection state '" << stateName << "'.";
+    } else {
+	this->SetState(state);
+    }
 }
 
 //! Begins asynchronous I/O after the descriptor is indexed by the game.
 void Descriptor::Start() {
     protocol_->OnStart();
+    this->SetState(game_.GetStates()->Get(
+	game_.GetConfig()->GetBootstrapState()));
     this->InitAsyncRead();
     this->Write("");
 }
@@ -229,17 +502,25 @@ void Descriptor::Start() {
 //! Writes application output through the protocol.
 //! \param message the message to write
 void Descriptor::Write(const String& message) {
+    if (this->Closed())
+	return;
     protocol_->Send(message);
 }
 
 //! Writes the prompt.
 void Descriptor::WritePrompt() {
-    this->PrintFormat("%s:ScratchMUD:> %s",
+    if (!state_ || !state_->GetPromptBit())
+	return;
+
+    this->EndLine();
+
+    char message[MaxString] = {'\0'};
+    std::snprintf(message, sizeof(message), "%s:ScratchMUD:> %s",
 	this->GetColor(Color::C_PROMPT),
 	this->GetColor(Color::C_NORMAL));
+    this->Write(message);
 
-    // Restore in-progress input that local echo already
-    // showed on the prompt line that we interrupted.
+    // Restore interrupted input.
     const auto pendingInput = lineInput_.str();
     if (!pendingInput.empty())
 	this->Write(pendingInput);
@@ -278,9 +559,27 @@ void Descriptor::WriteRaw(const String& message) {
 	if (!self->Closed() && !message.empty())
 	    self->output_.sputn(message.data(), static_cast<std::streamsize>(message.size()));
 
-	if (!self->Closed() && !self->writePending_ && self->output_.size())
-	    self->InitAsyncWrite();
+	// Coalesce queued WriteRaw posts before async_write.
+	// Must not mutate streambuf during in-flight write.
+	if (!self->Closed() && !self->writePending_ &&
+	    self->output_.size() && !self->writeFlushPosted_) {
+	    self->writeFlushPosted_ = true;
+	    boost::asio::post(self->game_.GetIoContext(), std::function<void()>([self]() {
+		self->writeFlushPosted_ = false;
+		if (!self->Closed() && !self->game_.GetShutdown() &&
+		    !self->writePending_ && self->output_.size())
+		    self->InitAsyncWrite();
+	    }));
+	}
     }));
+}
+
+//! Ends the current line if needed.
+void Descriptor::EndLine() {
+    if (promptBit_)
+	return;
+    this->Write("\r\n");
+    promptBit_ = true;
 }
 
 //! Configures an asynchronous read.
@@ -349,10 +648,11 @@ void Descriptor::InitAsyncWrite() {
 	    // Advance the output buffer past bytes written.
 	    self->output_.consume(nBytes);
 
-	    // Continue draining, or show the prompt when idle.
+	    // Continue draining, or show the prompt.
 	    if (!self->game_.GetShutdown() && !self->Closed() && self->output_.size())
 		self->InitAsyncWrite();
-	    else if (!self->game_.GetShutdown() && !self->Closed() && self->promptBit_)
+	    else if (!self->game_.GetShutdown() && !self->Closed() &&
+		     self->state_ && self->state_->GetPromptBit() && self->promptBit_)
 		self->WritePrompt();
 	}));
 }
@@ -362,14 +662,49 @@ void Descriptor::InitAsyncWrite() {
 void Descriptor::ReceiveLine(const String& lineReceived) {
     if (this->Closed()) {
 	LOGGER_NETWORK() << "Descriptor " << name_ << " already closed.";
+    } else if (!state_) {
+	LOGGER_NETWORK() << "Descriptor " << name_ << " has no connection state; closing.";
+	this->Close();
     } else {
-	for (auto d: game_.GetDescriptors()) {
-	    d->PrintFormat("%s[%s%s%s]: %s%s%s\r\n",
-		this->GetColor(Color::C_SILVER), this->GetColor(Color::C_FOREST), name_.c_str(),
-		this->GetColor(Color::C_SILVER), this->GetColor(Color::C_FOREST), lineReceived.c_str(),
-		this->GetColor(Color::C_NORMAL));
-	}
+	const auto before = state_;
+	const auto received = state_->GetReceived();
+	if (!received.empty())
+	    this->RunStateHook(received, "Received", lineReceived);
+	// Transition owns prompt; redisplay only if Received left state unchanged.
+	if (!this->Closed() && state_ && state_ == before &&
+	    state_->GetPromptBit())
+	    this->SetPromptBit(true);
     }
+}
+
+//! Runs a connection-state Lua hook with \c d, \c line, and \c Q.
+//! \param hook the Lua source to execute
+//! \param hookName hook label appended to the Caller identity (\c Focus, \c FocusLost, \c Received)
+//! \param line the input line for \c line
+//! \return \c true if the hook is empty or executed successfully
+bool Descriptor::RunStateHook(
+	const String& hook,
+	const String& hookName,
+	const String& line) {
+    if (hook.empty())
+	return true;
+
+    auto& lua = game_.GetLua();
+    Scratch::Scripting::Lua::Caller caller(
+	lua,
+	name_ + ":" + hookName);
+    if (!caller.IsActive())
+	return false;
+    Scratch::Scripting::DescriptorBindings::Push(
+	lua,
+	this->shared_from_this());
+    lua.SetEnv("d");
+    lua.PushString(line);
+    lua.SetEnv("line");
+    lua.PushStringMap(
+	Scratch::Scripting::ColorBindings::Codes(*this));
+    lua.SetEnv("Q");
+    return lua.Execute(hook);
 }
 
 }; // namespace Net

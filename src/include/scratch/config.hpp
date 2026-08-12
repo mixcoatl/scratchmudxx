@@ -35,6 +35,12 @@ public:
 	return address_;
     }
 
+    //! Gets the bootstrap connection state name.
+    //! \sa #SetBootstrapState(const String&)
+    String GetBootstrapState() const noexcept {
+	return bootstrapState_;
+    }
+
     //! Gets the house metacolor map.
     //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
     const std::map<Color::ColorEnum, Color::ColorEnum>& GetMetaColors() const noexcept {
@@ -63,6 +69,12 @@ public:
 	address_ = address;
     }
 
+    //! Sets the bootstrap connection state name.
+    //! \sa #GetBootstrapState() const
+    void SetBootstrapState(const String& bootstrapState) {
+	bootstrapState_ = bootstrapState;
+    }
+
     //! Sets a house metacolor.
     //! \param meta the metacolor
     //! \param color the real color
@@ -82,6 +94,10 @@ protected:
     //! Network bind address.
     //! \sa #GetAddress() const
     String address_;
+
+    //! Bootstrap connection state name.
+    //! \sa #GetBootstrapState() const
+    String bootstrapState_;
 
     //! House metacolor map.
     //! \sa #GetMetaColors() const
