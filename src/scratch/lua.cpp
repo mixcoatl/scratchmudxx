@@ -15,11 +15,13 @@
 #include <scratch/enumeration_bindings.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
+#include <scratch/gender_bindings.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
+#include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -103,7 +105,9 @@ Lua::Lua(Game& game) :
     EditorBindings::Register(*this);
     EnumerationBindings::Register(*this);
     GameBindings::Register(*this);
+    GenderBindings::Register(*this);
     StateBindings::Register(*this);
+    UserBindings::Register(*this);
 
     // Strip loaders from real _G.
     static const char* const denied[] = {

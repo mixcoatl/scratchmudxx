@@ -3,7 +3,7 @@ Hooks:
     local edit = d:get_edit_enumeration();
     if not edit then
       d:print_format("%sNo enumeration draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
-      d:set_state("Login");
+      d:pop_state();
       return;
     end
     local members = edit:get_members();
@@ -23,7 +23,7 @@ Hooks:
     local edit = d:get_edit_enumeration();
     if not edit then
       d:print_format("%sNo enumeration draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
-      d:set_state("Login");
+      d:pop_state();
       return;
     end
     local key = d:menu_match(line);
@@ -39,6 +39,9 @@ Hooks:
       else
         local modified = os.time();
         local modified_by = "system";
+        if d:get_user() then
+          modified_by = d:get_user():get_name();
+        end
         if d:get_edit_name() == "" then
           edit:set_created(modified);
           edit:set_created_by(modified_by);
@@ -51,11 +54,11 @@ Hooks:
           get_enumerations():erase(original);
         end
         d:clear_edit_enumeration();
-        d:set_state("Login");
+        d:pop_state();
       end
     elseif key == "x" then
       d:clear_edit_enumeration();
-      d:set_state("Login");
+      d:pop_state();
     else
       d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
       d:set_state("Enumeration");

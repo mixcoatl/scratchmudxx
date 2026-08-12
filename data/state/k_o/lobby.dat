@@ -1,0 +1,53 @@
+Hooks:
+  Focus:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    d:clear_menu();
+    d:menu_title("Lobby");
+    d:menu_choices();
+    d:menu_item("1", "Enter game.");
+    d:menu_item("2", "Edit user record.");
+    d:menu_item("3", "Delete user record.");
+    d:menu_item("4", "Quit.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    local key = d:menu_match(line);
+    if key == "1" then
+      local who = user:get_name();
+      d:print_format("%sWelcome to ScratchMUD, %s%s%s!%s\r\n",
+        Q.PROMPT, Q.EMPHASIS, who, Q.PROMPT, Q.NORMAL);
+      local last_logout = user:get_last_logout();
+      if last_logout and last_logout > 0 then
+        d:print_format("%sYour last visit ended %s%s%s.%s\r\n",
+          Q.PROMPT, Q.EMPHASIS, os.date("%Y-%m-%d %H:%M:%S", last_logout), Q.PROMPT, Q.NORMAL);
+      end
+      d:set_state("Playing");
+    elseif key == "2" then
+      d:set_edit_user(user);
+      d:push_state("User");
+    elseif key == "3" then
+      d:set_state("LobbyDelete");
+    elseif key == "4" then
+      local who = user:get_name();
+      d:close();
+      broadcast(who .. " has disconnected.\r\n");
+    else
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("Lobby");
+    end
+    ~
+  ~
+Name: Lobby~
+~

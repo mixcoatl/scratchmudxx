@@ -1,0 +1,89 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_user();
+    if not edit then
+      d:print_format("%sNo user draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:pop_state();
+      return;
+    end
+    d:clear_menu();
+    d:menu_title("User", edit:get_name(), "name", "<New>");
+    d:menu_choices();
+    d:menu_field("1", "Name", edit:get_name(), "name");
+    d:menu_field("2", "Password", edit:get_password(), "text", "<Blank>", "<Set>");
+    d:menu_field("3", "Gender", edit:get_gender(), "enum");
+    d:menu_field("4", "Email", edit:get_email());
+    d:menu_choices();
+    d:menu_item("q", "Save and quit.");
+    d:menu_item("x", "Abort without saving.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_user();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local key = d:menu_match(line);
+    if key == "1" then
+      d:push_state("UserName");
+    elseif key == "2" then
+      if edit:get_password() ~~= "" then
+        d:push_state("UserPasswordCurrent");
+      else
+        d:push_state("UserPassword");
+      end
+    elseif key == "3" then
+      d:push_state("UserGender");
+    elseif key == "4" then
+      d:push_state("UserEmail");
+    elseif key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        d:print_format("%sName is required before saving.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("User");
+      elseif name:lower() == "new" then
+        d:print_format("%sThat username is reserved.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("User");
+      elseif edit:get_password() == "" then
+        d:print_format("%sPassword is required before saving.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("User");
+      else
+        local modified = os.time();
+        local modified_by = name;
+        if d:get_user() then
+          modified_by = d:get_user():get_name();
+        end
+        local is_new = d:get_edit_name() == "";
+        if is_new then
+          edit:set_created(modified);
+          edit:set_created_by(modified_by);
+        end
+        edit:set_modified(modified);
+        edit:set_modified_by(modified_by);
+        get_users():store(name, edit);
+        local original = d:get_edit_name();
+        if original ~~= "" and original:lower() ~~= name:lower() then
+          get_users():erase(original);
+        end
+        d:login(get_users():get(name));
+        d:clear_edit_user();
+        d:set_edit_string("");
+        if is_new then
+          d:set_state("Lobby");
+        else
+          d:pop_state();
+        end
+      end
+    elseif key == "x" then
+      d:clear_edit_user();
+      d:pop_state();
+    else
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("User");
+    end
+    ~
+  ~
+Name: User~
+~

@@ -19,6 +19,7 @@
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
+#include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -94,12 +95,22 @@ static int GetEnumerationsProxy(lua_State* L) {
 
 
 //! Handles lua get_states.
-//! \param L the lua state
+//! \param L the \c lua_State
 static int GetStatesProxy(lua_State* L) {
     if (lua_gettop(L) != 0)
 	return luaL_error(L, "get_states expects no arguments");
     auto& lua = Lua::CheckLua(L);
     StateBindings::PushRepository(lua);
+    return 1;
+}
+
+//! Handles lua get_users.
+//! \param L the \c lua_State
+static int GetUsersProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_users expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    UserBindings::PushRepository(lua);
     return 1;
 }
 
@@ -166,6 +177,8 @@ void GameBindings::Register(Lua& lua) {
     lua.SetSafe("get_enumerations");
     lua.PushFunction(GetStatesProxy);
     lua.SetSafe("get_states");
+    lua.PushFunction(GetUsersProxy);
+    lua.SetSafe("get_users");
     lua.PushFunction(PrintProxy);
     lua.SetSafe("print");
     lua.PushFunction(ShutdownProxy);

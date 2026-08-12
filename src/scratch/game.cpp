@@ -19,6 +19,7 @@
 #include <scratch/state.hpp>
 #include <scratch/storage_file.hpp>
 #include <scratch/storage_file_multi.hpp>
+#include <scratch/user.hpp>
 
 namespace Scratch {
 namespace Core {
@@ -37,7 +38,10 @@ Game::Game() :
 			"data", "enumeration", ".dat"))),
 	states_(std::make_shared<StateRepository>(
 		Scratch::Storage::MultiFileStorage<State>(
-			"data", "state", ".dat"))) {
+			"data", "state", ".dat"))),
+	users_(std::make_shared<UserRepository>(
+		Scratch::Storage::MultiFileStorage<User>(
+			"data", "user", ".dat"))) {
     // Nothing.
 }
 
@@ -48,7 +52,7 @@ Game::~Game() noexcept {
     this->Shutdown();
     if (server_)
 	server_.reset();
-    // Close Lua before enumerations_ / states_ tear down.
+    // Close Lua before enumerations_ / states_ / users_ tear down.
     lua_.reset();
 }
 
@@ -83,6 +87,11 @@ EnumerationRepositoryPtr Game::GetEnumerations() const noexcept {
 //! Gets the connection-state repository.
 StateRepositoryPtr Game::GetStates() const noexcept {
     return states_;
+}
+
+//! Gets the user repository.
+UserRepositoryPtr Game::GetUsers() const noexcept {
+    return users_;
 }
 
 //! Applies Quiet and Prompt bits to descriptors in \p state.
@@ -180,6 +189,9 @@ void Game::LoadRepositories() {
     }
     if (!enumerations_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load enumeration index.");
+    }
+    if (!users_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load user index.");
     }
 }
 

@@ -18,6 +18,7 @@ namespace Core {
 class Enumeration;
 class Game;
 class State;
+class User;
 }; // namespace Core
 }; // namespace Scratch
 
@@ -43,6 +44,8 @@ using Game = Scratch::Core::Game;
 using MenuPtr = std::shared_ptr<Menu>;
 using State = Scratch::Core::State;
 using StatePtr = std::shared_ptr<State>;
+using User = Scratch::Core::User;
+using UserPtr = std::shared_ptr<User>;
 
 //! The descriptor class. \{
 class Descriptor: public std::enable_shared_from_this<Descriptor> {
@@ -86,6 +89,7 @@ public:
 
     //! Closes the descriptor.
     //! \sa #Closed() const
+    //! \sa #Login(const UserPtr&)
     void Close() noexcept;
 
     //! Returns whether the descriptor is closed.
@@ -113,7 +117,6 @@ public:
     //! Returns the color code.
     //! \param color the color
     const char *GetColor(const int color) const noexcept;
-
     //! Gets the color bit.
     //! \sa #SetColorBit(const bool)
     bool GetColorBit() const noexcept {
@@ -138,6 +141,19 @@ public:
     //! \sa #SetEditState(const StatePtr&)
     StatePtr GetEditState() const noexcept {
 	return editState_;
+    }
+
+    //! Gets the multi-step edit string.
+    //! \remark Login name, password confirm, and similar.
+    //! \sa #SetEditString(const String&)
+    String GetEditString() const noexcept {
+	return editString_;
+    }
+
+    //! Gets the user being edited.
+    //! \sa #SetEditUser(const UserPtr&)
+    UserPtr GetEditUser() const noexcept {
+	return editUser_;
     }
 
     //! Gets the descriptor-owned editor, if any.
@@ -182,6 +198,12 @@ public:
 	return terminalType_;
     }
 
+    //! Gets the attached user.
+    //! \sa #Login(const UserPtr&)
+    UserPtr GetUser() const noexcept {
+	return user_;
+    }
+
     //! Gets the terminal window height in characters.
     //! \remark Defaults to 24 until NAWS reports a size.
     //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
@@ -195,6 +217,14 @@ public:
     std::uint16_t GetWindowWidth() const noexcept {
 	return windowWidth_;
     }
+
+    //! Logs in the specified user, setting LastLogin and persisting.
+    //! \param user the user to log in
+    //! \remark No-op for the already-attached user; logs out a different
+    //!     previously-attached user first. Rejects a null user.
+    //! \sa #Close()
+    //! \sa #GetUser() const
+    void Login(const UserPtr& user) noexcept;
 
     //! Writes to the descriptor.
     //! \param message the message to print
@@ -240,6 +270,20 @@ public:
     //! \sa #GetEditState() const
     void SetEditState(const StatePtr& editState) {
 	editState_ = editState;
+    }
+
+    //! Sets the multi-step edit string.
+    //! \param editString the value to store
+    //! \sa #GetEditString() const
+    void SetEditString(const String& editString) {
+	editString_ = editString;
+    }
+
+    //! Sets the user being edited.
+    //! \param editUser the user draft being edited
+    //! \sa #GetEditUser() const
+    void SetEditUser(const UserPtr& editUser) {
+	editUser_ = editUser;
     }
 
     //! Sets the descriptor name.
@@ -357,6 +401,17 @@ protected:
     //! \sa #SetEditState(const StatePtr&)
     StatePtr editState_;
 
+    //! The multi-step edit string.
+    //! \remark Login name, password confirm, and similar.
+    //! \sa #GetEditString() const
+    //! \sa #SetEditString(const String&)
+    String editString_;
+
+    //! The user being edited.
+    //! \sa #GetEditUser() const
+    //! \sa #SetEditUser(const UserPtr&)
+    UserPtr editUser_;
+
     //! The game state.
     Game& game_;
 
@@ -413,6 +468,11 @@ protected:
     //! \sa #GetTerminalType() const
     //! \sa #SetTerminalType(const String&)
     String terminalType_;
+
+    //! The attached user.
+    //! \sa #GetUser() const
+    //! \sa #Login(const UserPtr&)
+    UserPtr user_;
 
     //! The terminal window height in characters.
     //! \remark Defaults to 24 until NAWS reports a size.
