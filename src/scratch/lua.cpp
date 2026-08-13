@@ -11,6 +11,7 @@
 #include <scratch/color_bindings.hpp>
 #include <scratch/config_bindings.hpp>
 #include <scratch/descriptor_bindings.hpp>
+#include <scratch/editor_bindings.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
 #include <scratch/logger.hpp>
@@ -98,6 +99,7 @@ Lua::Lua(Game& game) :
     ColorBindings::Register(*this);
     ConfigBindings::Register(*this);
     DescriptorBindings::Register(*this);
+    EditorBindings::Register(*this);
     GameBindings::Register(*this);
     StateBindings::Register(*this);
 
