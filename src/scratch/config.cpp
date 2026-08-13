@@ -26,6 +26,7 @@ static const char configFileName[] = "data/config.dat";
 //! Default constructor.
 Config::Config() noexcept :
 	address_(),
+	metaColors_(),
 	port_(6767) {
     // Nothing.
 }
@@ -51,7 +52,8 @@ bool Config::Load() noexcept {
 	return false;
 
     for (const auto& entry: root->GetEntries()) {
-	if (!KeyIs(entry.first, "Network"))
+	if (!KeyIs(entry.first, "Colors") &&
+		!KeyIs(entry.first, "Network"))
 	    return false;
     }
 
@@ -72,7 +74,20 @@ bool Config::Load() noexcept {
 	}
     }
 
+    std::map<Color::ColorEnum, Color::ColorEnum> metaColors;
+    if (auto colors = root->Get("Colors")) {
+	for (const auto& entry: colors->GetEntries()) {
+	    const auto meta = Color::ByName(entry.first);
+	    const auto color = Color::ByName(
+		colors->GetString(entry.first));
+	    if (!Color::IsMeta(meta) || !Color::IsReal(color))
+		return false;
+	    metaColors[meta] = color;
+	}
+    }
+
     address_ = std::move(address);
+    metaColors_ = std::move(metaColors);
     port_ = port;
     return true;
 }
@@ -82,6 +97,17 @@ bool Config::Load() noexcept {
 //! \sa #Load()
 bool Config::Save() const noexcept {
     auto root = std::make_shared<Data>();
+    if (!metaColors_.empty()) {
+	auto colors = root->Put("Colors");
+	if (!colors)
+	    return false;
+	for (const auto& entry: metaColors_) {
+	    colors->PutString(
+		Color::ToString(entry.first),
+		Color::ToString(entry.second));
+	}
+    }
+
     auto network = root->Put("Network");
     if (!network)
 	return false;
@@ -90,6 +116,20 @@ bool Config::Save() const noexcept {
     network->PutNumber("Port", static_cast<double>(port_));
 
     return root->SaveFile(configFileName);
+}
+
+//! Sets a house metacolor.
+//! \param meta the metacolor
+//! \param color the real color
+//! \return \c true if the metacolor was set
+//! \sa #GetMetaColors() const
+bool Config::SetMetaColor(
+	Color::ColorEnum meta,
+	Color::ColorEnum color) noexcept {
+    if (!Color::IsMeta(meta) || !Color::IsReal(color))
+	return false;
+    metaColors_[meta] = color;
+    return true;
 }
 
 }; // namespace Core

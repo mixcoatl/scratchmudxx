@@ -176,6 +176,16 @@ bool StringStartsWithCi(
 	const String& str,
 	const String& prefix);
 
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStripCopy(const String&)
+String& StringStrip(String& str) noexcept;
+
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStrip(String&)
+String StringStripCopy(const String& str) noexcept;
+
 }; // namespace Algorithm
 }; // namespace Scratch
 

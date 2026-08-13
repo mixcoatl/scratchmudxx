@@ -324,5 +324,28 @@ bool StringStartsWithCi(
     return StringCompareCi(str.substr(0, prefix.size()), prefix) == 0;
 }
 
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStripCopy(const String&)
+String& StringStrip(String& str) noexcept {
+    return str = StringStripCopy(str);
+}
+
+//! Removes color codes from a string.
+//! \param str the string to strip
+//! \sa StringStrip(String&)
+String StringStripCopy(const String& str) noexcept {
+    std::ostringstream oss("");
+    for (auto ptr = std::begin(str); ptr != std::end(str); ++ptr) {
+	if (*ptr == '\x1b') {
+	    while (ptr != std::end(str) && !std::isalpha(*ptr))
+		++ptr;
+	} else {
+	    oss << *ptr;
+	}
+    }
+    return oss.str();
+}
+
 }; // namespace Algorithm
 }; // namespace Scratch

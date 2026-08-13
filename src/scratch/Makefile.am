@@ -10,6 +10,7 @@ __top_builddir__bin_scratch_LDADD = \
 	$(BOOST_FILESYSTEM_LIB) \
 	$(BOOST_SYSTEM_LIB)
 __top_builddir__bin_scratch_SOURCES = \
+	color.cpp \
 	config.cpp \
 	data.cpp \
 	descriptor.cpp \
@@ -22,6 +23,7 @@ __top_builddir__bin_scratch_SOURCES = \
 	string.cpp
 
 noinst_HEADERS = \
+	../include/scratch/color.hpp \
 	../include/scratch/config.hpp \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
