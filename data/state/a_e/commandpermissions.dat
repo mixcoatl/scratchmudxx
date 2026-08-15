@@ -1,0 +1,84 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local permissions = edit:get_permissions();
+    local available = {};
+    local catalog = get_enumerations():get("Permission");
+    if catalog then
+      for _, name in ipairs(catalog:get_members()) do
+        if not edit:has_permission(name) then
+          available[#available + 1] = name;
+        end
+      end
+    end
+    d:clear_menu();
+    d:menu_title("Permissions", edit:get_name(), "name", "<New>");
+    if #available > 0 then
+      d:menu_named_choices("Add");
+      for i, name in ipairs(available) do
+        d:menu_item(tostring(i), name);
+      end
+    end
+    if #permissions > 0 then
+      d:menu_named_choices("Current");
+      for i, permission in ipairs(permissions) do
+        d:menu_item(tostring(#available + i), permission);
+      end
+    end
+    d:menu_choices();
+    d:menu_item("x", "Return.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local key = d:menu_match(line);
+    if key == "x" then
+      d:pop_state();
+      return;
+    end
+    if not key then
+      if line:match("%S+") then
+        d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("CommandPermissions");
+      else
+        d:pop_state();
+      end
+      return;
+    end
+    local available = {};
+    local catalog = get_enumerations():get("Permission");
+    if catalog then
+      for _, name in ipairs(catalog:get_members()) do
+        if not edit:has_permission(name) then
+          available[#available + 1] = name;
+        end
+      end
+    end
+    local n = tonumber(key);
+    if n and n >= 1 and n <= #available then
+      edit:add_permission(available[n]);
+      d:set_state("CommandPermissions");
+      return;
+    end
+    local permissions = edit:get_permissions();
+    local permission = n and permissions[n - #available];
+    if permission then
+      edit:erase_permission(permission);
+      d:print_format("%sRemoved permission %s.%s\r\n", Q.OKAY, permission, Q.NORMAL);
+    else
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+    end
+    d:set_state("CommandPermissions");
+    ~
+  ~
+Name: CommandPermissions~
+~

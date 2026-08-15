@@ -1,0 +1,7 @@
+Name: Smile~
+Social:
+  Found: ${S.Name} smile${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} smile${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} smile${:s} happily.~
+  ~
+~

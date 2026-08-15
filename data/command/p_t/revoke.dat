@@ -1,0 +1,24 @@
+Name: Revoke~
+Permissions:
+  0001: Wizard~
+  ~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  local who, permission = line:match("^%s*(%S+)%s+(%S+)")
+  if not who or not permission then
+    d:print_format("%sUsage: revoke <user> <permission>%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local user = get_users():get(who)
+  if not user then
+    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  user:erase_permission(permission)
+  get_users():save(user:get_name())
+  d:print_format("%sRevoked %s from %s.%s\r\n", Q.OKAY, permission, user:get_name(), Q.NORMAL)
+  ~
+~

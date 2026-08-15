@@ -1,0 +1,7 @@
+Name: Fart~
+Social:
+  Found: ${S.Name} fart${:s} on ${D.Name}.~
+  FoundAuto: ${S.Name} stew${:s} in ${S.Determiner} own farts.~
+  NoArgument: ${S.Name} fart${:s} noisily.~
+  ~
+~

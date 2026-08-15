@@ -1,0 +1,5 @@
+Name: Hiccup~
+Social:
+  NoArgument: ${S.Name} hiccup${:s}.~
+  ~
+~

@@ -1,0 +1,29 @@
+Name: Grant~
+Permissions:
+  0001: Wizard~
+  ~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  local who, permission = line:match("^%s*(%S+)%s+(%S+)")
+  if not who or not permission then
+    d:print_format("%sUsage: grant <user> <permission>%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local catalog = get_enumerations():get("Permission")
+  if not catalog or not catalog:has_member(permission) then
+    d:print_format("%sUnknown permission.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local user = get_users():get(who)
+  if not user then
+    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  user:add_permission(permission)
+  get_users():save(user:get_name())
+  d:print_format("%sGranted %s to %s.%s\r\n", Q.OKAY, permission, user:get_name(), Q.NORMAL)
+  ~
+~

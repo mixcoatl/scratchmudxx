@@ -1,0 +1,7 @@
+Name: Ponder~
+Social:
+  Found: ${S.Name} ponder${:s} ${D.NamePossessive} problem.~
+  FoundAuto: ${S.Name} ponder${:s} ${S.Determiner} problem.~
+  NoArgument: ${S.Name} ponder${:s} something.~
+  ~
+~

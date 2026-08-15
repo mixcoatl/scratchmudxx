@@ -1,0 +1,68 @@
+Name: Delete~
+Permissions:
+  0001: Owner~
+  0002: Wizard~
+  ~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  local type_name, name = line:match("^%s*(%S+)%s+(%S+)")
+  if not type_name or not name then
+    d:print_format("%sUsage: delete command|enumeration|state|user <name>%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  type_name = type_name:lower()
+  if type_name == "command" then
+    local cmd = get_commands():get(name)
+    if not cmd then
+      d:print_format("%sNo such command.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    get_commands():erase(name)
+    d:print_format("%sDeleted command %s.%s\r\n", Q.OKAY, name, Q.NORMAL)
+  elseif type_name == "enumeration" then
+    local enumeration = get_enumerations():get(name)
+    if not enumeration then
+      d:print_format("%sNo such enumeration.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    get_enumerations():erase(name)
+    d:print_format("%sDeleted enumeration %s.%s\r\n", Q.OKAY, name, Q.NORMAL)
+  elseif type_name == "user" then
+    local user = get_users():get(name)
+    if not user then
+      d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    local self = d:get_user()
+    if self and self:get_name():lower() == name:lower() then
+      d:print_format("%sCannot delete the logged-in user.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    get_users():erase(name)
+    d:print_format("%sDeleted user %s.%s\r\n", Q.OKAY, name, Q.NORMAL)
+  elseif type_name == "state" then
+    local state = get_states():get(name)
+    if not state then
+      d:print_format("%sNo such state.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    for _, dname in ipairs(get_descriptor_names()) do
+      local other = get_descriptor(dname)
+      if other then
+        local cur = other:get_state()
+        if cur and cur:get_name():lower() == name:lower() then
+          d:print_format("%sCannot delete a state in use.%s\r\n", Q.FAILED, Q.NORMAL)
+          return
+        end
+      end
+    end
+    get_states():erase(name)
+    d:print_format("%sDeleted state %s.%s\r\n", Q.OKAY, name, Q.NORMAL)
+  else
+    d:print_format("%sUsage: delete command|enumeration|state|user <name>%s\r\n", Q.FAILED, Q.NORMAL)
+  end
+  ~
+~

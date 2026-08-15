@@ -9,6 +9,7 @@
 #define _SCRATCH_LUA_CPP_
 
 #include <scratch/color_bindings.hpp>
+#include <scratch/command_bindings.hpp>
 #include <scratch/config_bindings.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor_bindings.hpp>
@@ -100,6 +101,7 @@ Lua::Lua(Game& game) :
     this->InitSafe();
 
     ColorBindings::Register(*this);
+    CommandBindings::Register(*this);
     ConfigBindings::Register(*this);
     DescriptorBindings::Register(*this);
     EditorBindings::Register(*this);

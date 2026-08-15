@@ -1,0 +1,108 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:print_format("%sNo command draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:pop_state();
+      return;
+    end
+    local kws = edit:get_keywords();
+    local kwtext = table.concat(kws, ", ");
+    local permissions = edit:get_permissions();
+    local permtext = table.concat(permissions, ", ");
+    local social = edit:get_social();
+    local found = "";
+    local found_auto = "";
+    local no_argument = "";
+    if social then
+      found = social:get_found();
+      found_auto = social:get_found_auto();
+      no_argument = social:get_no_argument();
+    end
+    d:clear_menu();
+    d:menu_title("Command", edit:get_name(), "name", "<New>");
+    d:menu_choices();
+    d:menu_field("1", "Name", edit:get_name(), "name");
+    d:menu_field("2", "Keywords", kwtext);
+    d:menu_block("3", "Action", edit:get_action());
+    d:menu_field("4", "Permissions", permtext, "enum", "<Empty>");
+    d:menu_named_choices("Social Information");
+    d:menu_field("5", "Found", found);
+    d:menu_field("6", "Found Auto", found_auto);
+    d:menu_field("7", "No Argument", no_argument);
+    d:menu_item("8", "Delete Social Data.");
+    d:menu_choices();
+    d:menu_item("q", "Save and quit.");
+    d:menu_item("x", "Abort without saving.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local key = d:menu_match(line);
+    if key == "1" then
+      d:push_state("CommandName");
+    elseif key == "2" then
+      d:push_state("CommandKeywords");
+    elseif key == "3" then
+      d:push_state("CommandAction");
+    elseif key == "4" then
+      d:push_state("CommandPermissions");
+    elseif key == "5" then
+      if not edit:get_social() then
+        edit:create_social();
+      end
+      d:push_state("CommandFound");
+    elseif key == "6" then
+      if not edit:get_social() then
+        edit:create_social();
+      end
+      d:push_state("CommandFoundAuto");
+    elseif key == "7" then
+      if not edit:get_social() then
+        edit:create_social();
+      end
+      d:push_state("CommandNoArgument");
+    elseif key == "8" then
+      edit:set_social(nil);
+      d:set_state("Command");
+    elseif key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        d:print_format("%sName is required before saving.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("Command");
+      else
+        local modified = os.time();
+        local modified_by = "system";
+        if d:get_user() then
+          modified_by = d:get_user():get_name();
+        end
+        if d:get_edit_name() == "" then
+          edit:set_created(modified);
+          edit:set_created_by(modified_by);
+        end
+        edit:set_modified(modified);
+        edit:set_modified_by(modified_by);
+        get_commands():store(name, edit);
+        local original = d:get_edit_name();
+        if original ~~= "" and original:lower() ~~= name:lower() then
+          get_commands():erase(original);
+        end
+        d:clear_edit_command();
+        d:pop_state();
+      end
+    elseif key == "x" then
+      d:clear_edit_command();
+      d:pop_state();
+    else
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("Command");
+    end
+    ~
+  ~
+Name: Command~
+~

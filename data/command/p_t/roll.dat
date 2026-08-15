@@ -1,0 +1,6 @@
+Name: Roll~
+Social:
+  Found: ${S.Name} roll${:s} ${S.Determiner} eyes at ${D.Name}.~
+  NoArgument: ${S.Name} roll${:s} ${S.Determiner} eyes.~
+  ~
+~

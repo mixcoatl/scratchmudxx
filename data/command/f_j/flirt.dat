@@ -1,0 +1,6 @@
+Name: Flirt~
+Social:
+  Found: ${S.Name} flirt${:s} with ${D.Name}.~
+  NoArgument: ${S.Name} flirt${:s}.~
+  ~
+~

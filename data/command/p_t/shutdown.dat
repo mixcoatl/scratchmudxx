@@ -1,0 +1,9 @@
+Name: Shutdown~
+Permissions:
+  0001: Owner~
+  ~
+Action:-
+  broadcast("Game is shutting down.\r\n")
+  shutdown()
+  ~
+~

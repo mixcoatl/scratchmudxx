@@ -1,0 +1,7 @@
+Name: Peer~
+Social:
+  Found: ${S.Name} peer${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} peer${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} peer${:s} around.~
+  ~
+~

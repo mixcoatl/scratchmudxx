@@ -1,0 +1,27 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEnter the command's name%s:%s ", Q.PROMPT, Q.PUNCTUATION, Q.NORMAL);
+    ~
+  Received:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+    else
+      local name = line:match("%S+") or "";
+      local original = d:get_edit_name();
+      local existing = get_commands():get(name);
+      if name == "" then
+        d:print_format("%sName entry cancelled.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:pop_state();
+      elseif existing and (original == "" or original:lower() ~~= name:lower()) then
+        d:print_format("%sThat command name is already taken.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("CommandName");
+      else
+        edit:set_name(name);
+        d:pop_state();
+      end
+    end
+    ~
+  ~
+Name: CommandName~
+~

@@ -1,0 +1,21 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_command();
+    if not edit or not edit:get_social() then
+      d:pop_state();
+      return;
+    end
+    local ed = d:get_editor();
+    if ed then
+      if not ed:is_aborted() then
+        edit:get_social():set_found(ed:get_text());
+      end
+      d:clear_editor();
+      d:pop_state();
+      return;
+    end
+    d:start_editor(edit:get_social():get_found(), "found");
+    ~
+  ~
+Name: CommandFound~
+~

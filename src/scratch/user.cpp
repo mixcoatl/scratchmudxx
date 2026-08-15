@@ -9,7 +9,8 @@
 #define _SCRATCH_USER_CPP_
 
 #include <scratch/data.hpp>
-#include <scratch/gender.hpp>
+#include <scratch/descriptor.hpp>
+#include <scratch/game.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 #include <scratch/user.hpp>
@@ -26,6 +27,7 @@ User::User() noexcept :
 	lastLogout_(0),
 	metaColors_(),
 	password_(),
+	permissions_(),
 	preferences_() {
     // Nothing.
 }
@@ -40,6 +42,7 @@ User::User(const User& other) noexcept :
 	lastLogout_(other.lastLogout_),
 	metaColors_(other.metaColors_),
 	password_(other.password_),
+	permissions_(other.permissions_),
 	preferences_(other.preferences_) {
     // Nothing.
 }
@@ -59,6 +62,7 @@ User& User::operator=(const User& other) noexcept {
     lastLogout_ = other.lastLogout_;
     metaColors_ = other.metaColors_;
     password_ = other.password_;
+    permissions_ = other.permissions_;
     preferences_ = other.preferences_;
     return *this;
 }
@@ -68,6 +72,43 @@ User& User::operator=(const User& other) noexcept {
 //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
 void User::ClearMetaColor(Color::ColorEnum meta) noexcept {
     metaColors_.erase(meta);
+}
+
+//! Finds a thing by name.
+//! \param game the game state
+//! \param name the name token
+//! \return the matched thing, or \c nullptr
+ThingPtr User::Find(
+	const Game& game,
+	const String& name) const noexcept {
+    auto self = Thing::Find(game, name);
+    if (self)
+	return self;
+    if (name.empty())
+	return nullptr;
+
+    ThingPtr best;
+    std::size_t bestLen = static_cast<std::size_t>(-1);
+    for (auto& d: game.GetDescriptors()) {
+	if (!d || d->Closed())
+	    continue;
+	// Controlling User as Thing.
+	ThingPtr thing = d->GetUser();
+	if (!thing)
+	    continue;
+	const auto thingName = thing->GetName();
+	if (Scratch::Algorithm::StringCompareCi(thingName, name) == 0)
+	    return thing;
+	if (name.size() <= thingName.size() &&
+		Scratch::Algorithm::StringCompareCi(
+			thingName.substr(0, name.size()), name) == 0) {
+	    if (thingName.size() < bestLen) {
+		best = thing;
+		bestLen = thingName.size();
+	    }
+	}
+    }
+    return best;
 }
 
 //! Reads colors from a data node.
@@ -95,6 +136,12 @@ void User::ReadData(const DataPtr& data) noexcept {
     gender_ = Gender::ByName(data->GetString("Gender"));
     password_ = data->GetString("Password");
 
+    // Read permissions.
+    auto permissionsData = data->Get("Permissions");
+    if (!permissionsData)
+	permissionsData = std::make_shared<Data>();
+    this->ReadPermissionsData(permissionsData);
+
     // Read preferences.
     auto preferencesData = data->Get("Preferences");
     if (!preferencesData)
@@ -118,6 +165,19 @@ void User::ReadData(const DataPtr& data) noexcept {
     if (!metadataData)
 	metadataData = std::make_shared<Data>();
     this->ReadMetadataData(metadataData);
+}
+
+//! Reads permissions from a data node.
+//! \param data the Permissions data node to read
+//! \sa #ReadData(const DataPtr&)
+//! \sa #WritePermissionsData(const DataPtr&) const
+void User::ReadPermissionsData(const DataPtr& data) noexcept {
+    permissions_.clear();
+    for (const auto& entry: data->GetEntries()) {
+	const auto permission = data->GetString(entry.first);
+	if (!permission.empty())
+	    permissions_.insert(permission);
+    }
 }
 
 //! Reads preferences from a data node.
@@ -197,6 +257,12 @@ void User::WriteData(const DataPtr& data) const noexcept {
     if (!password_.empty())
 	data->PutString("Password", password_);
 
+    // Write permissions.
+    auto permissionsData = std::make_shared<Data>();
+    this->WritePermissionsData(permissionsData);
+    if (permissionsData->Size())
+	data->Put("Permissions", permissionsData);
+
     // Write preferences.
     auto preferencesData = std::make_shared<Data>();
     this->WritePreferencesData(preferencesData);
@@ -220,6 +286,15 @@ void User::WriteData(const DataPtr& data) const noexcept {
     this->WriteMetadataData(metadataData);
     if (metadataData->Size())
 	data->Put("Metadata", metadataData);
+}
+
+//! Writes permissions to a data node.
+//! \param data the Permissions data node to write
+//! \sa #ReadPermissionsData(const DataPtr&)
+//! \sa #WriteData(const DataPtr&) const
+void User::WritePermissionsData(const DataPtr& data) const noexcept {
+    for (const auto& permission: permissions_)
+	data->PutString("%", permission);
 }
 
 //! Writes preferences to a data node.

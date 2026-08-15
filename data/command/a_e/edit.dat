@@ -1,0 +1,54 @@
+Name: Edit~
+Permissions:
+  0001: Owner~
+  0002: Wizard~
+  ~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  local type_name, name = line:match("^%s*(%S+)%s+(%S+)")
+  if not type_name or not name then
+    d:print_format("%sUsage: edit command|enumeration|state|user <name>%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  type_name = type_name:lower()
+  if type_name == "command" then
+    local cmd = get_commands():get(name)
+    if cmd then
+      d:set_edit_command(cmd)
+    else
+      local edit = d:set_edit_command()
+      edit:set_name(name)
+    end
+    d:push_state("Command")
+  elseif type_name == "enumeration" then
+    local enumeration = get_enumerations():get(name)
+    if not enumeration then
+      d:print_format("%sNo such enumeration.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    d:set_edit_enumeration(enumeration)
+    d:push_state("Enumeration")
+  elseif type_name == "user" then
+    local user = get_users():get(name)
+    if not user then
+      d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    d:set_edit_user(user)
+    d:push_state("User")
+  elseif type_name == "state" then
+    local state = get_states():get(name)
+    if not state then
+      d:print_format("%sNo such state.%s\r\n", Q.FAILED, Q.NORMAL)
+      return
+    end
+    d:set_edit_state(state)
+    d:push_state("State")
+  else
+    d:print_format("%sUsage: edit command|enumeration|state|user <name>%s\r\n", Q.FAILED, Q.NORMAL)
+  end
+  ~
+~

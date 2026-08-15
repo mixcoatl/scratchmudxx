@@ -1,0 +1,6 @@
+Name: Ruffle~
+Social:
+  Found: ${S.Name} ruffle${:s} ${D.NamePossessive} hair playfully.~
+  FoundAuto: ${S.Name} ruffle${:s} ${S.Determiner} own hair.~
+  ~
+~

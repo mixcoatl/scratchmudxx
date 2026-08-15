@@ -22,12 +22,19 @@ class Data;
 namespace Scratch {
 namespace Core {
 
+// Forward declarations.
+class Game;
+class Thing;
+
+//! The type of a shared thing pointer.
+using ThingPtr = std::shared_ptr<Thing>;
+
 // ScratchMUD types.
 using Data = Scratch::Utility::Data;
 using DataPtr = std::shared_ptr<Data>;
 
-//! The domain-object base class. \{
-class Thing {
+//! The thing class. \{
+class Thing : public std::enable_shared_from_this<Thing> {
 public:
     //! Default constructor.
     Thing() noexcept;
@@ -42,6 +49,14 @@ public:
     //! Default assignment.
     //! \param other the \sa thing to assign
     Thing& operator=(const Thing& other) noexcept;
+
+    //! Finds a thing by name.
+    //! \param game the game state
+    //! \param name the name token
+    //! \return the matched thing, or \c nullptr
+    virtual ThingPtr Find(
+	const Game& game,
+	const String& name) const noexcept;
 
     //! Gets the creation time.
     //! \sa #SetCreated(const std::time_t)
@@ -69,7 +84,7 @@ public:
 
     //! Gets the thing name.
     //! \sa #SetName(const String&)
-    String GetName() const noexcept {
+    virtual String GetName() const noexcept {
 	return name_;
     }
 
@@ -140,9 +155,6 @@ protected:
     String name_;
 };
 //! \}
-
-//! The type of a shared thing pointer.
-using ThingPtr = std::shared_ptr<Thing>;
 
 }; // namespace Core
 }; // namespace Scratch

@@ -1,0 +1,7 @@
+Name: Clap~
+Social:
+  Found: ${S.Name} clap${:s} wildly for ${D.Name}.~
+  FoundAuto: ${S.Name} clap${:s} wildly for ${S.Reflexive}.~
+  NoArgument: ${S.Name} clap${:s} wildly.~
+  ~
+~

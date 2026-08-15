@@ -1,0 +1,7 @@
+Name: Purr~
+Social:
+  Found: ${S.Name} purr${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} purr${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} purr${:s} contentedly.~
+  ~
+~

@@ -84,7 +84,7 @@ static int GetDescriptorProxy(lua_State* L) {
 }
 
 //! Handles lua get_enumerations.
-//! \param L the lua state
+//! \param L the \c lua_State
 static int GetEnumerationsProxy(lua_State* L) {
     if (lua_gettop(L) != 0)
 	return luaL_error(L, "get_enumerations expects no arguments");
@@ -92,7 +92,6 @@ static int GetEnumerationsProxy(lua_State* L) {
     EnumerationBindings::PushRepository(lua);
     return 1;
 }
-
 
 //! Handles lua get_states.
 //! \param L the \c lua_State

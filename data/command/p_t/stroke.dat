@@ -1,0 +1,7 @@
+Name: Stroke~
+Social:
+  Found: ${S.Name} stroke${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} stroke${:s} ${S.Reflexive}.~
+  NoArgument: ${S.Name} ${S.Copula} having a stroke.~
+  ~
+~

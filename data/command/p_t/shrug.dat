@@ -1,0 +1,7 @@
+Name: Shrug~
+Social:
+  Found: ${S.Name} shrug${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} shrug${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} shrug${:s}.~
+  ~
+~

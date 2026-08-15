@@ -1,0 +1,5 @@
+Name: Bounce~
+Social:
+  NoArgument: ${S.Name} bounce${:s} around.~
+  ~
+~

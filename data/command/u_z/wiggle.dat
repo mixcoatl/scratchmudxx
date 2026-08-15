@@ -1,0 +1,6 @@
+Name: Wiggle~
+Social:
+  Found: ${S.Name} wiggle${:s} ${S.Determiner} bum at ${D.Name}.~
+  NoArgument: ${S.Name} wiggle${:s} ${S.Determiner} bum.~
+  ~
+~

@@ -1,0 +1,6 @@
+Name: Caress~
+Social:
+  Found: ${S.Name} caress${:es} ${D.Name}.~
+  FoundAuto: ${S.Name} caress${:es} ${S.Reflexive}.~
+  ~
+~
