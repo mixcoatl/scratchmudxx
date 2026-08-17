@@ -1,16 +1,24 @@
 Name: Norepeat~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
     return
   end
-  if actor:has_preference("NoRepeat") then
-    actor:erase_preference("NoRepeat")
+  local player = actor:get_player()
+  if not player then
+    return
+  end
+  local user = d:get_user()
+  local by = user and user:get_name() or player:get_name()
+  if player:has_preference("NoRepeat") then
+    player:erase_preference("NoRepeat")
     d:print_format("%sNoRepeat off.%s\r\n", Q.OKAY, Q.NORMAL)
   else
-    actor:add_preference("NoRepeat")
+    player:add_preference("NoRepeat")
     d:print_format("%sNoRepeat on.%s\r\n", Q.OKAY, Q.NORMAL)
   end
-  get_users():save(actor:get_name())
+  player:set_modified(os.time())
+  player:set_modified_by(by)
+  get_players():save(player:get_name())
   ~
 ~

@@ -16,6 +16,7 @@
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/enumeration.hpp>
 #include <scratch/game.hpp>
+#include <scratch/instance_bindings.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
@@ -23,8 +24,6 @@
 #include <scratch/storage_file.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
-#include <scratch/user.hpp>
-#include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -41,12 +40,11 @@ const char CommandBindings::SocialMetaName[] = "Scratch.Social";
 using ActionParam = Scratch::Core::ActionParam;
 using Color = Scratch::Net::Color;
 using CommandRepositoryPtr = Scratch::Core::CommandRepositoryPtr;
-using ThingPtr = Scratch::Core::ThingPtr;
-using UserPtr = Scratch::Core::UserPtr;
+using InstancePtr = Scratch::Core::InstancePtr;
 using WeakCommandPtr = std::weak_ptr<Command>;
 using WeakCommandRepositoryPtr = std::weak_ptr<CommandRepository>;
+using WeakInstancePtr = std::weak_ptr<Instance>;
 using WeakSocialPtr = std::weak_ptr<Social>;
-using WeakUserPtr = std::weak_ptr<User>;
 
 static WeakCommandRepositoryPtr CheckWeakCommandRepositoryPtr(
 	lua_State* L,
@@ -146,19 +144,19 @@ static ActionParam CheckActionParam(
 	return ActionParam();
     const int type = lua_type(L, index);
     if (type == LUA_TUSERDATA) {
-	auto* box = luaL_testudata(L, index, UserBindings::MetaName);
+	auto* box = luaL_testudata(L, index, InstanceBindings::MetaName);
 	if (!box)
-	    luaL_argerror(L, index, "expected user, string, or number");
-	UserPtr user = static_cast<WeakUserPtr*>(box)->lock();
-	if (!user)
-	    luaL_argerror(L, index, "invalid user");
-	return ActionParam(user);
+	    luaL_argerror(L, index, "expected instance, string, or number");
+	InstancePtr instance = static_cast<WeakInstancePtr*>(box)->lock();
+	if (!instance)
+	    luaL_argerror(L, index, "invalid instance");
+	return ActionParam(instance);
     }
     if (type == LUA_TNUMBER)
 	return ActionParam(lua_tonumber(L, index));
     if (type == LUA_TSTRING)
 	return ActionParam(Lua::CheckString(L, index));
-    luaL_argerror(L, index, "expected user, string, or number");
+    luaL_argerror(L, index, "expected instance, string, or number");
     return ActionParam();
 }
 
@@ -167,12 +165,7 @@ static int RunCommandHookProxy(lua_State* L) {
     if (lua_gettop(L) != 3)
 	return luaL_error(L, "run_command_hook expects 3 arguments");
     auto command = CommandBindings::Check(L, 1);
-    auto* box = luaL_testudata(L, 2, UserBindings::MetaName);
-    if (!box)
-	return luaL_argerror(L, 2, "expected user");
-    UserPtr performer = static_cast<WeakUserPtr*>(box)->lock();
-    if (!performer)
-	return luaL_argerror(L, 2, "invalid user");
+    auto performer = InstanceBindings::Check(L, 2);
     luaL_checktype(L, 3, LUA_TSTRING);
     Lua::CheckGame(L).RunCommandHook(
 	    command, performer, Lua::CheckString(L, 3));
@@ -707,12 +700,7 @@ static int ActionProxy(lua_State* L) {
 static int DispatchCommandProxy(lua_State* L) {
     if (lua_gettop(L) != 2)
 	return luaL_error(L, "dispatch_command expects 2 arguments");
-    auto* box = luaL_testudata(L, 1, UserBindings::MetaName);
-    if (!box)
-	return luaL_argerror(L, 1, "expected user");
-    UserPtr performer = static_cast<WeakUserPtr*>(box)->lock();
-    if (!performer)
-	return luaL_argerror(L, 1, "invalid user");
+    auto performer = InstanceBindings::Check(L, 1);
     luaL_checktype(L, 2, LUA_TSTRING);
     Lua::CheckGame(L).DispatchCommand(performer, Lua::CheckString(L, 2));
     return 0;
@@ -742,25 +730,6 @@ static int GetCommandsIndexProxy(lua_State* L) {
     return 1;
 }
 
-//! Handles lua get_descriptor_for(thing).
-static int GetDescriptorForProxy(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "get_descriptor_for expects 1 argument");
-    auto& lua = Lua::CheckLua(L);
-    auto& game = Lua::CheckGame(L);
-    ThingPtr thing;
-    if (!lua_isnil(L, 1)) {
-	auto* box = luaL_testudata(L, 1, UserBindings::MetaName);
-	if (!box)
-	    return luaL_argerror(L, 1, "expected user");
-	thing = static_cast<WeakUserPtr*>(box)->lock();
-	if (!thing)
-	    return luaL_argerror(L, 1, "invalid user");
-    }
-    DescriptorBindings::Push(lua, game.GetDescriptorFor(thing));
-    return 1;
-}
-
 //! Handles lua run_social().
 static int RunSocialProxy(lua_State* L) {
     if (lua_gettop(L) != 0)
@@ -780,13 +749,13 @@ static int RunSocialProxy(lua_State* L) {
     lua_pop(L, 1);
 
     lua_getfield(L, env, "actor");
-    auto* actorBox = luaL_testudata(L, -1, UserBindings::MetaName);
+    auto* actorBox = luaL_testudata(L, -1, InstanceBindings::MetaName);
     if (!actorBox) {
 	lua_pop(L, 2);
 	command.reset();
-	return luaL_error(L, "run_social requires a user actor");
+	return luaL_error(L, "run_social requires an instance actor");
     }
-    UserPtr actor = static_cast<WeakUserPtr*>(actorBox)->lock();
+    InstancePtr actor = static_cast<WeakInstancePtr*>(actorBox)->lock();
     lua_pop(L, 1);
     if (!actor) {
 	lua_pop(L, 1);
@@ -844,8 +813,6 @@ void CommandBindings::Register(Lua& lua) {
     lua.SetSafe("get_commands");
     lua.PushFunction(GetCommandsIndexProxy);
     lua.SetSafe("get_commands_index");
-    lua.PushFunction(GetDescriptorForProxy);
-    lua.SetSafe("get_descriptor_for");
     lua.PushFunction(RunCommandHookProxy);
     lua.SetSafe("run_command_hook");
     lua.PushFunction(RunSocialProxy);

@@ -136,6 +136,45 @@ static int UserAddPreference(lua_State* L) {
     return 0;
 }
 
+//! Handles User:add_player(player).
+static int UserAddPlayer(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "add_player expects 1 argument");
+    luaL_checktype(L, 2, LUA_TSTRING);
+    UserBindings::Check(L, 1)->AddPlayer(Lua::CheckString(L, 2));
+    return 0;
+}
+
+//! Handles User:erase_player(player).
+static int UserErasePlayer(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "erase_player expects 1 argument");
+    luaL_checktype(L, 2, LUA_TSTRING);
+    UserBindings::Check(L, 1)->ErasePlayer(Lua::CheckString(L, 2));
+    return 0;
+}
+
+//! Handles User:get_players().
+static int UserGetPlayers(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto user = UserBindings::Check(L, 1);
+    auto players = user->GetPlayers();
+    user.reset();
+    lua.PushStringSet(std::move(players));
+    return 1;
+}
+
+//! Handles User:has_player(player).
+static int UserHasPlayer(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "has_player expects 1 argument");
+    luaL_checktype(L, 2, LUA_TSTRING);
+    auto& lua = Lua::CheckLua(L);
+    auto user = UserBindings::Check(L, 1);
+    lua.PushBool(user->HasPlayer(Lua::CheckString(L, 2)));
+    return 1;
+}
+
 //! Handles User:erase_permission(permission).
 static int UserErasePermission(lua_State* L) {
     if (lua_gettop(L) != 2)
@@ -513,9 +552,11 @@ static void RegisterUserMeta(lua_State* L) {
     static const luaL_Reg methods[] = {
 	{"__gc", UserGc},
 	{"add_permission", UserAddPermission},
+	{"add_player", UserAddPlayer},
 	{"add_preference", UserAddPreference},
 	{"clear_metacolor", UserClearMetaColor},
 	{"erase_permission", UserErasePermission},
+	{"erase_player", UserErasePlayer},
 	{"erase_preference", UserErasePreference},
 	{"get_created", UserGetCreated},
 	{"get_created_by", UserGetCreatedBy},
@@ -529,8 +570,10 @@ static void RegisterUserMeta(lua_State* L) {
 	{"get_name", UserGetName},
 	{"get_password", UserGetPassword},
 	{"get_permissions", UserGetPermissions},
+	{"get_players", UserGetPlayers},
 	{"get_preferences", UserGetPreferences},
 	{"has_permission", UserHasPermission},
+	{"has_player", UserHasPlayer},
 	{"has_preference", UserHasPreference},
 	{"set_created", UserSetCreated},
 	{"set_created_by", UserSetCreatedBy},

@@ -1,7 +1,11 @@
 Name: Commands~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
+    return
+  end
+  local player = actor:get_player()
+  if not player then
     return
   end
   local cells = {}
@@ -12,7 +16,7 @@ Action:-
       local allowed = #perms == 0
       if not allowed then
         for _, p in ipairs(perms) do
-          if actor:has_permission(p) then
+          if player:has_permission(p) then
             allowed = true
             break
           end

@@ -17,8 +17,11 @@
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
 #include <scratch/gender_bindings.hpp>
+#include <scratch/instance_bindings.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/parser_bindings.hpp>
+#include <scratch/player_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
@@ -108,6 +111,9 @@ Lua::Lua(Game& game) :
     EnumerationBindings::Register(*this);
     GameBindings::Register(*this);
     GenderBindings::Register(*this);
+    InstanceBindings::Register(*this);
+    ParserBindings::Register(*this);
+    PlayerBindings::Register(*this);
     StateBindings::Register(*this);
     UserBindings::Register(*this);
 

@@ -10,10 +10,10 @@
 
 #include <scratch/command.hpp>
 #include <scratch/data.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/social.hpp>
 #include <scratch/string.hpp>
-#include <scratch/user.hpp>
 
 namespace Scratch {
 namespace Core {
@@ -104,16 +104,19 @@ Command& Command::operator=(const Command& other) noexcept {
 }
 
 //! Returns whether \p performer may run this command.
-//! \param performer the performing user, or null for open commands only
+//! \param performer the performing instance, or null for open commands only
 //! \sa #GetPermissions() const
 //! \sa #HasPermission(const String&) const
-bool Command::Allows(const UserPtr& performer) const noexcept {
+bool Command::Allows(const InstancePtr& performer) const noexcept {
     if (!performer)
 	return permissions_.empty();
     if (permissions_.empty())
 	return true;
+    auto player = performer->GetPlayer();
+    if (!player)
+	return false;
     for (const auto& permission: permissions_) {
-	if (performer->HasPermission(permission))
+	if (player->HasPermission(permission))
 	    return true;
     }
     return false;

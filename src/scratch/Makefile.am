@@ -31,10 +31,16 @@ __top_builddir__bin_scratch_SOURCES = \
 	game_bindings.cpp \
 	gender.cpp \
 	gender_bindings.cpp \
+	instance.cpp \
+	instance_bindings.cpp \
 	logger.cpp \
 	lua.cpp \
 	main.cpp \
 	menu.cpp \
+	parser.cpp \
+	parser_bindings.cpp \
+	player.cpp \
+	player_bindings.cpp \
 	protocol_telnet.cpp \
 	random.cpp \
 	server.cpp \
@@ -66,9 +72,15 @@ noinst_HEADERS = \
 	../include/scratch/game_bindings.hpp \
 	../include/scratch/gender.hpp \
 	../include/scratch/gender_bindings.hpp \
+	../include/scratch/instance.hpp \
+	../include/scratch/instance_bindings.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/lua.hpp \
 	../include/scratch/menu.hpp \
+	../include/scratch/parser.hpp \
+	../include/scratch/parser_bindings.hpp \
+	../include/scratch/player.hpp \
+	../include/scratch/player_bindings.hpp \
 	../include/scratch/protocol.hpp \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \

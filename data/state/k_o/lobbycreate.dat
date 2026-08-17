@@ -1,0 +1,60 @@
+Hooks:
+  Focus:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    d:clear_menu();
+    d:menu_title("Create Character");
+    d:menu_choices();
+    d:menu_prompt("Enter character name");
+    d:print_menu();
+    ~
+  Received:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    local name = line:match("^%s*(%S+)") or "";
+    if name == "" then
+      d:print("Character creation cancelled.\r\n");
+      d:set_state("Lobby");
+      return;
+    end
+    if name:lower() == "new" then
+      d:print_format("%sThat name is reserved.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LobbyCreate");
+      return;
+    end
+    if not name:match("^[%w_]+$") then
+      d:print_format("%sCharacter names may contain only letters, digits, and underscores.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LobbyCreate");
+      return;
+    end
+    if get_players():get(name) then
+      d:print_format("%sThat name is already taken.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LobbyCreate");
+      return;
+    end
+    local player = d:set_edit_player();
+    player:set_name(name);
+    player:set_owner(user:get_name());
+    player:set_gender(user:get_gender());
+    local now = os.time();
+    player:set_created(now);
+    player:set_created_by(user:get_name());
+    player:set_modified(now);
+    player:set_modified_by(user:get_name());
+    get_players():store(name, player);
+    user:add_player(name);
+    get_users():save(user:get_name());
+    d:clear_edit_player();
+    d:set_state("Lobby");
+    ~
+  ~
+Name: LobbyCreate~
+~

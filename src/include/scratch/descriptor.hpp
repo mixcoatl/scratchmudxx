@@ -18,6 +18,8 @@ namespace Core {
 class Command;
 class Enumeration;
 class Game;
+class Instance;
+class Player;
 class State;
 class User;
 }; // namespace Core
@@ -44,7 +46,11 @@ using EditorPtr = std::shared_ptr<Editor>;
 using Enumeration = Scratch::Core::Enumeration;
 using EnumerationPtr = std::shared_ptr<Enumeration>;
 using Game = Scratch::Core::Game;
+using Instance = Scratch::Core::Instance;
+using InstancePtr = std::shared_ptr<Instance>;
 using MenuPtr = std::shared_ptr<Menu>;
+using Player = Scratch::Core::Player;
+using PlayerPtr = std::shared_ptr<Player>;
 using State = Scratch::Core::State;
 using StatePtr = std::shared_ptr<State>;
 using User = Scratch::Core::User;
@@ -121,6 +127,12 @@ public:
     //! \param color the color
     const char *GetColor(const int color) const noexcept;
 
+    //! Creates a character from \p player and attaches it.
+    //! \param player the player prototype
+    //! \sa #GetCharacter() const
+    //! \sa #SetCharacter(const InstancePtr&)
+    void CreateCharacter(const PlayerPtr& player) noexcept;
+
     //! Gets the color bit.
     //! \sa #SetColorBit(const bool)
     bool GetColorBit() const noexcept {
@@ -144,6 +156,12 @@ public:
     //! \sa #SetEditName(const String&)
     String GetEditName() const noexcept {
 	return editName_;
+    }
+
+    //! Gets the player being edited.
+    //! \sa #SetEditPlayer(const PlayerPtr&)
+    PlayerPtr GetEditPlayer() const noexcept {
+	return editPlayer_;
     }
 
     //! Gets the connection state being edited.
@@ -202,6 +220,13 @@ public:
     //! \sa #SetTerminalType(const String&)
     String GetTerminalType() const noexcept {
 	return terminalType_;
+    }
+
+    //! Gets the attached character.
+    //! \sa #CreateCharacter(const PlayerPtr&)
+    //! \sa #SetCharacter(const InstancePtr&)
+    InstancePtr GetCharacter() const noexcept {
+	return instance_;
     }
 
     //! Gets the attached user.
@@ -277,6 +302,13 @@ public:
 	editName_ = editName;
     }
 
+    //! Sets the player being edited.
+    //! \param editPlayer the player draft being edited
+    //! \sa #GetEditPlayer() const
+    void SetEditPlayer(const PlayerPtr& editPlayer) {
+	editPlayer_ = editPlayer;
+    }
+
     //! Sets the connection state being edited.
     //! \param editState the connection state being edited
     //! \sa #GetEditState() const
@@ -297,6 +329,13 @@ public:
     void SetEditUser(const UserPtr& editUser) {
 	editUser_ = editUser;
     }
+
+    //! Sets the attached character.
+    //! \param instance the instance, or null to clear
+    //! \remark Does not erase the live instance.
+    //! \sa #CreateCharacter(const PlayerPtr&)
+    //! \sa #GetCharacter() const
+    void SetCharacter(const InstancePtr& instance) noexcept;
 
     //! Sets the descriptor name.
     //! \sa #GetName() const
@@ -412,6 +451,11 @@ protected:
     //! \sa #SetEditName(const String&)
     String editName_;
 
+    //! The player being edited.
+    //! \sa #GetEditPlayer() const
+    //! \sa #SetEditPlayer(const PlayerPtr&)
+    PlayerPtr editPlayer_;
+
     //! The connection state being edited.
     //! \sa #GetEditState() const
     //! \sa #SetEditState(const StatePtr&)
@@ -484,6 +528,11 @@ protected:
     //! \sa #GetTerminalType() const
     //! \sa #SetTerminalType(const String&)
     String terminalType_;
+
+    //! The attached character.
+    //! \sa #GetCharacter() const
+    //! \sa #SetCharacter(const InstancePtr&)
+    InstancePtr instance_;
 
     //! The attached user.
     //! \sa #GetUser() const

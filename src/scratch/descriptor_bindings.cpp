@@ -18,8 +18,10 @@
 #include <scratch/editor_bindings.hpp>
 #include <scratch/enumeration.hpp>
 #include <scratch/enumeration_bindings.hpp>
+#include <scratch/instance_bindings.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/menu.hpp>
+#include <scratch/player_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
 #include <scratch/state_bindings.hpp>
@@ -138,6 +140,16 @@ static int DescriptorClearEditUser(lua_State* L) {
     return 0;
 }
 
+//! Handles Descriptor:clear_edit_player().
+static int DescriptorClearEditPlayer(lua_State* L) {
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    d->SetEditPlayer(nullptr);
+    d->SetEditName(String());
+    d->SetEditString(String());
+    return 0;
+}
+
 //! Handles Descriptor:clear_editor().
 static int DescriptorClearEditor(lua_State* L) {
     DescriptorBindings::Check(L)->ClearEditor();
@@ -214,6 +226,13 @@ static int DescriptorGetEditUser(lua_State* L) {
     return 1;
 }
 
+//! Handles Descriptor:get_edit_player().
+static int DescriptorGetEditPlayer(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    PlayerBindings::Push(lua, DescriptorBindings::Check(L)->GetEditPlayer());
+    return 1;
+}
+
 //! Handles Descriptor:get_editor().
 //! \remark Returns a finished editor only (\c nil while active or absent).
 static int DescriptorGetEditor(lua_State* L) {
@@ -227,6 +246,23 @@ static int DescriptorGetEditor(lua_State* L) {
 	return 1;
     }
     EditorBindings::Push(lua, std::move(editor));
+    return 1;
+}
+
+//! Handles Descriptor:create_character(player).
+static int DescriptorCreateCharacter(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "create_character expects 1 argument");
+    auto d = DescriptorBindings::Check(L);
+    auto player = PlayerBindings::Check(L, 2);
+    d->CreateCharacter(player);
+    return 0;
+}
+
+//! Handles Descriptor:get_character().
+static int DescriptorGetCharacter(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    InstanceBindings::Push(lua, DescriptorBindings::Check(L)->GetCharacter());
     return 1;
 }
 
@@ -840,6 +876,56 @@ static int DescriptorSetEditUser(lua_State* L) {
     return 1;
 }
 
+//! Handles Descriptor:set_edit_player([player]).
+//! \remark Draft copy of \p player, or blank when omitted.
+static int DescriptorSetEditPlayer(lua_State* L) {
+    const int argc = lua_gettop(L);
+    if (argc != 1 && argc != 2)
+	return luaL_error(L, "set_edit_player expects 0 or 1 arguments");
+    const auto weakD = CheckWeakDescriptorPtr(L);
+    if (weakD.expired())
+	return luaL_error(L, "invalid descriptor");
+    {
+	auto d = weakD.lock();
+	RequireNoEditorActive(L, d);
+    }
+    auto& lua = Lua::CheckLua(L);
+    PlayerPtr editPlayer;
+    String originalName;
+    if (argc == 2) {
+	auto source = PlayerBindings::Check(L, 2);
+	originalName = source->GetName();
+	editPlayer = std::make_shared<Player>(*source);
+	source.reset();
+    } else {
+	editPlayer = std::make_shared<Player>();
+    }
+    auto d = weakD.lock();
+    if (!d) {
+	editPlayer.reset();
+	return luaL_error(L, "invalid descriptor");
+    }
+    d->SetEditPlayer(editPlayer);
+    d->SetEditName(originalName);
+    d->SetEditString(String());
+    d.reset();
+    PlayerBindings::Push(lua, std::move(editPlayer));
+    return 1;
+}
+
+//! Handles Descriptor:set_character(instance).
+static int DescriptorSetCharacter(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "set_character expects 1 argument");
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    InstancePtr instance;
+    if (!lua_isnil(L, 2))
+	instance = InstanceBindings::Check(L, 2);
+    d->SetCharacter(instance);
+    return 0;
+}
+
 //! Handles Descriptor:set_prompt(prompt).
 static int DescriptorSetPrompt(lua_State* L) {
     if (lua_gettop(L) != 2)
@@ -1006,15 +1092,19 @@ static void RegisterDescriptorMeta(lua_State* L) {
 	{"clear_edit_enumeration", DescriptorClearEditEnumeration},
 	{"clear_edit_state", DescriptorClearEditState},
 	{"clear_edit_user", DescriptorClearEditUser},
+	{"clear_edit_player", DescriptorClearEditPlayer},
 	{"clear_editor", DescriptorClearEditor},
 	{"clear_menu", DescriptorClearMenu},
 	{"close", DescriptorClose},
+	{"create_character", DescriptorCreateCharacter},
+	{"get_character", DescriptorGetCharacter},
 	{"get_edit_command", DescriptorGetEditCommand},
 	{"get_edit_enumeration", DescriptorGetEditEnumeration},
 	{"get_edit_name", DescriptorGetEditName},
 	{"get_edit_state", DescriptorGetEditState},
 	{"get_edit_string", DescriptorGetEditString},
 	{"get_edit_user", DescriptorGetEditUser},
+	{"get_edit_player", DescriptorGetEditPlayer},
 	{"get_editor", DescriptorGetEditor},
 	{"get_name", DescriptorGetName},
 	{"get_state", DescriptorGetState},
@@ -1043,12 +1133,14 @@ static void RegisterDescriptorMeta(lua_State* L) {
 	{"print_format", DescriptorPrintFormat},
 	{"print_menu", DescriptorPrintMenu},
 	{"push_state", DescriptorPushState},
+	{"set_character", DescriptorSetCharacter},
 	{"set_color", DescriptorSetColor},
 	{"set_edit_command", DescriptorSetEditCommand},
 	{"set_edit_enumeration", DescriptorSetEditEnumeration},
 	{"set_edit_state", DescriptorSetEditState},
 	{"set_edit_string", DescriptorSetEditString},
 	{"set_edit_user", DescriptorSetEditUser},
+	{"set_edit_player", DescriptorSetEditPlayer},
 	{"set_prompt", DescriptorSetPrompt},
 	{"set_state", DescriptorSetState},
 	{"start_editor", DescriptorStartEditor},

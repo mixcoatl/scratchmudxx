@@ -3,22 +3,30 @@ Permissions:
   0001: Wizard~
   ~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
     return
   end
   local who, permission = line:match("^%s*(%S+)%s+(%S+)")
   if not who or not permission then
-    d:print_format("%sUsage: revoke <user> <permission>%s\r\n", Q.FAILED, Q.NORMAL)
+    d:print_format("%sUsage: revoke <player> <permission>%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
-  local user = get_users():get(who)
-  if not user then
-    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+  local player = get_players():get(who)
+  if not player then
+    d:print_format("%sNo such player.%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
-  user:erase_permission(permission)
-  get_users():save(user:get_name())
-  d:print_format("%sRevoked %s from %s.%s\r\n", Q.OKAY, permission, user:get_name(), Q.NORMAL)
+  local user = d:get_user()
+  local by = user and user:get_name() or ""
+  local actor_player = actor:get_player()
+  if by == "" and actor_player then
+    by = actor_player:get_name()
+  end
+  player:erase_permission(permission)
+  player:set_modified(os.time())
+  player:set_modified_by(by)
+  get_players():save(player:get_name())
+  d:print_format("%sRevoked %s from %s.%s\r\n", Q.OKAY, permission, player:get_name(), Q.NORMAL)
   ~
 ~

@@ -16,14 +16,15 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
 #include <scratch/gender.hpp>
+#include <scratch/instance.hpp>
+#include <scratch/instance_bindings.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/parser.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/storage_file.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
-#include <scratch/user.hpp>
-#include <scratch/user_bindings.hpp>
 
 #include <cctype>
 
@@ -33,18 +34,6 @@ namespace Core {
 using Lua = Scratch::Scripting::Lua;
 
 namespace {
-
-//! Returns whether the key starts with the prefix.
-//! \param key the candidate string
-//! \param prefix the prefix
-bool StartsWithCi(
-	const String& key,
-	const String& prefix) noexcept {
-    if (prefix.size() > key.size())
-	return false;
-    return Scratch::Algorithm::StringCompareCi(
-	    key.substr(0, prefix.size()), prefix) == 0;
-}
 
 //! Returns the genitive form.
 //! \param name the name
@@ -66,7 +55,7 @@ String MakeNamePossessive(const String& name) {
     return name + "'s";
 }
 
-//! Returns whether the text starts with a vowel.
+//! Returns whether text starts with vowel.
 //! \param text the text
 bool StartsWithVowel(const String& text) noexcept {
     if (text.empty())
@@ -77,61 +66,72 @@ bool StartsWithVowel(const String& text) noexcept {
 }
 
 //! Resolves gender.
-//! \param thing the thing
+//! \param instance the instance
 //! \return the gender, or \c GENDER_UNDEFINED
-Gender::GenderEnum ResolveGender(const ThingPtr& thing) {
-    auto user = std::dynamic_pointer_cast<User>(thing);
-    if (!user)
+Gender::GenderEnum ResolveGender(const InstancePtr& instance) {
+    if (!instance)
 	return Gender::GENDER_UNDEFINED;
-    return user->GetGender();
+    return instance->GetGender();
+}
+
+//! Resolves name.
+//! \param instance the instance
+//! \return the name
+String ResolveName(const InstancePtr& instance) {
+    if (!instance)
+	return String();
+    auto player = instance->GetPlayer();
+    if (player)
+	return player->GetName();
+    return String();
 }
 
 //! Resolves one property.
 //! \param prop the property name
 //! \param param the action param
-//! \param recipient the recipient thing
+//! \param recipient the recipient instance
 //! \param raw whether you-shift is disabled
 String ResolveProperty(
 	const String& prop,
 	const ActionParam& param,
-	const ThingPtr& recipient,
+	const InstancePtr& recipient,
 	const bool raw) {
-    const auto thing = param.GetThing();
-    const bool isMe = !raw && thing && recipient && thing == recipient;
-    const auto gender = ResolveGender(thing);
+    const auto instance = param.GetInstance();
+    const bool isMe = !raw && instance && recipient && instance == recipient;
+    const auto gender = ResolveGender(instance);
 
     if (Scratch::Algorithm::StringCompareCi(prop, "Text") == 0) {
 	if (!param.GetText().empty())
 	    return param.GetText();
-	if (thing)
-	    return thing->GetName();
+	if (instance)
+	    return ResolveName(instance);
 	return String();
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "An") == 0) {
 	String text = param.GetText();
-	if (text.empty() && thing)
-	    text = thing->GetName();
+	if (text.empty() && instance)
+	    text = ResolveName(instance);
 	return StartsWithVowel(text) ? "an" : "a";
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "Name") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawName") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "you";
-	return thing->GetName();
+	return ResolveName(instance);
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "NamePossessive") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawNamePossessive") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "your";
-	return MakeNamePossessive(thing->GetName());
+	return MakeNamePossessive(ResolveName(instance));
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "Copula") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawCopula") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "are";
@@ -139,7 +139,7 @@ String ResolveProperty(
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "Determiner") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawDeterminer") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "your";
@@ -147,7 +147,7 @@ String ResolveProperty(
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "Subject") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawSubject") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "you";
@@ -155,7 +155,7 @@ String ResolveProperty(
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "Object") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawObject") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "you";
@@ -163,7 +163,7 @@ String ResolveProperty(
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "Possessive") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawPossessive") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "yours";
@@ -171,7 +171,7 @@ String ResolveProperty(
     }
     if (Scratch::Algorithm::StringCompareCi(prop, "Reflexive") == 0 ||
 	    Scratch::Algorithm::StringCompareCi(prop, "RawReflexive") == 0) {
-	if (!thing)
+	if (!instance)
 	    return "<Invalid>";
 	if (isMe)
 	    return "yourself";
@@ -209,14 +209,14 @@ const ActionParam* SlotParam(
 //! \param direct the direct slot
 //! \param indirect the indirect slot
 //! \param extra the extra slot
-//! \param recipient the recipient thing
+//! \param recipient the recipient instance
 String ExpandSide(
 	const String& side,
 	const ActionParam& subject,
 	const ActionParam& direct,
 	const ActionParam& indirect,
 	const ActionParam& extra,
-	const ThingPtr& recipient) {
+	const InstancePtr& recipient) {
     const auto dot = side.find('.');
     if (dot == String::npos)
 	return side;
@@ -227,8 +227,7 @@ String ExpandSide(
     if (!param)
 	return "<Invalid>";
     const auto prop = side.substr(dot + 1);
-    const bool raw = Scratch::Algorithm::StringCompareCi(
-	    prop.substr(0, 3), "Raw") == 0;
+    const bool raw = Scratch::Algorithm::StringStartsWithCi(prop, "Raw");
     return ResolveProperty(prop, *param, recipient, raw);
 }
 
@@ -238,14 +237,14 @@ String ExpandSide(
 //! \param direct the direct slot
 //! \param indirect the indirect slot
 //! \param extra the extra slot
-//! \param recipient the recipient thing
+//! \param recipient the recipient instance
 String ExpandMessage(
 	const String& message,
 	const ActionParam& subject,
 	const ActionParam& direct,
 	const ActionParam& indirect,
 	const ActionParam& extra,
-	const ThingPtr& recipient) {
+	const InstancePtr& recipient) {
     String out;
     out.reserve(message.size());
     for (std::size_t i = 0; i < message.size(); ++i) {
@@ -281,8 +280,8 @@ String ExpandMessage(
 	    chosen = body;
 	} else {
 	    const bool youSubject =
-		    subject.GetThing() && recipient &&
-		    subject.GetThing() == recipient;
+		    subject.GetInstance() && recipient &&
+		    subject.GetInstance() == recipient;
 	    chosen = youSubject ?
 		    body.substr(0, colon) :
 		    body.substr(colon + 1);
@@ -315,36 +314,36 @@ void Game::Action(
     if (message.empty() || targets == 0)
 	return;
 
-    std::set<ThingPtr> audience;
-    auto addThing = [&audience](const ActionParam& param) {
-	if (param.GetThing())
-	    audience.insert(param.GetThing());
+    std::set<InstancePtr> audience;
+    auto addInstance = [&audience](const ActionParam& param) {
+	if (param.GetInstance())
+	    audience.insert(param.GetInstance());
     };
-    addThing(subject);
-    addThing(direct);
-    addThing(indirect);
-    addThing(extra);
+    addInstance(subject);
+    addInstance(direct);
+    addInstance(indirect);
+    addInstance(extra);
 
     for (auto& d: this->GetDescriptors()) {
 	if (!d || d->Closed())
 	    continue;
-	auto user = d->GetUser();
-	if (user)
-	    audience.insert(user);
+	auto instance = d->GetCharacter();
+	if (instance)
+	    audience.insert(instance);
     }
 
-    const auto subjectThing = subject.GetThing();
-    const auto victThing = direct.GetThing() ?
-	    direct.GetThing() :
-	    (indirect.GetThing() ? indirect.GetThing() : ThingPtr());
+    const auto subjectInstance = subject.GetInstance();
+    const auto victInstance = direct.GetInstance() ?
+	    direct.GetInstance() :
+	    (indirect.GetInstance() ? indirect.GetInstance() : InstancePtr());
 
     for (const auto& recipient: audience) {
 	if (!recipient)
 	    continue;
 	const bool isChar =
-		subjectThing && recipient == subjectThing;
+		subjectInstance && recipient == subjectInstance;
 	const bool isVict =
-		victThing && recipient == victThing;
+		victInstance && recipient == victInstance;
 	const bool isOther = !isChar && !isVict;
 
 	if (isChar && !(targets & ACT_TOCHAR))
@@ -354,13 +353,13 @@ void Game::Action(
 	if (isOther && !(targets & ACT_TONOTVICT))
 	    continue;
 
-	auto d = this->GetDescriptorFor(recipient);
+	auto d = recipient ? recipient->GetDescriptor() : DescriptorPtr();
 	if (!d || d->Closed())
 	    continue;
 
 	if (isChar && (targets & ACT_NOREPEAT)) {
-	    auto user = std::dynamic_pointer_cast<User>(recipient);
-	    if (user && user->HasPreference("NoRepeat")) {
+	    auto player = recipient->GetPlayer();
+	    if (player && player->HasPreference("NoRepeat")) {
 		String out;
 		out += d->GetColor(Color::C_OKAY);
 		out += "OK.";
@@ -384,7 +383,7 @@ void Game::Action(
 //! \param direct the direct slot
 //! \param indirect the indirect slot
 //! \param extra the extra slot
-//! \param recipient the recipient thing
+//! \param recipient the recipient instance
 //! \param to the recipient descriptor
 //! \sa #Action
 void Game::ActionPerform(
@@ -394,7 +393,7 @@ void Game::ActionPerform(
 	const ActionParam& direct,
 	const ActionParam& indirect,
 	const ActionParam& extra,
-	const ThingPtr& recipient,
+	const InstancePtr& recipient,
 	Descriptor& to) {
     auto expanded = ExpandMessage(
 	    message, subject, direct, indirect, extra, recipient);
@@ -412,24 +411,23 @@ void Game::ActionPerform(
 
 //! Finds a command.
 //! \param word the first input word
-//! \param performer the performing thing
+//! \param performer the performing instance
 //! \return the matched command, or \c nullptr
-//! \sa Command::Allows(const UserPtr&) const
+//! \sa Command::Allows(const InstancePtr&) const
 //! \sa #GetCommandsIndex() const
 CommandPtr Game::FindCommand(
 	const String& word,
-	const ThingPtr& performer) const noexcept {
+	const InstancePtr& performer) const noexcept {
     if (word.empty())
 	return nullptr;
 
-    const auto user = std::dynamic_pointer_cast<User>(performer);
     CommandPtr best;
     std::size_t bestLen = static_cast<std::size_t>(-1);
     for (auto it = commandsIndex_.lower_bound(word);
 	    it != std::end(commandsIndex_); ++it) {
-	if (!StartsWithCi(it->first, word))
+	if (!Scratch::Algorithm::StringStartsWithCi(it->first, word))
 	    break;
-	if (!it->second || !it->second->Allows(user))
+	if (!it->second || !it->second->Allows(performer))
 	    continue;
 	if (it->first.size() < bestLen) {
 	    best = it->second;
@@ -440,10 +438,10 @@ CommandPtr Game::FindCommand(
 }
 
 //! Dispatches a command line.
-//! \param performer the performing thing
+//! \param performer the performing instance
 //! \param line the raw input line
 void Game::DispatchCommand(
-	const ThingPtr& performer,
+	const InstancePtr& performer,
 	const String& line) {
     if (!performer)
 	return;
@@ -455,8 +453,8 @@ void Game::DispatchCommand(
 
     auto command = this->FindCommand(word, performer);
     if (!command) {
-	auto user = std::dynamic_pointer_cast<User>(performer);
-	if (user && user->HasPreference("AutoSay")) {
+	auto player = performer->GetPlayer();
+	if (player && player->HasPreference("AutoSay")) {
 	    command = this->GetCommands()->Get("Say");
 	    argument = line;
 	}
@@ -467,7 +465,7 @@ void Game::DispatchCommand(
 	return;
     }
 
-    auto d = this->GetDescriptorFor(performer);
+    auto d = performer->GetDescriptor();
     if (d && !d->Closed()) {
 	String out;
 	out += d->GetColor(Color::C_FAILED);
@@ -480,19 +478,18 @@ void Game::DispatchCommand(
 
 //! Runs a command Action Lua hook with \c actor, \c command, \c line, and \c Q.
 //! \param command the command
-//! \param performer the performing thing
+//! \param performer the performing instance
 //! \param line the remainder after the matched word
 void Game::RunCommandHook(
 	const CommandPtr& command,
-	const ThingPtr& performer,
+	const InstancePtr& performer,
 	const String& line) {
     if (!command || !performer)
 	return;
     const auto action = command->GetAction();
     const auto social = command->GetSocial();
     if (action.empty() && social) {
-	if (auto user = std::dynamic_pointer_cast<User>(performer))
-	    this->RunSocial(user, social, line);
+	this->RunSocial(performer, social, line);
 	return;
     }
     if (action.empty())
@@ -503,10 +500,7 @@ void Game::RunCommandHook(
     if (!caller.IsActive())
 	return;
 
-    if (auto user = std::dynamic_pointer_cast<User>(performer))
-	Scripting::UserBindings::Push(lua, std::move(user));
-    else
-	lua.PushString(String());
+    Scripting::InstanceBindings::Push(lua, performer);
     lua.SetEnv("actor");
 
     Scripting::CommandBindings::Push(lua, command);
@@ -515,47 +509,55 @@ void Game::RunCommandHook(
     lua.PushString(line);
     lua.SetEnv("line");
 
-    if (auto d = this->GetDescriptorFor(performer))
+    if (auto d = performer->GetDescriptor())
 	Scripting::ColorBindings::AssignQ(lua, *d);
 
     lua.Execute(action);
 }
 
 //! Runs social templates for \p actor.
-//! \param actor the performing user
+//! \param actor the performing instance
 //! \param social the social templates
 //! \param line the remainder after the matched command word
-//! \sa #RunCommandHook(const CommandPtr&, const ThingPtr&, const String&)
+//! \sa #RunCommandHook(const CommandPtr&, const InstancePtr&, const String&)
 void Game::RunSocial(
-	const UserPtr& actor,
+	const InstancePtr& actor,
 	const SocialPtr& social,
 	const String& line) {
     if (!actor || !social)
 	return;
 
-    String unused;
-    const auto token = Scratch::Algorithm::StringChopCopy(line, unused);
+    const auto printMiss = [&actor]() {
+	auto d = actor->GetDescriptor();
+	if (!d || d->Closed())
+	    return;
+	String out;
+	out += d->GetColor(Color::C_FAILED);
+	out += "You don't see them here.";
+	out += d->GetColor(Color::C_NORMAL);
+	out += "\r\n";
+	d->Print(out);
+    };
+
+    Parser parser;
+    if (!parser.Parse(line)) {
+	printMiss();
+	return;
+    }
 
     String message;
     ActionParam direct;
-    if (token.empty()) {
+    if (!parser.GetSize()) {
 	message = social->GetNoArgument();
+    } else if (parser.GetSize() != 1) {
+	printMiss();
+	return;
     } else {
-	auto target = actor->Find(*this, token);
+	auto target = actor->Find(*this, parser.GetPhrase(0));
 	if (!target) {
-	    auto d = this->GetDescriptorFor(actor);
-	    if (d && !d->Closed()) {
-		String out;
-		out += d->GetColor(Color::C_FAILED);
-		out += "You don't see them here.";
-		out += d->GetColor(Color::C_NORMAL);
-		out += "\r\n";
-		d->Print(out);
-	    }
+	    printMiss();
 	    return;
-	}
-	ThingPtr actorThing = actor;
-	if (target == actorThing) {
+	} else if (target == actor) {
 	    message = social->GetFoundAuto();
 	    if (message.empty())
 		message = social->GetFound();
@@ -573,22 +575,6 @@ void Game::RunSocial(
 	    message,
 	    ActionParam(actor),
 	    direct);
-}
-
-//! Gets the controlling descriptor.
-//! \param thing the thing
-//! \return the controlling descriptor, or \c nullptr
-DescriptorPtr Game::GetDescriptorFor(const ThingPtr& thing) noexcept {
-    if (!thing)
-	return nullptr;
-    for (auto& d: this->GetDescriptors()) {
-	if (!d || d->Closed())
-	    continue;
-	auto user = d->GetUser();
-	if (user && user == thing)
-	    return d;
-    }
-    return nullptr;
 }
 
 //! Rebuilds the keyword command index.

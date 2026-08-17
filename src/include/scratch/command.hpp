@@ -25,12 +25,12 @@ namespace Scratch {
 namespace Core {
 
 // Forward declarations.
-class User;
+class Instance;
 
 // ScratchMUD types.
 using Data = Scratch::Utility::Data;
 using DataPtr = std::shared_ptr<Data>;
-using UserPtr = std::shared_ptr<User>;
+using InstancePtr = std::shared_ptr<Instance>;
 
 //! The command class. \{
 class Command : public Thing {
@@ -59,10 +59,10 @@ public:
     }
 
     //! Returns whether \p performer may run this command.
-    //! \param performer the performing user, or null for open commands only
+    //! \param performer the performing instance, or null for open commands only
     //! \sa #GetPermissions() const
     //! \sa #HasPermission(const String&) const
-    bool Allows(const UserPtr& performer) const noexcept;
+    bool Allows(const InstancePtr& performer) const noexcept;
 
     //! Erases a permission.
     //! \param permission the permission to erase

@@ -13,13 +13,16 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/enumeration.hpp>
 #include <scratch/game.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/player.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/server.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file.hpp>
 #include <scratch/storage_file_multi.hpp>
+#include <scratch/string.hpp>
 #include <scratch/user.hpp>
 
 namespace Scratch {
@@ -37,7 +40,11 @@ Game::Game() :
 	enumerations_(std::make_shared<EnumerationRepository>(
 		Scratch::Storage::FileStorage<Enumeration>(
 			"data", "enumeration", ".dat"))),
+	instances_(),
 	lua_(std::make_unique<Lua>(*this)),
+	players_(std::make_shared<PlayerRepository>(
+		Scratch::Storage::MultiFileStorage<Player>(
+			"data", "player", ".dat"))),
 	server_(),
 	shutdown_(false),
 	signals_(ioContext_),
@@ -57,7 +64,7 @@ Game::~Game() noexcept {
     this->Shutdown();
     if (server_)
 	server_.reset();
-    // Close Lua before repositories tear down.
+    // Lua before repositories.
     lua_.reset();
 }
 
@@ -101,6 +108,65 @@ StateRepositoryPtr Game::GetStates() const noexcept {
 //! Gets the user repository.
 UserRepositoryPtr Game::GetUsers() const noexcept {
     return users_;
+}
+
+//! Gets the player repository.
+PlayerRepositoryPtr Game::GetPlayers() const noexcept {
+    return players_;
+}
+
+//! Gets an instance.
+//! \param instanceName the instance name
+//! \return the instance, or \c nullptr
+InstancePtr Game::GetInstance(const String& instanceName) const noexcept {
+    auto it = instances_.find(instanceName);
+    return it != std::end(instances_) ? it->second : nullptr;
+}
+
+//! Gets the instances.
+std::set<InstancePtr> Game::GetInstances() const noexcept {
+    std::set<InstancePtr> instanceSet;
+    for (auto& pair: instances_)
+	instanceSet.insert(pair.second);
+    return instanceSet;
+}
+
+//! Gets the instance for \p player.
+//! \param player the player
+//! \return the instance, or \c nullptr
+InstancePtr Game::GetInstanceFor(const PlayerPtr& player) noexcept {
+    if (!player)
+	return nullptr;
+    for (auto& pair: instances_) {
+	auto& instance = pair.second;
+	if (instance && instance->GetPlayer() == player)
+	    return instance;
+    }
+    return nullptr;
+}
+
+//! Inserts an instance.
+//! \param instance the instance to insert
+//! \return \c true if inserted
+bool Game::InsertInstance(const InstancePtr& instance) noexcept {
+    if (!instance)
+	return false;
+    if (instance->GetPlayer() && this->GetInstanceFor(instance->GetPlayer()))
+	return false;
+    while (instance->GetName().empty() ||
+	    this->GetInstance(instance->GetName())) {
+	instance->SetName(Scratch::Algorithm::StringGenerateCopy());
+    }
+    instances_[instance->GetName()] = instance;
+    return true;
+}
+
+//! Removes an instance.
+//! \param instance the instance to erase
+void Game::EraseInstance(const InstancePtr& instance) noexcept {
+    if (!instance || instance->GetName().empty())
+	return;
+    instances_.erase(instance->GetName());
 }
 
 //! Applies Quiet and Prompt bits.
@@ -203,6 +269,9 @@ void Game::LoadRepositories() {
     if (!users_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load user index.");
     }
+    if (!players_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load player index.");
+    }
 }
 
 //! Parses command line arguments.
@@ -277,6 +346,7 @@ void Game::Shutdown() noexcept {
 
     // Maps; Close() defers EraseDescriptor via post.
     descriptors_.clear();
+    instances_.clear();
     ioContext_.stop();
 }
 

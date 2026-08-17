@@ -12,6 +12,8 @@
 #include <scratch/action.hpp>
 #include <scratch/command.hpp>
 #include <scratch/enumeration.hpp>
+#include <scratch/instance.hpp>
+#include <scratch/player.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
@@ -57,8 +59,12 @@ using DescriptorPtr = std::shared_ptr<Descriptor>;
 using EnumerationRepository = Scratch::Storage::Repository<
 	Enumeration, Scratch::Storage::FileStorage<Enumeration>>;
 using EnumerationRepositoryPtr = std::shared_ptr<EnumerationRepository>;
+using InstancePtr = std::shared_ptr<Instance>;
 using Lua = Scratch::Scripting::Lua;
 using LuaPtr = std::unique_ptr<Lua>;
+using PlayerRepository = Scratch::Storage::Repository<
+	Player, Scratch::Storage::MultiFileStorage<Player>>;
+using PlayerRepositoryPtr = std::shared_ptr<PlayerRepository>;
 using Server = Scratch::Net::Server;
 using ServerPtr = std::shared_ptr<Server>;
 using StateRepository = Scratch::Storage::Repository<
@@ -102,25 +108,29 @@ public:
     void ApplyStateBits(const StatePtr& state) noexcept;
 
     //! Dispatches a command line.
-    //! \param performer the performing thing
+    //! \param performer the performing instance
     //! \param line the raw input line
     void DispatchCommand(
-	const ThingPtr& performer,
+	const InstancePtr& performer,
 	const String& line);
 
     //! Erases a descriptor.
     //! \param descriptorName the descriptor name to erase
     void EraseDescriptor(const String& descriptorName) noexcept;
 
+    //! Removes an instance.
+    //! \param instance the instance to erase
+    void EraseInstance(const InstancePtr& instance) noexcept;
+
     //! Finds a command.
     //! \param word the first input word
-    //! \param performer the performing thing
+    //! \param performer the performing instance
     //! \return the matched command, or \c nullptr
-    //! \sa Command::Allows(const UserPtr&) const
+    //! \sa Command::Allows(const InstancePtr&) const
     //! \sa #GetCommandsIndex() const
     CommandPtr FindCommand(
 	const String& word,
-	const ThingPtr& performer) const noexcept;
+	const InstancePtr& performer) const noexcept;
 
     //! Gets the command repository.
     CommandRepositoryPtr GetCommands() const noexcept;
@@ -139,22 +149,33 @@ public:
     //! \return the descriptor, or \c nullptr
     DescriptorPtr GetDescriptor(const String& descriptorName) noexcept;
 
-    //! Gets the controlling descriptor.
-    //! \param thing the thing
-    //! \return the controlling descriptor, or \c nullptr
-    DescriptorPtr GetDescriptorFor(const ThingPtr& thing) noexcept;
-
     //! Gets the descriptors.
     std::set<DescriptorPtr> GetDescriptors() const noexcept;
 
     //! Gets the enumeration repository.
     EnumerationRepositoryPtr GetEnumerations() const noexcept;
 
+    //! Gets an instance.
+    //! \param instanceName the instance name
+    //! \return the instance, or \c nullptr
+    InstancePtr GetInstance(const String& instanceName) const noexcept;
+
+    //! Gets the instance for \p player.
+    //! \param player the player
+    //! \return the instance, or \c nullptr
+    InstancePtr GetInstanceFor(const PlayerPtr& player) noexcept;
+
+    //! Gets the instances.
+    std::set<InstancePtr> GetInstances() const noexcept;
+
     //! Gets the IO context.
     IoContext& GetIoContext() noexcept;
 
     //! Gets the Lua facade.
     Lua& GetLua() noexcept;
+
+    //! Gets the player repository.
+    PlayerRepositoryPtr GetPlayers() const noexcept;
 
     //! Gets the server.
     Server& GetServer() noexcept;
@@ -168,6 +189,11 @@ public:
 
     //! Gets the user repository.
     UserRepositoryPtr GetUsers() const noexcept;
+
+    //! Inserts an instance.
+    //! \param instance the instance to insert
+    //! \return \c true if inserted
+    bool InsertInstance(const InstancePtr& instance) noexcept;
 
     //! Loads game repositories from disk.
     //! \throw std::runtime_error if a required repository cannot be loaded
@@ -195,20 +221,20 @@ public:
 
     //! Runs a command Action Lua hook with \c actor, \c command, \c line, and \c Q.
     //! \param command the command
-    //! \param performer the performing thing
+    //! \param performer the performing instance
     //! \param line the remainder after the matched word
     void RunCommandHook(
 	const CommandPtr& command,
-	const ThingPtr& performer,
+	const InstancePtr& performer,
 	const String& line);
 
     //! Runs social templates for \p actor.
-    //! \param actor the performing user
+    //! \param actor the performing instance
     //! \param social the social templates
     //! \param line the remainder after the matched command word
-    //! \sa #RunCommandHook(const CommandPtr&, const ThingPtr&, const String&)
+    //! \sa #RunCommandHook(const CommandPtr&, const InstancePtr&, const String&)
     void RunSocial(
-	const UserPtr& actor,
+	const InstancePtr& actor,
 	const SocialPtr& social,
 	const String& line);
 
@@ -226,7 +252,7 @@ protected:
     //! \param direct the direct slot
     //! \param indirect the indirect slot
     //! \param extra the extra slot
-    //! \param recipient the recipient thing
+    //! \param recipient the recipient instance
     //! \param to the recipient descriptor
     //! \sa #Action
     void ActionPerform(
@@ -236,7 +262,7 @@ protected:
 	const ActionParam& direct,
 	const ActionParam& indirect,
 	const ActionParam& extra,
-	const ThingPtr& recipient,
+	const InstancePtr& recipient,
 	Descriptor& to);
 
     //! Begins waiting for process termination signals.
@@ -261,7 +287,8 @@ protected:
     //! \sa #RebuildCommandIndex()
     StringMapCi<CommandPtr> commandsIndex_;
 
-    //! Host configuration.
+    //! The host configuration.
+    //! \sa #GetConfig() const
     ConfigPtr config_;
 
     //! The descriptors.
@@ -272,9 +299,17 @@ protected:
     //! \sa #GetEnumerations() const
     EnumerationRepositoryPtr enumerations_;
 
+    //! The instances.
+    //! \sa #GetInstances() const
+    StringMapCi<InstancePtr> instances_;
+
     //! The Lua facade.
     //! \sa #GetLua()
     LuaPtr lua_;
+
+    //! The player repository.
+    //! \sa #GetPlayers() const
+    PlayerRepositoryPtr players_;
 
     //! The server.
     //! \sa #GetServer()

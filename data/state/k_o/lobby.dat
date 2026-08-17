@@ -6,13 +6,26 @@ Hooks:
       d:set_state("LoginUser");
       return;
     end
+    local players = user:get_players() or {};
+    local n = 0;
+    local function next_key()
+      n = n + 1;
+      return tostring(n);
+    end
     d:clear_menu();
     d:menu_title("Lobby");
-    d:menu_choices();
-    d:menu_item("1", "Enter game.");
-    d:menu_item("2", "Edit user record.");
-    d:menu_item("3", "Delete user record.");
-    d:menu_item("4", "Quit.");
+    d:menu_named_choices("Characters");
+    for _, name in ipairs(players) do
+      d:menu_item(next_key(), name);
+    end
+    d:menu_item(next_key(), "Create a new character.");
+    if #players > 0 then
+      d:menu_item(next_key(), "Delete a character.");
+    end
+    d:menu_named_choices("Account");
+    d:menu_item(next_key(), "Edit user record.");
+    d:menu_item(next_key(), "Delete user record.");
+    d:menu_item("q", "Quit.");
     d:menu_prompt("Enter choice");
     d:print_menu();
     ~
@@ -23,29 +36,72 @@ Hooks:
       d:set_state("LoginUser");
       return;
     end
+    local players = user:get_players() or {};
+    local n = 0;
+    local function next_key()
+      n = n + 1;
+      return tostring(n);
+    end
+    for _ in ipairs(players) do
+      next_key();
+    end
+    local keyCreate = next_key();
+    local keyDelete = nil;
+    if #players > 0 then
+      keyDelete = next_key();
+    end
+    local keyEdit = next_key();
+    local keyUserDelete = next_key();
     local key = d:menu_match(line);
-    if key == "1" then
-      local who = user:get_name();
-      d:print_format("%sWelcome to ScratchMUD, %s%s%s!%s\r\n",
-        Q.PROMPT, Q.EMPHASIS, who, Q.PROMPT, Q.NORMAL);
-      local last_logout = user:get_last_logout();
-      if last_logout and last_logout > 0 then
-        d:print_format("%sYour last visit ended %s%s%s.%s\r\n",
-          Q.PROMPT, Q.EMPHASIS, os.date("%Y-%m-%d %H:%M:%S", last_logout), Q.PROMPT, Q.NORMAL);
-      end
-      d:set_state("Playing");
-    elseif key == "2" then
-      d:set_edit_user(user);
-      d:push_state("User");
-    elseif key == "3" then
-      d:set_state("LobbyDelete");
-    elseif key == "4" then
+    if key == "q" then
       local who = user:get_name();
       d:close();
       broadcast(who .. " has disconnected.\r\n");
-    else
+    elseif not key then
       d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
       d:set_state("Lobby");
+    else
+      local index = tonumber(key);
+      if index and index >= 1 and index <= #players then
+        local who = user:get_name();
+        d:print_format("%sWelcome to ScratchMUD, %s%s%s!%s\r\n",
+          Q.PROMPT, Q.EMPHASIS, who, Q.PROMPT, Q.NORMAL);
+        local last_logout = user:get_last_logout();
+        if last_logout and last_logout > 0 then
+          d:print_format("%sYour last visit ended %s%s%s.%s\r\n",
+            Q.PROMPT, Q.EMPHASIS, os.date("%Y-%m-%d %H:%M:%S", last_logout), Q.PROMPT, Q.NORMAL);
+        end
+        local player = get_players():get(players[index]);
+        if not player then
+          d:print_format("%sMissing player record.%s\r\n", Q.FAILED, Q.NORMAL);
+          d:set_state("Lobby");
+          return;
+        end
+        local inst = get_instance_for(player);
+        if inst then
+          if inst:get_descriptor() then
+            d:print_format("%sThat character is already in play.%s\r\n", Q.FAILED, Q.NORMAL);
+            d:set_state("Lobby");
+            return;
+          end
+          d:set_character(inst);
+        else
+          d:create_character(player);
+        end
+        d:set_state("Playing");
+      elseif key == keyCreate then
+        d:set_state("LobbyCreate");
+      elseif keyDelete and key == keyDelete then
+        d:set_state("LobbyPlayerDelete");
+      elseif key == keyEdit then
+        d:set_edit_user(user);
+        d:push_state("User");
+      elseif key == keyUserDelete then
+        d:set_state("LobbyDelete");
+      else
+        d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("Lobby");
+      end
     end
     ~
   ~

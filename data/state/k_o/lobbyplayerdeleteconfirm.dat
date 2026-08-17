@@ -1,0 +1,60 @@
+Hooks:
+  Focus:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    local name = d:get_edit_string();
+    if name == "" then
+      d:set_state("Lobby");
+      return;
+    end
+    d:print_format(
+      "%sType %s%s%s to permanently delete this character:%s ",
+      Q.PROMPT, Q.NAME, name, Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    local name = d:get_edit_string();
+    if name == "" then
+      d:set_state("Lobby");
+      return;
+    end
+    local word = line:match("%S+") or "";
+    if word == "" then
+      d:set_edit_string("");
+      d:set_state("Lobby");
+    elseif word:lower() == name:lower() then
+      if not user:has_player(name) then
+        d:print_format("%sUnknown character.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_edit_string("");
+        d:set_state("Lobby");
+        return;
+      end
+      local player = get_players():get(name);
+      if player and get_instance_for(player) then
+        d:print_format("%sThat character is already in play.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_edit_string("");
+        d:set_state("Lobby");
+        return;
+      end
+      get_players():erase(name);
+      user:erase_player(name);
+      get_users():save(user:get_name());
+      d:set_edit_string("");
+      d:set_state("Lobby");
+    else
+      d:print_format("%sCharacter name did not match.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LobbyPlayerDeleteConfirm");
+    end
+    ~
+  ~
+Name: LobbyPlayerDeleteConfirm~
+~

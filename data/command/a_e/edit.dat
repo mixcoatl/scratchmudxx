@@ -4,7 +4,7 @@ Permissions:
   0002: Wizard~
   ~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
     return
   end

@@ -16,7 +16,7 @@
 namespace Scratch {
 namespace Net {
 
-// Boost stypes.
+// Boost types.
 using ErrorCode = boost::system::error_code;
 using Resolver = boost::asio::ip::tcp::resolver;
 using ResolverIterator = boost::asio::ip::tcp::resolver::iterator;

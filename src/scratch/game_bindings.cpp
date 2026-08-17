@@ -14,8 +14,10 @@
 #include <scratch/enumeration_bindings.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
+#include <scratch/instance_bindings.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/player_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
@@ -103,6 +105,41 @@ static int GetStatesProxy(lua_State* L) {
     return 1;
 }
 
+//! Handles lua erase_instance(instance).
+//! \param L the \c lua_State
+static int EraseInstanceProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "erase_instance expects 1 argument");
+    auto& game = Lua::CheckGame(L);
+    InstancePtr instance;
+    if (!lua_isnil(L, 1))
+	instance = InstanceBindings::Check(L, 1);
+    game.EraseInstance(instance);
+    return 0;
+}
+
+//! Handles lua get_instance_for(player).
+//! \param L the \c lua_State
+static int GetInstanceForProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "get_instance_for expects 1 argument");
+    auto& lua = Lua::CheckLua(L);
+    auto& game = Lua::CheckGame(L);
+    auto player = PlayerBindings::Check(L, 1);
+    InstanceBindings::Push(lua, game.GetInstanceFor(player));
+    return 1;
+}
+
+//! Handles lua get_players.
+//! \param L the \c lua_State
+static int GetPlayersProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_players expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    PlayerBindings::PushRepository(lua);
+    return 1;
+}
+
 //! Handles lua get_users.
 //! \param L the \c lua_State
 static int GetUsersProxy(lua_State* L) {
@@ -166,6 +203,8 @@ void GameBindings::Register(Lua& lua) {
     lua.SetSafe("broadcast");
     lua.PushFunction(CryptProxy);
     lua.SetSafe("crypt");
+    lua.PushFunction(EraseInstanceProxy);
+    lua.SetSafe("erase_instance");
     lua.PushFunction(GetConfigProxy);
     lua.SetSafe("get_config");
     lua.PushFunction(GetDescriptorProxy);
@@ -174,6 +213,10 @@ void GameBindings::Register(Lua& lua) {
     lua.SetSafe("get_descriptor_names");
     lua.PushFunction(GetEnumerationsProxy);
     lua.SetSafe("get_enumerations");
+    lua.PushFunction(GetInstanceForProxy);
+    lua.SetSafe("get_instance_for");
+    lua.PushFunction(GetPlayersProxy);
+    lua.SetSafe("get_players");
     lua.PushFunction(GetStatesProxy);
     lua.SetSafe("get_states");
     lua.PushFunction(GetUsersProxy);
