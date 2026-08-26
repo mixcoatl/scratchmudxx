@@ -25,7 +25,12 @@ int main(int argc, const char** argv) {
     game->ParseArguments(argc, argv);
 
     // Run game.
-    game->Run();
+    try {
+	game->Run();
+    } catch (const std::exception& ex) {
+	LOGGER_MAIN() << ex.what();
+	return EXIT_FAILURE;
+    }
 
     // Exit.
     LOGGER_MAIN() << "Exiting.";

@@ -42,6 +42,12 @@ public:
     //! Sends application output toward the wire.
     //! \param message the message to send
     virtual void Send(const String& message) = 0;
+
+    //! Enables or disables Quiet (server echo / hidden client local echo).
+    //! \param quiet whether Quiet is enabled
+    virtual void SetQuiet(bool quiet) {
+	// Nothing.
+    }
 };
 //! \}
 

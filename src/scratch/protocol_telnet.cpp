@@ -72,6 +72,12 @@ void TelnetProtocol::OnStart() {
     this->WantHim(TELOPT_TTYPE, true);
 }
 
+//! Enables or disables Quiet (server echo / hidden client local echo).
+//! \param quiet whether Quiet is enabled
+void TelnetProtocol::SetQuiet(bool quiet) {
+    this->WantUs(TELOPT_ECHO, quiet);
+}
+
 //! Processes one byte of wire input.
 //! \param byteReceived the byte to process
 void TelnetProtocol::Receive(const std::uint8_t byteReceived) {

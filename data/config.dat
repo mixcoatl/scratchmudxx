@@ -15,6 +15,9 @@ Colors:
   Text: Ochre~
   YesNo: Purple~
   ~
+Game:
+  BootstrapState: Login~
+  ~
 Network:
   Port: 6767~
   ~

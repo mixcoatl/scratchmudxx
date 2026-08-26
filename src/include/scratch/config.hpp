@@ -28,6 +28,8 @@ namespace Core {
 
 // ScratchMUD types.
 using Color = Scratch::Net::Color;
+using Data = Scratch::Utility::Data;
+using DataPtr = std::shared_ptr<Data>;
 
 //! The Config class. \{
 //! \remark Host settings document. Not a Repository.
@@ -43,6 +45,12 @@ public:
     //! \sa #SetAddress(const String&)
     String GetAddress() const noexcept {
 	return address_;
+    }
+
+    //! Gets the bootstrap connection state name.
+    //! \sa #SetBootstrapState(const String&)
+    String GetBootstrapState() const noexcept {
+	return bootstrapState_;
     }
 
     //! Gets the house metacolor map.
@@ -62,6 +70,29 @@ public:
     //! \sa #Save() const
     bool Load() noexcept;
 
+    //! Reads default colors from a data node.
+    //! \param data the Colors data node to read
+    //! \sa #ReadData(const DataPtr&)
+    //! \sa #WriteColorsData(const DataPtr&) const
+    void ReadColorsData(const DataPtr& data) noexcept;
+
+    //! Reads configuration from a data node.
+    //! \param data the data node to read
+    //! \sa #WriteData(const DataPtr&) const
+    void ReadData(const DataPtr& data) noexcept;
+
+    //! Reads game settings from a data node.
+    //! \param data the Game data node to read
+    //! \sa #ReadData(const DataPtr&)
+    //! \sa #WriteGameData(const DataPtr&) const
+    void ReadGameData(const DataPtr& data) noexcept;
+
+    //! Reads network settings from a data node.
+    //! \param data the Network data node to read
+    //! \sa #ReadData(const DataPtr&)
+    //! \sa #WriteNetworkData(const DataPtr&) const
+    void ReadNetworkData(const DataPtr& data) noexcept;
+
     //! Saves configuration to the fixed Data file.
     //! \return true if the file was written successfully
     //! \sa #Load()
@@ -73,6 +104,12 @@ public:
 	address_ = address;
     }
 
+    //! Sets the bootstrap connection state name.
+    //! \sa #GetBootstrapState() const
+    void SetBootstrapState(const String& bootstrapState) {
+	bootstrapState_ = bootstrapState;
+    }
+
     //! Sets a house metacolor.
     //! \param meta the metacolor
     //! \param color the real color
@@ -81,6 +118,29 @@ public:
     bool SetMetaColor(
 	Color::ColorEnum meta,
 	Color::ColorEnum color) noexcept;
+
+    //! Writes default colors to a data node.
+    //! \param data the Colors data node to write
+    //! \sa #ReadColorsData(const DataPtr&)
+    //! \sa #WriteData(const DataPtr&) const
+    void WriteColorsData(const DataPtr& data) const noexcept;
+
+    //! Writes configuration to a data node.
+    //! \param data the data node to write
+    //! \sa #ReadData(const DataPtr&)
+    void WriteData(const DataPtr& data) const noexcept;
+
+    //! Writes game settings to a data node.
+    //! \param data the Game data node to write
+    //! \sa #ReadGameData(const DataPtr&)
+    //! \sa #WriteData(const DataPtr&) const
+    void WriteGameData(const DataPtr& data) const noexcept;
+
+    //! Writes network settings to a data node.
+    //! \param data the Network data node to write
+    //! \sa #ReadNetworkData(const DataPtr&)
+    //! \sa #WriteData(const DataPtr&) const
+    void WriteNetworkData(const DataPtr& data) const noexcept;
 
     //! Sets the network listen port.
     //! \sa #GetPort() const
@@ -102,6 +162,10 @@ protected:
     //! Network bind address.
     //! \sa #GetAddress() const
     String address_;
+
+    //! Bootstrap connection state name.
+    //! \sa #GetBootstrapState() const
+    String bootstrapState_;
 
     //! House metacolor map.
     //! \sa #GetMetaColors() const
