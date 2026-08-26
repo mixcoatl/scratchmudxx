@@ -47,7 +47,6 @@
 #include <boost/lexical_cast.hpp>
 #endif // HAVE_BOOST_LEXICAL_CAST_HPP
 
-
 #ifdef HAVE_BOOST_RANDOM_HPP
 #include <boost/random.hpp>
 #endif // HAVE_BOOST_RANDOM_HPP
@@ -157,7 +156,6 @@ extern "C" {
 #ifdef HAVE_STRING
 #include <string>
 #endif // HAVE_STRING
-
 
 #ifdef HAVE_TYPE_TRAITS
 #include <type_traits>

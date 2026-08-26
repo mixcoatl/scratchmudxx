@@ -8,6 +8,7 @@
 
 #define _SCRATCH_MAIN_CPP_
 
+#include <scratch/game.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/scratch.hpp>
 
@@ -16,8 +17,15 @@
 //! \param argv an array containing the command line arguments
 //! \return zero for normal program termination; non-zero otherwise
 int main(int argc, const char** argv) {
-    // Run game
+    // Startup message.
     LOGGER_MAIN() << "Starting " << PACKAGE_STRING << '!';
+
+    // Configure game.
+    auto game = std::make_shared<Scratch::Core::Game>();
+    game->ParseArguments(argc, argv);
+
+    // Run game.
+    game->Run();
 
     // Exit.
     LOGGER_MAIN() << "Exiting.";

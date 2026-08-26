@@ -10,14 +10,18 @@ __top_builddir__bin_scratch_LDADD = \
 	$(BOOST_FILESYSTEM_LIB) \
 	$(BOOST_SYSTEM_LIB)
 __top_builddir__bin_scratch_SOURCES = \
+	config.cpp \
 	data.cpp \
+	game.cpp \
 	logger.cpp \
 	main.cpp \
 	random.cpp \
 	string.cpp
 
 noinst_HEADERS = \
+	../include/scratch/config.hpp \
 	../include/scratch/data.hpp \
+	../include/scratch/game.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/random.hpp \
 	../include/scratch/scratch.hpp \
