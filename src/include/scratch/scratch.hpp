@@ -15,6 +15,10 @@
 #include <algorithm>
 #endif // HAVE_ALGORITHM
 
+#ifdef HAVE_ARPA_TELNET_H
+#include <arpa/telnet.h>
+#endif // HAVE_ARPA_TELNET_H
+
 #ifdef HAVE_ATOMIC
 #include <atomic>
 #endif // HAVE_ATOMIC

@@ -12,17 +12,21 @@ __top_builddir__bin_scratch_LDADD = \
 __top_builddir__bin_scratch_SOURCES = \
 	config.cpp \
 	data.cpp \
+	descriptor.cpp \
 	game.cpp \
 	logger.cpp \
 	main.cpp \
 	random.cpp \
+	server.cpp \
 	string.cpp
 
 noinst_HEADERS = \
 	../include/scratch/config.hpp \
 	../include/scratch/data.hpp \
+	../include/scratch/descriptor.hpp \
 	../include/scratch/game.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/random.hpp \
 	../include/scratch/scratch.hpp \
+	../include/scratch/server.hpp \
 	../include/scratch/string.hpp
