@@ -12,6 +12,9 @@ EXTRA_DIST = \
 	bootstrap \
 	bin/README \
 	data \
+	lua/README \
+	$(wildcard lua/*.lua) \
+	$(wildcard lua/*/*.lua) \
 	log/README \
 	m4/README
 

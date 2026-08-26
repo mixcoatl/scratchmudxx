@@ -104,12 +104,14 @@ public:
     }
 
     //! Gets the terminal window height in characters.
+    //! \remark Defaults to 24 until NAWS reports a size.
     //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
     std::uint16_t GetWindowHeight() const noexcept {
 	return windowHeight_;
     }
 
     //! Gets the terminal window width in characters.
+    //! \remark Defaults to 80 until NAWS reports a size.
     //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
     std::uint16_t GetWindowWidth() const noexcept {
 	return windowWidth_;
@@ -214,11 +216,13 @@ protected:
     String terminalType_;
 
     //! The terminal window height in characters.
+    //! \remark Defaults to 24 until NAWS reports a size.
     //! \sa #GetWindowHeight() const
     //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
     std::uint16_t windowHeight_;
 
     //! The terminal window width in characters.
+    //! \remark Defaults to 80 until NAWS reports a size.
     //! \sa #GetWindowWidth() const
     //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
     std::uint16_t windowWidth_;

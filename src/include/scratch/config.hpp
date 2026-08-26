@@ -13,6 +13,16 @@
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 
+// Forward declarations.
+namespace Scratch {
+namespace Scripting {
+class LuaBindings;
+}; // namespace Scripting
+namespace Utility {
+class Data;
+}; // namespace Utility
+}; // namespace Scratch
+
 namespace Scratch {
 namespace Core {
 
@@ -37,7 +47,7 @@ public:
 
     //! Gets the house metacolor map.
     //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
-    const std::map<Color::ColorEnum, Color::ColorEnum>& GetMetaColors() const noexcept {
+    std::map<Color::ColorEnum, Color::ColorEnum> GetMetaColors() const noexcept {
 	return metaColors_;
     }
 
@@ -79,6 +89,16 @@ public:
     }
 
 protected:
+    friend class Scratch::Scripting::LuaBindings;
+
+    //! Gets a configured metacolor.
+    //! \param config the configuration
+    //! \param name the metacolor name
+    //! \return the configured color, or \c C_UNDEFINED
+    static Color::ColorEnum GetMetaColorProxy(
+	std::shared_ptr<Config> config,
+	const String& name) noexcept;
+
     //! Network bind address.
     //! \sa #GetAddress() const
     String address_;

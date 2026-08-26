@@ -105,12 +105,17 @@ src/**/Makefile
 src/**/Makefile.in
 src/**/*.o
 
-
 # ScratchMUD distribution archives (make dist / distcheck)
 scratchmud-*.tar.*
 scratchmud-*.zip
 scratchmud-*.shar*
 /scratchmud-*/
+
+# ScratchMUD project-local Lua modules
+lua/*
+!lua/README
+!lua/**/
+!lua/**/*.lua
 
 # Other ScratchMUD files
 .autorun.kill

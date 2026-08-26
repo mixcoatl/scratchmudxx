@@ -137,6 +137,10 @@ extern "C" {
 #include <list>
 #endif // HAVE_LIST
 
+#ifdef HAVE_LUA_HPP
+#include <lua.hpp>
+#endif // HAVE_LUA_HPP
+
 #ifdef HAVE_MAP
 #include <map>
 #endif // HAVE_MAP
@@ -168,6 +172,8 @@ extern "C" {
 #ifdef HAVE_TYPE_TRAITS
 #include <type_traits>
 #endif // HAVE_TYPE_TRAITS
+
+#include <tuple>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

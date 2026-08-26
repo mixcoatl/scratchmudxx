@@ -65,20 +65,26 @@ public:
     //! The enum type.
     using Enum = ColorEnum;
 
-    //! Returns the exclusive upper bound for listing.
-    static constexpr int Max() noexcept {
-	return MAX_C_TYPES;
-    }
-
     //! Returns the color indicated by the specified name.
     //! \param name the color name
     //! \sa #ToString(ColorEnum)
     static ColorEnum ByName(const String& name) noexcept;
 
+    //! Returns whether the value is a defined color.
+    //! \param value the color
+    static constexpr bool IsDefined(ColorEnum value) noexcept {
+	return value >= C_CHARCOAL && value < MAX_C_TYPES;
+    }
+
     //! Returns whether the value is a metacolor.
     //! \param value the color
     static constexpr bool IsMetaColor(ColorEnum value) noexcept {
 	return value >= C_FIRST_META && value < MAX_C_TYPES;
+    }
+
+    //! Returns the exclusive upper bound for listing.
+    static constexpr int Max() noexcept {
+	return MAX_C_TYPES;
     }
 
     //! Returns a string representation.

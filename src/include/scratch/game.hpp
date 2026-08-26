@@ -19,6 +19,9 @@ namespace Net {
 class Descriptor;
 class Server;
 }; // namespace Net
+namespace Scripting {
+class Lua;
+}; // namespace Scripting
 }; // namespace Scratch
 
 namespace Scratch {
@@ -36,6 +39,8 @@ using Socket = boost::asio::ip::tcp::socket;
 using ConfigPtr = std::shared_ptr<Config>;
 using Descriptor = Scratch::Net::Descriptor;
 using DescriptorPtr = std::shared_ptr<Descriptor>;
+using Lua = Scratch::Scripting::Lua;
+using LuaPtr = std::unique_ptr<Lua>;
 using Server = Scratch::Net::Server;
 using ServerPtr = std::shared_ptr<Server>;
 
@@ -62,6 +67,9 @@ public:
 
     //! Gets the IO context.
     IoContext& GetIoContext() noexcept;
+
+    //! Gets the Lua state.
+    Lua& GetLua() noexcept;
 
     //! Gets the scheduler.
     Scheduler& GetScheduler() noexcept;
@@ -109,6 +117,10 @@ protected:
     //! The descriptors.
     //! \sa #GetDescriptors() const
     StringMapCi<DescriptorPtr> descriptors_;
+
+    //! The Lua state.
+    //! \sa #GetLua()
+    LuaPtr lua_;
 
     //! The scheduler.
     //! \sa #GetScheduler()

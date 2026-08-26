@@ -132,5 +132,24 @@ bool Config::SetMetaColor(
     return true;
 }
 
+//! Gets a configured metacolor.
+//! \param config the configuration
+//! \param name the metacolor name
+//! \return the configured color, or \c C_UNDEFINED
+Color::ColorEnum Config::GetMetaColorProxy(
+	std::shared_ptr<Config> config,
+	const String& name) noexcept {
+    auto result = Color::C_UNDEFINED;
+    if (config) {
+	const auto meta = Color::ByName(name);
+	if (Color::IsMetaColor(meta)) {
+	    const auto found = config->metaColors_.find(meta);
+	    if (found != config->metaColors_.end())
+		result = found->second;
+	}
+    }
+    return result;
+}
+
 }; // namespace Core
 }; // namespace Scratch
