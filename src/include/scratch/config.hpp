@@ -9,11 +9,15 @@
 #ifndef _SCRATCH_CONFIG_HPP_
 #define _SCRATCH_CONFIG_HPP_
 
+#include <scratch/color.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 
 namespace Scratch {
 namespace Core {
+
+// ScratchMUD types.
+using Color = Scratch::Net::Color;
 
 //! The Config class. \{
 //! \remark Host settings document. Not a Repository.
@@ -29,6 +33,12 @@ public:
     //! \sa #SetAddress(const String&)
     String GetAddress() const noexcept {
 	return address_;
+    }
+
+    //! Gets the house metacolor map.
+    //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
+    const std::map<Color::ColorEnum, Color::ColorEnum>& GetMetaColors() const noexcept {
+	return metaColors_;
     }
 
     //! Gets the network listen port.
@@ -53,6 +63,15 @@ public:
 	address_ = address;
     }
 
+    //! Sets a house metacolor.
+    //! \param meta the metacolor
+    //! \param color the real color
+    //! \return \c true if the metacolor was set
+    //! \sa #GetMetaColors() const
+    bool SetMetaColor(
+	Color::ColorEnum meta,
+	Color::ColorEnum color) noexcept;
+
     //! Sets the network listen port.
     //! \sa #GetPort() const
     void SetPort(const std::uint16_t port) {
@@ -63,6 +82,10 @@ protected:
     //! Network bind address.
     //! \sa #GetAddress() const
     String address_;
+
+    //! House metacolor map.
+    //! \sa #GetMetaColors() const
+    std::map<Color::ColorEnum, Color::ColorEnum> metaColors_;
 
     //! Network listen port.
     //! \sa #GetPort() const

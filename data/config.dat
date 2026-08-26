@@ -1,2 +1,21 @@
+Colors:
+  Emphasis: Lime~
+  Enum: Purple~
+  Failed: Crimson~
+  Key: Crimson~
+  Name: Pink~
+  Number: Teal~
+  Okay: Teal~
+  Percent: Crimson~
+  Prompt: Forest~
+  Punctuation: Gray~
+  Restricted: Pink~
+  Say: Forest~
+  Social: Purple~
+  Text: Ochre~
+  YesNo: Purple~
+  ~
 Network:
   Port: 6767~
+  ~
+~
