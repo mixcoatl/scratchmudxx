@@ -105,7 +105,6 @@ src/**/Makefile
 src/**/Makefile.in
 src/**/*.o
 
-
 # ScratchMUD distribution archives (make dist / distcheck)
 scratchmud-*.tar.*
 scratchmud-*.zip

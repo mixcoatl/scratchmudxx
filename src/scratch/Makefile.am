@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/src/include $(BOOST_CPPFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/src/include $(LUA_INCLUDE) $(BOOST_CPPFLAGS)
 AM_CXXFLAGS = $(WARN_CXXFLAGS)
 AM_LDFLAGS = $(WARN_LDFLAGS) $(BOOST_LDFLAGS)
 
@@ -8,14 +8,19 @@ __top_builddir__bin_scratch_LDADD = \
 	$(BOOST_ASIO_LIB) \
 	$(BOOST_CHRONO_LIB) \
 	$(BOOST_FILESYSTEM_LIB) \
-	$(BOOST_SYSTEM_LIB)
+	$(BOOST_SYSTEM_LIB) \
+	$(LUA_LIB)
 __top_builddir__bin_scratch_SOURCES = \
 	color.cpp \
 	config.cpp \
+	config_bindings.cpp \
 	data.cpp \
 	descriptor.cpp \
+	descriptor_bindings.cpp \
 	game.cpp \
+	game_bindings.cpp \
 	logger.cpp \
+	lua.cpp \
 	main.cpp \
 	protocol_telnet.cpp \
 	random.cpp \
@@ -25,10 +30,15 @@ __top_builddir__bin_scratch_SOURCES = \
 noinst_HEADERS = \
 	../include/scratch/color.hpp \
 	../include/scratch/config.hpp \
+	../include/scratch/config_bindings.hpp \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
+	../include/scratch/descriptor_bindings.hpp \
 	../include/scratch/game.hpp \
+	../include/scratch/game_bindings.hpp \
 	../include/scratch/logger.hpp \
+	../include/scratch/lua.hpp \
+	../include/scratch/lua_bindings.hpp \
 	../include/scratch/protocol.hpp \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
