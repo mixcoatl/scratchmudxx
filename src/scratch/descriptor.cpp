@@ -8,6 +8,8 @@
 
 #define _SCRATCH_DESCRIPTOR_CPP_
 
+#include <scratch/color.hpp>
+#include <scratch/config.hpp>
 #include <scratch/game.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/logger.hpp>
@@ -17,12 +19,16 @@
 namespace Scratch {
 namespace Net {
 
+// ScratchMUD types.
+using Color = Scratch::Net::Color;
+
 //! Constructor.
 //! \param game the game state
 //! \param socket the Boost socket
 Descriptor::Descriptor(
 	Game& game,
 	Socket&& socket) :
+	colorBit_(true),
 	game_(game),
 	input_(),
 	lineInput_(),
@@ -94,6 +100,57 @@ void Descriptor::Close() noexcept {
 //! \sa #Close()
 bool Descriptor::Closed() const noexcept {
     return !socket_.is_open();
+}
+
+//! Returns the color code.
+//! \param color the color
+const char *Descriptor::GetColor(const int color) const noexcept {
+    if (!colorBit_)
+	return "";
+
+    auto id = static_cast<Color::ColorEnum>(color);
+    if (auto config = game_.GetConfig()) {
+	const auto& metaColors = config->GetMetaColors();
+	auto found = metaColors.find(id);
+	if (found != metaColors.end())
+	    return this->GetColor(found->second);
+    }
+
+    switch (static_cast<int>(id)) {
+    case Color::C_CHARCOAL:		return "\x1b[0;30m";
+    case Color::C_CRIMSON:		return "\x1b[0;31m";
+    case Color::C_FOREST:		return "\x1b[0;32m";
+    case Color::C_OCHRE:		return "\x1b[0;33m";
+    case Color::C_INDIGO:		return "\x1b[0;34m";
+    case Color::C_PURPLE:		return "\x1b[0;35m";
+    case Color::C_TEAL:			return "\x1b[0;36m";
+    case Color::C_SILVER:		return "\x1b[0;37m";
+    case Color::C_GRAY:			return "\x1b[1;30m";
+    case Color::C_PINK:			return "\x1b[1;31m";
+    case Color::C_LIME:			return "\x1b[1;32m";
+    case Color::C_AMBER:		return "\x1b[1;33m";
+    case Color::C_AZURE:		return "\x1b[1;34m";
+    case Color::C_VIOLET:		return "\x1b[1;35m";
+    case Color::C_AQUA:			return "\x1b[1;36m";
+    case Color::C_SNOW:			return "\x1b[1;37m";
+    case Color::C_NORMAL:		return "\x1b[0m";
+    case Color::C_EMPHASIS:		return this->GetColor(Color::C_LIME);
+    case Color::C_ENUM:			return this->GetColor(Color::C_PURPLE);
+    case Color::C_FAILED:		return this->GetColor(Color::C_CRIMSON);
+    case Color::C_KEY:			return this->GetColor(Color::C_CRIMSON);
+    case Color::C_NUMBER:		return this->GetColor(Color::C_TEAL);
+    case Color::C_OKAY:			return this->GetColor(Color::C_TEAL);
+    case Color::C_NAME:			return this->GetColor(Color::C_PINK);
+    case Color::C_PERCENT:		return this->GetColor(Color::C_CRIMSON);
+    case Color::C_PROMPT:		return this->GetColor(Color::C_FOREST);
+    case Color::C_PUNCTUATION:		return this->GetColor(Color::C_GRAY);
+    case Color::C_RESTRICTED:		return this->GetColor(Color::C_PINK);
+    case Color::C_SAY:			return this->GetColor(Color::C_FOREST);
+    case Color::C_SOCIAL:		return this->GetColor(Color::C_PURPLE);
+    case Color::C_TEXT:			return this->GetColor(Color::C_OCHRE);
+    case Color::C_YESNO:		return this->GetColor(Color::C_PURPLE);
+    default:				return "";
+    }
 }
 
 //! Delivers one application-data byte from the protocol.
@@ -177,7 +234,9 @@ void Descriptor::Write(const String& message) {
 
 //! Writes the prompt.
 void Descriptor::WritePrompt() {
-    this->PrintFormat(":ScratchMUD:> ");
+    this->PrintFormat("%s:ScratchMUD:> %s",
+	this->GetColor(Color::C_PROMPT),
+	this->GetColor(Color::C_NORMAL));
 
     // Restore in-progress input that local echo already
     // showed on the prompt line that we interrupted.
@@ -305,7 +364,10 @@ void Descriptor::ReceiveLine(const String& lineReceived) {
 	LOGGER_NETWORK() << "Descriptor " << name_ << " already closed.";
     } else {
 	for (auto d: game_.GetDescriptors()) {
-	    d->PrintFormat("[%s]: %s\r\n", name_.c_str(), lineReceived.c_str());
+	    d->PrintFormat("%s[%s%s%s]: %s%s%s\r\n",
+		this->GetColor(Color::C_SILVER), this->GetColor(Color::C_FOREST), name_.c_str(),
+		this->GetColor(Color::C_SILVER), this->GetColor(Color::C_FOREST), lineReceived.c_str(),
+		this->GetColor(Color::C_NORMAL));
 	}
     }
 }
