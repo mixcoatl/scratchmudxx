@@ -16,6 +16,7 @@ __top_builddir__bin_scratch_SOURCES = \
 	game.cpp \
 	logger.cpp \
 	main.cpp \
+	protocol_telnet.cpp \
 	random.cpp \
 	scheduler.cpp \
 	server.cpp \
@@ -27,6 +28,8 @@ noinst_HEADERS = \
 	../include/scratch/descriptor.hpp \
 	../include/scratch/game.hpp \
 	../include/scratch/logger.hpp \
+	../include/scratch/protocol.hpp \
+	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
 	../include/scratch/scheduler.hpp \
 	../include/scratch/scratch.hpp \

@@ -74,6 +74,11 @@ public:
     //! \param socket the Boost socket
     DescriptorPtr MakeDescriptor(Socket&& socket) noexcept;
 
+    //! Closes a descriptor if needed and removes it from the index.
+    //! \param descriptorName the descriptor name to erase
+    //! \remark Safe to call for an already-closed or unknown name; idempotent.
+    void EraseDescriptor(const String& descriptorName) noexcept;
+
     //! Parses command line arguments.
     //! \param argc the number of command line arguments
     //! \param argv an array containing the command line arguments
@@ -91,18 +96,19 @@ public:
     void SetShutdown(const bool shutdown) noexcept;
 
 protected:
+    //! The IO context.
+    //! \sa #GetIoContext() const
+    //! \remark Must precede ASIO-dependent members (\ref descriptors_,
+    //!     \ref scheduler_, \ref server_, \ref signals_) so it outlives them
+    //!     on teardown.
+    IoContext ioContext_;
+
     //! Host configuration.
     ConfigPtr config_;
 
     //! The descriptors.
     //! \sa #GetDescriptors() const
     StringMapCi<DescriptorPtr> descriptors_;
-
-    //! The IO context.
-    //! \sa #GetIoContext() const
-    //! \remark Must precede ASIO-dependent members (\ref scheduler_,
-    //!     \ref server_, \ref signals_) so it outlives them on teardown.
-    IoContext ioContext_;
 
     //! The scheduler.
     //! \sa #GetScheduler()

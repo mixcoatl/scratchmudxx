@@ -26,6 +26,7 @@ AC_CHECK_HEADER([bitset], [AC_DEFINE([HAVE_BITSET], [1], [Define to 1 if you hav
 AC_CHECK_HEADER([boost/algorithm/string.hpp], [AC_DEFINE([HAVE_BOOST_ALGORITHM_STRING_HPP], [1], [Define to 1 if you have the <boost/algorithm/string.hpp> header file.])])
 AC_CHECK_HEADER([boost/asio.hpp], [AC_DEFINE([HAVE_BOOST_ASIO_HPP], [1], [Define to 1 if you have the <boost/asio.hpp> header file.])])
 AC_CHECK_HEADER([boost/chrono.hpp], [AC_DEFINE([HAVE_BOOST_CHRONO_HPP], [1], [Define to 1 if you have the <boost/chrono.hpp> header file.])])
+AC_CHECK_HEADER([boost/endian/conversion.hpp], [AC_DEFINE([HAVE_BOOST_ENDIAN_CONVERSION_HPP], [1], [Define to 1 if you have the <boost/endian/conversion.hpp> header file.])])
 AC_CHECK_HEADER([boost/filesystem.hpp], [AC_DEFINE([HAVE_BOOST_FILESYSTEM_HPP], [1], [Define to 1 if you have the <boost/filesystem.hpp> header file.])])
 AC_CHECK_HEADER([boost/filesystem/fstream.hpp], [AC_DEFINE([HAVE_BOOST_FILESYSTEM_FSTREAM_HPP], [1], [Define to 1 if you have the <boost/filesystem/fstream.hpp> header file.])])
 AC_CHECK_HEADER([boost/lexical_cast.hpp], [AC_DEFINE([HAVE_BOOST_LEXICAL_CAST_HPP], [1], [Define to 1 if you have the <boost/lexical_cast.hpp> header file.])])
