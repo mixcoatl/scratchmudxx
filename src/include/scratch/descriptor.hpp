@@ -21,6 +21,9 @@ class Game;
 namespace Scratch {
 namespace Net {
 
+// Forward declarations.
+class Protocol;
+
 // Boost types.
 using ErrorCode = boost::system::error_code;
 using MutableBuffersType = boost::asio::streambuf::mutable_buffers_type;
@@ -45,12 +48,20 @@ public:
 
     //! Writes to the descriptor.
     //! \param value the value to write
-    //! \sa #send(const String&)
+    //! \sa #Write(const String&)
     template<class T>
     Descriptor& operator<<(const T& value) {
 	this->Write(boost::lexical_cast<String>(value));
 	return *this;
     }
+
+    //! Backspaces one character.
+    //! \sa #BackspaceLine()
+    void Backspace();
+
+    //! Backspaces the entire line.
+    //! \sa #Backspace()
+    void BackspaceLine();
 
     //! Closes the descriptor.
     //! \sa #Closed() const
@@ -60,11 +71,47 @@ public:
     //! \sa #Close()
     bool Closed() const noexcept;
 
+    //! Delivers one application-data byte from the protocol.
+    //! \param byteReceived the byte to deliver
+    void DeliverByte(const std::uint8_t byteReceived);
+
     //! Gets the descriptor name.
     //! \sa #SetName(const String&)
     String GetName() const noexcept {
 	return name_;
     }
+
+    //! Gets the prompt bit.
+    //! \sa #SetPromptBit(const bool)
+    bool GetPromptBit() const noexcept {
+	return promptBit_;
+    }
+
+    //! Gets the TELNET terminal type.
+    //! \sa #SetTerminalType(const String&)
+    String GetTerminalType() const noexcept {
+	return terminalType_;
+    }
+
+    //! Gets the terminal window height in characters.
+    //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
+    std::uint16_t GetWindowHeight() const noexcept {
+	return windowHeight_;
+    }
+
+    //! Gets the terminal window width in characters.
+    //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
+    std::uint16_t GetWindowWidth() const noexcept {
+	return windowWidth_;
+    }
+
+    //! Writes to the descriptor.
+    //! \param message the message to print
+    void Print(const String& message) noexcept;
+
+    //! Writes to the descriptor.
+    //! \param format the printf-style format specifier
+    void PrintFormat(const String& format, ...) noexcept;
 
     //! Sets the descriptor name.
     //! \sa #GetName() const
@@ -72,9 +119,43 @@ public:
 	name_ = name;
     }
 
-    //! Writes to the descriptor.
-    //! \param messsage the message to write
+    //! Sets the prompt bit.
+    //! \param promptBit the prompt bit value
+    //! \sa #GetPromptBit() const
+    void SetPromptBit(const bool promptBit) noexcept;
+
+    //! Sets the TELNET terminal type.
+    //! \param terminalType the terminal type string
+    //! \sa #GetTerminalType() const
+    void SetTerminalType(const String& terminalType) {
+	terminalType_ = terminalType;
+    }
+
+    //! Sets the terminal window size in characters.
+    //! \param width the window width
+    //! \param height the window height
+    //! \sa #GetWindowHeight() const
+    //! \sa #GetWindowWidth() const
+    void SetWindowSize(
+	const std::uint16_t width,
+	const std::uint16_t height) noexcept {
+	windowWidth_ = width;
+	windowHeight_ = height;
+    }
+
+    //! Begins asynchronous I/O after the descriptor is indexed by the game.
+    void Start();
+
+    //! Writes application output through the protocol.
+    //! \param message the message to write
     void Write(const String& message);
+
+    //! Writes the prompt.
+    void WritePrompt();
+
+    //! Writes raw bytes to the wire.
+    //! \param message the message to write
+    void WriteRaw(const String& message);
 
 protected:
     //! The game state.
@@ -84,16 +165,45 @@ protected:
     //! \remark Used by \ref boost::asio::async_read().
     StreamBuf input_;
 
+    //! The line input buffer.
+    std::ostringstream lineInput_;
+
     //! The descriptor name.
     //! \sa #GetName() const
     //! \sa #SetName(const String&)
     String name_;
 
-    //! The output queue.
-    std::deque<String> output_;
+    //! The pending wire output buffer.
+    StreamBuf output_;
+
+    //! The prompt bit.
+    //! \sa #GetPromptBit() const
+    //! \sa #SetPromptBit(const bool)
+    bool promptBit_;
+
+    //! The wire protocol.
+    std::unique_ptr<Protocol> protocol_;
 
     //! The Boost socket.
     Socket socket_;
+
+    //! The TELNET terminal type.
+    //! \sa #GetTerminalType() const
+    //! \sa #SetTerminalType(const String&)
+    String terminalType_;
+
+    //! The terminal window height in characters.
+    //! \sa #GetWindowHeight() const
+    //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
+    std::uint16_t windowHeight_;
+
+    //! The terminal window width in characters.
+    //! \sa #GetWindowWidth() const
+    //! \sa #SetWindowSize(const std::uint16_t, const std::uint16_t)
+    std::uint16_t windowWidth_;
+
+    //! Whether an asynchronous write is pending.
+    bool writePending_;
 
     //! Configures an asynchronous read.
     void InitAsyncRead();
@@ -101,21 +211,13 @@ protected:
     //! Configures an asynchronous write.
     void InitAsyncWrite();
 
-    //! Processes one byte of input.
-    //! \param byteReceived the byte to process
-    void ReceiveByte(const int byteReceived);
-
     //! Processes line input.
     //! \param lineReceived the line input to process
     void ReceiveLine(const String& lineReceived);
-
-    //! Processes one byte of line input.
-    //! \param lineByteReceived the line byte to process
-    void ReceiveLineByte(const int lineByteReceived);
 };
 //! \}
 
 }; // namespace Net
 }; // namespace Scratch
 
-#endif // _SCRATCH_DESCRIPTOR_HXX_
+#endif // _SCRATCH_DESCRIPTOR_HPP_
