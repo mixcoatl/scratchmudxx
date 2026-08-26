@@ -1,0 +1,28 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Prompt (Yes/No)");
+    ~
+  Received:-
+    local edit = d:get_edit_state();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local ans = (line:match("%S+") or ""):lower();
+    if ans == "" then
+      require("io").fail(d, Q, "Prompt entry cancelled.");
+      d:pop_state();
+    elseif ans == "y" or ans == "yes" then
+      edit:set_prompt(true);
+      d:pop_state();
+    elseif ans == "n" or ans == "no" then
+      edit:set_prompt(false);
+      d:pop_state();
+    else
+      require("io").fail(d, Q, "Enter Yes or No.");
+      d:set_state("StatePrompt");
+    end
+    ~
+  ~
+Name: StatePrompt~
+~

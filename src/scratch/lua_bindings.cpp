@@ -6,8 +6,10 @@
 
 #include <scratch/config.hpp>
 #include <scratch/descriptor_bindings.hpp>
+#include <scratch/editor.hpp>
 #include <scratch/game_bindings.hpp>
 #include <scratch/lua_bindings.hpp>
+#include <scratch/menu.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
@@ -17,6 +19,8 @@ namespace Scripting {
 
 using Color = Scratch::Net::Color;
 using Config = Scratch::Core::Config;
+using Editor = Scratch::Net::Editor;
+using Menu = Scratch::Net::Menu;
 using StateRepository = Scratch::Core::StateRepository;
 using Strings = Scratch::Algorithm::Strings;
 
@@ -69,7 +73,29 @@ void LuaBindings::Register(Lua& lua) {
 	Function("get_metacolor", &Config::GetMetaColorProxy).
 	Function("get_metacolors", &Config::GetMetaColors).
 	Function("get_port", &Config::GetPort);
+    lua.Class<Menu>("Scratch.Menu").
+	Function("add_block", &Menu::AddBlock, Optional(Color::C_TEXT), Optional(String("<Blank>")), Optional()).
+	Function("add_choices", &Menu::AddChoices, Optional()).
+	Function("add_field", &Menu::AddField, Optional(Color::C_TEXT), Optional(String("<Blank>")), Optional()).
+	Function("add_item", &Menu::AddItem).
+	Function("add_listing", &Menu::AddListing, Optional()).
+	Function("add_named_choices", &Menu::AddNamedChoices, Optional()).
+	Function("add_named_listing", &Menu::AddNamedListing, Optional()).
+	Function("clear", &Menu::Clear).
+	Function("has_prompt", &Menu::HasPrompt).
+	Function("has_section", &Menu::HasSection).
+	Function("match_key", &Menu::MatchKey).
+	Function("set_field_title", static_cast<void (Menu::*)(const String&, const String&, Color::ColorEnum, const String&)>(&Menu::SetTitle)).
+	Function("set_prompt", &Menu::SetPrompt).
+	Function("set_title", static_cast<void (Menu::*)(const String&)>(&Menu::SetTitle));
     DescriptorBindings::Register(lua);
+    lua.Class<Editor>("Scratch.Editor").
+	Function("get_length", &Editor::GetLength).
+	Function("get_max_length", &Editor::GetMaxLength).
+	Function("get_tag", &Editor::GetTag).
+	Function("get_text", &Editor::GetText).
+	Function("is_aborted", &Editor::IsAborted).
+	Function("is_saved", &Editor::IsSaved);
     GameBindings::Register(lua);
     StateBindings::Register(lua);
     lua.Class<StateRepository>(StateBindings::RepositoryMetaName).

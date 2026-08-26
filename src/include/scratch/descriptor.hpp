@@ -24,6 +24,8 @@ namespace Scratch {
 namespace Net {
 
 // Forward declarations.
+class Editor;
+class Menu;
 class Protocol;
 
 // Boost types.
@@ -33,7 +35,9 @@ using Socket = boost::asio::ip::tcp::socket;
 using StreamBuf = boost::asio::streambuf;
 
 // ScratchMUD types.
+using EditorPtr = std::shared_ptr<Editor>;
 using Game = Scratch::Core::Game;
+using MenuPtr = std::shared_ptr<Menu>;
 using State = Scratch::Core::State;
 using StatePtr = std::shared_ptr<State>;
 
@@ -67,6 +71,16 @@ public:
     //! \sa #Backspace()
     void BackspaceLine();
 
+    //! Clears the descriptor-owned editor.
+    //! \sa #EnsureEditor()
+    //! \sa #GetEditor() const
+    void ClearEditor() noexcept;
+
+    //! Clears the descriptor-owned menu.
+    //! \sa #EnsureMenu()
+    //! \sa #GetMenu() const
+    void ClearMenu() noexcept;
+
     //! Closes the descriptor.
     //! \sa #Closed() const
     void Close() noexcept;
@@ -75,9 +89,23 @@ public:
     //! \sa #Close()
     bool Closed() const noexcept;
 
+    //! Returns whether the editor is intercepting input.
+    //! \sa #GetEditor() const
+    bool IsEditorActive() const noexcept;
+
     //! Delivers one application-data byte from the protocol.
     //! \param byteReceived the byte to deliver
     void DeliverByte(const std::uint8_t byteReceived);
+
+    //! Returns the editor, creating one if needed.
+    //! \sa #ClearEditor()
+    //! \sa #GetEditor() const
+    EditorPtr EnsureEditor();
+
+    //! Returns the menu, creating an empty one if needed.
+    //! \sa #ClearMenu()
+    //! \sa #GetMenu() const
+    MenuPtr EnsureMenu();
 
     //! Returns the color code.
     //! \param color the color
@@ -93,6 +121,20 @@ public:
     //! \sa #SetEditState(const StatePtr&)
     StatePtr GetEditState() const noexcept {
 	return editState_;
+    }
+
+    //! Gets the descriptor-owned editor, if any.
+    //! \sa #ClearEditor()
+    //! \sa #EnsureEditor()
+    EditorPtr GetEditor() const noexcept {
+	return editor_;
+    }
+
+    //! Gets the descriptor-owned menu, if any.
+    //! \sa #ClearMenu()
+    //! \sa #EnsureMenu()
+    MenuPtr GetMenu() const noexcept {
+	return menu_;
     }
 
     //! Gets the descriptor name.
@@ -141,9 +183,20 @@ public:
     //! \param message the message to print
     void Print(const String& message) noexcept;
 
+    //! Writes cells in a column-major fold.
+    //! \param cells the pre-rendered cell strings
+    //! \sa #Print(const String&)
+    //! \sa #GetWindowWidth() const
+    void PrintColumns(const std::vector<String>& cells) noexcept;
+
     //! Writes to the descriptor.
     //! \param format the printf-style format specifier
     void PrintFormat(const String& format, ...) noexcept;
+
+    //! Renders the descriptor-owned menu.
+    //! \return \c false if there is no menu or no prompt
+    //! \sa #GetMenu() const
+    bool PrintMenu();
 
     //! Sets the color bit.
     //! \sa #GetColorBit() const
@@ -271,6 +324,18 @@ protected:
     //! The line input buffer.
     std::ostringstream lineInput_;
 
+    //! The descriptor-owned editor.
+    //! \sa #ClearEditor()
+    //! \sa #EnsureEditor()
+    //! \sa #GetEditor() const
+    EditorPtr editor_;
+
+    //! The descriptor-owned menu.
+    //! \sa #ClearMenu()
+    //! \sa #EnsureMenu()
+    //! \sa #GetMenu() const
+    MenuPtr menu_;
+
     //! The descriptor name.
     //! \sa #GetName() const
     //! \sa #SetName(const String&)
@@ -337,6 +402,10 @@ protected:
     //! Processes line input.
     //! \param lineReceived the line input to process
     void ReceiveLine(const String& lineReceived);
+
+    //! Re-runs Focus after an editor finish.
+    //! \remark Auto-clears with a bookkeeping log if Lua did not call clear_editor.
+    void ResumeAfterEditor();
 
     //! Runs a connection-state Lua hook with \c d, \c line, and \c Q.
     //! \param hook the Lua source to execute

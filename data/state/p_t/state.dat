@@ -1,0 +1,79 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_state();
+    if not edit then
+      require("io").fail(d, Q, "No state draft; returning.");
+      d:pop_state();
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("State", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_field("1", "Name", edit:get_name(), "name");
+    m:add_named_choices("Hooks");
+    m:add_block("2", "Focus", edit:get_focus_hook());
+    m:add_block("3", "FocusLost", edit:get_focus_lost_hook());
+    m:add_block("4", "Received", edit:get_received_hook());
+    local quiet = "No";
+    if edit:is_quiet() then
+      quiet = "Yes";
+    end
+    local prompt = "No";
+    if edit:is_prompt() then
+      prompt = "Yes";
+    end
+    m:add_choices();
+    m:add_field("5", "Quiet", quiet, "yesno");
+    m:add_field("6", "Prompt", prompt, "yesno");
+    m:add_choices();
+    m:add_item("q", "Save and quit.");
+    m:add_item("x", "Abort without saving.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_state();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "1" then
+      d:push_state("StateName");
+    elseif key == "2" then
+      d:push_state("StateFocus");
+    elseif key == "3" then
+      d:push_state("StateFocusLost");
+    elseif key == "4" then
+      d:push_state("StateReceived");
+    elseif key == "5" then
+      d:push_state("StateQuiet");
+    elseif key == "6" then
+      d:push_state("StatePrompt");
+    elseif key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        require("io").fail(d, Q, "Name is required before saving.");
+        d:set_state("State");
+      else
+        require("thing").set_audit_metadata(edit, d, d:get_edit_name() == "");
+        get_states():store(name, edit);
+        local original = d:get_edit_name();
+        if original ~~= "" and original:lower() ~~= name:lower() then
+          get_states():erase(original);
+        end
+        d:clear_edit_state();
+        d:pop_state();
+      end
+    elseif key == "x" then
+      d:clear_edit_state();
+      d:pop_state();
+    else
+      require("io").show_unknown_choice(d, Q, "State");
+    end
+    ~
+  ~
+Name: State~
+~
