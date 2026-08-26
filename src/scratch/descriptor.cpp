@@ -14,18 +14,22 @@
 #include <scratch/game.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/descriptor_bindings.hpp>
+#include <scratch/editor.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/menu.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/protocol_telnet.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file_multi.hpp>
+#include <scratch/string.hpp>
 
 namespace Scratch {
 namespace Net {
 
 // ScratchMUD types.
 using Color = Scratch::Net::Color;
+using Strings = Scratch::Algorithm::Strings;
 
 //! Constructor.
 //! \param game the game state
@@ -38,6 +42,8 @@ Descriptor::Descriptor(
 	game_(game),
 	input_(),
 	lineInput_(),
+	editor_(),
+	menu_(),
 	name_(),
 	output_(),
 	promptBit_(true),
@@ -78,6 +84,20 @@ void Descriptor::BackspaceLine() {
     lineInput_.clear();
 }
 
+//! Clears the descriptor-owned editor.
+//! \sa #EnsureEditor()
+//! \sa #GetEditor() const
+void Descriptor::ClearEditor() noexcept {
+    editor_.reset();
+}
+
+//! Clears the descriptor-owned menu.
+//! \sa #EnsureMenu()
+//! \sa #GetMenu() const
+void Descriptor::ClearMenu() noexcept {
+    menu_.reset();
+}
+
 //! Closes the descriptor.
 //! \sa #Closed() const
 void Descriptor::Close() noexcept {
@@ -86,6 +106,7 @@ void Descriptor::Close() noexcept {
 
     LOGGER_NETWORK() << "Descriptor " << name_ << " disconnected.";
 
+    this->ClearEditor();
     stateStack_.clear();
     state_.reset();
 
@@ -112,6 +133,30 @@ void Descriptor::Close() noexcept {
 //! \sa #Close()
 bool Descriptor::Closed() const noexcept {
     return !socket_.is_open();
+}
+
+//! Returns whether the editor is intercepting input.
+//! \sa #GetEditor() const
+bool Descriptor::IsEditorActive() const noexcept {
+    return editor_ && editor_->IsActive();
+}
+
+//! Returns the editor, creating one if needed.
+//! \sa #ClearEditor()
+//! \sa #GetEditor() const
+EditorPtr Descriptor::EnsureEditor() {
+    if (!editor_)
+	editor_ = std::make_shared<Editor>(*this);
+    return editor_;
+}
+
+//! Returns the menu, creating an empty one if needed.
+//! \sa #ClearMenu()
+//! \sa #GetMenu() const
+MenuPtr Descriptor::EnsureMenu() {
+    if (!menu_)
+	menu_ = std::make_shared<Menu>();
+    return menu_;
 }
 
 //! Returns the color code.
@@ -194,29 +239,82 @@ void Descriptor::Print(const String& message) noexcept {
 	promptBit_ = message.back() == '\n';
 }
 
+//! Writes cells in a column-major fold.
+//! \param cells the pre-rendered cell strings
+//! \sa #Print(const String&)
+//! \sa #GetWindowWidth() const
+void Descriptor::PrintColumns(const std::vector<String>& cells) noexcept {
+    if (this->Closed() || cells.empty())
+	return;
+
+    std::size_t longest = 0;
+    for (const auto& cell : cells) {
+	longest = std::max(longest,
+	    Scratch::Algorithm::Strings::StripCopy(cell).size());
+    }
+    if (longest == 0)
+	return;
+
+    // Gap of two spaces between columns.
+    const auto stride = longest + 2;
+    auto win = static_cast<std::size_t>(this->GetWindowWidth());
+    if (win < 1)
+	win = 80;
+    const auto nColumns = std::max<std::size_t>(1, win / stride);
+    const auto count = cells.size();
+    const auto nRows = std::max<std::size_t>(4,
+	(count + nColumns - 1) / nColumns);
+
+    String out;
+    const auto* cNormal = this->GetColor(Color::C_NORMAL);
+    for (std::size_t row = 0; row < nRows; ++row) {
+	String line;
+	bool any = false;
+	for (std::size_t column = 0; column < nColumns; ++column) {
+	    const auto itemN = column * nRows + row;
+	    if (itemN >= count)
+		continue;
+	    any = true;
+	    auto cell = cells[itemN];
+	    const auto visible =
+		Scratch::Algorithm::Strings::StripCopy(cell).size();
+	    const auto pad = stride > visible ? stride - visible : 0;
+	    cell.append(pad, ' ');
+	    line += cell;
+	}
+	if (any) {
+	    out += line;
+	    out += cNormal;
+	    out += "\r\n";
+	}
+    }
+    this->Print(out);
+}
+
 //! Writes to the descriptor.
 //! \param format the printf-style format specifier
 void Descriptor::PrintFormat(const String& format, ...) noexcept {
     if (this->Closed())
 	return;
 
-    // Format message.
     va_list args;
     va_start(args, format);
-    char message[MaxString] = {'\0'};
-    const int N = std::vsnprintf(message, sizeof(message), format.c_str(), args);
+    const auto message = Strings::FormatVa(format.c_str(), args);
     va_end(args);
-
-    // Check return.
-    if (N < 0) {
-	LOGGER_MAIN() << "std::vsnprintf() failed: errno=" << errno;
-	return;
-    }
 
     this->EndLine();
     this->Write(message);
-    if (N > 0)
-	promptBit_ = message[N - 1] == '\n';
+    if (!message.empty())
+	promptBit_ = message[message.size() - 1] == '\n';
+}
+
+//! Renders the descriptor-owned menu.
+//! \return \c false if there is no menu or no prompt
+//! \sa #GetMenu() const
+bool Descriptor::PrintMenu() {
+    if (!menu_)
+	return false;
+    return menu_->Print(*this);
 }
 
 //! Sets the prompt bit.
@@ -228,9 +326,14 @@ void Descriptor::SetPromptBit(const bool promptBit) noexcept {
 
     const auto self = this->shared_from_this();
     boost::asio::post(game_.GetIoContext(), std::function<void()>([self]() {
-	if (!self->Closed() && !self->game_.GetShutdown() &&
-	    self->state_ && self->state_->GetPromptBit() &&
-	    !self->writePending_ && !self->output_.size())
+	if (self->Closed() || self->game_.GetShutdown() ||
+	    self->writePending_ || self->output_.size())
+	    return;
+	if (self->IsEditorActive()) {
+	    self->WritePrompt();
+	    return;
+	}
+	if (self->state_ && self->state_->GetPromptBit())
 	    self->WritePrompt();
     }));
 }
@@ -259,6 +362,8 @@ void Descriptor::PopState() {
 
     stateStack_.pop_front();
     state_ = stateStack_.empty() ? StatePtr() : stateStack_.front();
+    this->ClearEditor();
+    this->ClearMenu();
 
     if (state_) {
 	const auto expected = state_;
@@ -298,6 +403,8 @@ void Descriptor::PopStateUntil(const StatePtr& target) {
 	    return;
 	if (state_ != leaving)
 	    return;
+	this->ClearEditor();
+	this->ClearMenu();
 	this->RunStateHook(wanted->GetFocus(), "Focus");
 	if (state_ != wanted)
 	    return;
@@ -323,11 +430,15 @@ void Descriptor::PopStateUntil(const StatePtr& target) {
     if (stateStack_.empty()) {
 	LOGGER_NETWORK() << "Descriptor " << name_
 	    << " pop_state_until missed '" << wanted->GetName() << "'.";
+	this->ClearEditor();
+	this->ClearMenu();
 	if (lastQuiet)
 	    this->SetQuiet(false);
 	return;
     }
 
+    this->ClearEditor();
+    this->ClearMenu();
     this->RunStateHook(wanted->GetFocus(), "Focus");
     if (state_ != wanted)
 	return;
@@ -372,6 +483,8 @@ void Descriptor::PushState(const StatePtr& state) {
 
     // Same-state reentry.
     if (!stateStack_.empty() && stateStack_.front() == next) {
+	this->ClearEditor();
+	this->ClearMenu();
 	this->RunStateHook(next->GetFocus(), "Focus");
 	if (state_ != next)
 	    return;
@@ -386,6 +499,8 @@ void Descriptor::PushState(const StatePtr& state) {
 
     stateStack_.push_front(next);
     state_ = next;
+    this->ClearEditor();
+    this->ClearMenu();
     this->RunStateHook(next->GetFocus(), "Focus");
     if (state_ != next)
 	return;
@@ -435,6 +550,8 @@ void Descriptor::SetState(const StatePtr& state) {
 	    return;
 	if (state_ != leaving)
 	    return;
+	this->ClearEditor();
+	this->ClearMenu();
 	this->RunStateHook(next->GetFocus(), "Focus");
 	if (state_ != next)
 	    return;
@@ -458,6 +575,8 @@ void Descriptor::SetState(const StatePtr& state) {
     }
 
     if (!next) {
+	this->ClearEditor();
+	this->ClearMenu();
 	if (lastQuiet)
 	    this->SetQuiet(false);
 	return;
@@ -465,6 +584,8 @@ void Descriptor::SetState(const StatePtr& state) {
 
     stateStack_.push_front(next);
     state_ = next;
+    this->ClearEditor();
+    this->ClearMenu();
     this->RunStateHook(next->GetFocus(), "Focus");
     if (state_ != next)
 	return;
@@ -509,6 +630,11 @@ void Descriptor::Write(const String& message) {
 
 //! Writes the prompt.
 void Descriptor::WritePrompt() {
+    if (this->IsEditorActive()) {
+	editor_->PrintPrompt();
+	return;
+    }
+
     if (!state_ || !state_->GetPromptBit())
 	return;
 
@@ -651,9 +777,12 @@ void Descriptor::InitAsyncWrite() {
 	    // Continue draining, or show the prompt.
 	    if (!self->game_.GetShutdown() && !self->Closed() && self->output_.size())
 		self->InitAsyncWrite();
-	    else if (!self->game_.GetShutdown() && !self->Closed() &&
-		     self->state_ && self->state_->GetPromptBit() && self->promptBit_)
-		self->WritePrompt();
+	    else if (!self->game_.GetShutdown() && !self->Closed() && self->promptBit_) {
+		if (self->IsEditorActive())
+		    self->WritePrompt();
+		else if (self->state_ && self->state_->GetPromptBit())
+		    self->WritePrompt();
+	    }
 	}));
 }
 
@@ -665,6 +794,9 @@ void Descriptor::ReceiveLine(const String& lineReceived) {
     } else if (!state_) {
 	LOGGER_NETWORK() << "Descriptor " << name_ << " has no connection state; closing.";
 	this->Close();
+    } else if (this->IsEditorActive()) {
+	if (!editor_->Receive(lineReceived))
+	    this->ResumeAfterEditor();
     } else {
 	const auto before = state_;
 	const auto received = state_->GetReceived();
@@ -674,6 +806,20 @@ void Descriptor::ReceiveLine(const String& lineReceived) {
 	if (!this->Closed() && state_ && state_ == before &&
 	    state_->GetPromptBit())
 	    this->SetPromptBit(true);
+    }
+}
+
+//! Re-runs Focus after an editor finish.
+//! \remark Auto-clears with a bookkeeping log if Lua did not call clear_editor.
+void Descriptor::ResumeAfterEditor() {
+    if (this->Closed())
+	return;
+    if (state_)
+	this->RunStateHook(state_->GetFocus(), "Focus");
+    if (editor_) {
+	LOGGER_NETWORK() << "Descriptor " << name_
+	    << " auto-cleared editor after Focus.";
+	this->ClearEditor();
     }
 }
 
