@@ -17,12 +17,15 @@ __top_builddir__bin_scratch_SOURCES = \
 	data.cpp \
 	descriptor.cpp \
 	descriptor_bindings.cpp \
+	editor.cpp \
+	editor_verbs.cpp \
 	game.cpp \
 	game_bindings.cpp \
 	logger.cpp \
 	lua.cpp \
 	lua_bindings.cpp \
 	main.cpp \
+	menu.cpp \
 	protocol_telnet.cpp \
 	random.cpp \
 	scheduler.cpp \
@@ -39,11 +42,14 @@ noinst_HEADERS = \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
 	../include/scratch/descriptor_bindings.hpp \
+	../include/scratch/editor.hpp \
+	../include/scratch/editor_verbs.hpp \
 	../include/scratch/game.hpp \
 	../include/scratch/game_bindings.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/lua.hpp \
 	../include/scratch/lua_bindings.hpp \
+	../include/scratch/menu.hpp \
 	../include/scratch/protocol.hpp \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
