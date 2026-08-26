@@ -1,0 +1,21 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEnable ANSI color?%s [Y/n]: ", Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    local word = line:match("%w+") or "";
+    local word_lower = word:lower();
+    if word_lower == "" or word_lower == "yes" or word_lower == "y" then
+      d:set_color(true);
+      d:set_state("LoginUser");
+    elseif word_lower == "no" or word_lower == "n" then
+      d:set_color(false);
+      d:set_state("LoginUser");
+    else
+      require("io").fail(d, Q, "Please answer Y or N.");
+      d:set_state("Login");
+    end
+    ~
+  ~
+Name: Login~
+~

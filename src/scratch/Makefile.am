@@ -12,6 +12,7 @@ __top_builddir__bin_scratch_LDADD = \
 	$(LUA_LIB)
 __top_builddir__bin_scratch_SOURCES = \
 	color.cpp \
+	color_bindings.cpp \
 	config.cpp \
 	data.cpp \
 	descriptor.cpp \
@@ -26,11 +27,14 @@ __top_builddir__bin_scratch_SOURCES = \
 	random.cpp \
 	scheduler.cpp \
 	server.cpp \
+	state.cpp \
+	state_bindings.cpp \
 	string.cpp \
 	thing.cpp
 
 noinst_HEADERS = \
 	../include/scratch/color.hpp \
+	../include/scratch/color_bindings.hpp \
 	../include/scratch/config.hpp \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
@@ -47,6 +51,8 @@ noinst_HEADERS = \
 	../include/scratch/scheduler.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
+	../include/scratch/state.hpp \
+	../include/scratch/state_bindings.hpp \
 	../include/scratch/storage.hpp \
 	../include/scratch/storage_file.hpp \
 	../include/scratch/storage_file_multi.hpp \

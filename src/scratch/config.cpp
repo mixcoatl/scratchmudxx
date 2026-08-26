@@ -10,15 +10,12 @@
 
 #include <scratch/config.hpp>
 #include <scratch/data.hpp>
+#include <scratch/logger.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 
 namespace Scratch {
 namespace Core {
-
-// ScratchMUD types.
-using Data = Scratch::Utility::Data;
-using DataPtr = std::shared_ptr<Data>;
 
 //! Fixed path of the host configuration Data file.
 static const char configFileName[] = "data/config.dat";
@@ -26,6 +23,7 @@ static const char configFileName[] = "data/config.dat";
 //! Default constructor.
 Config::Config() noexcept :
 	address_(),
+	bootstrapState_("Login"),
 	metaColors_(),
 	port_(6767) {
     // Nothing.
@@ -36,13 +34,6 @@ Config::~Config() noexcept {
     // Nothing.
 }
 
-//! Returns whether \p key matches \p allowed.
-static bool KeyIs(
-	const String& key,
-	const char* allowed) noexcept {
-    return !Scratch::Algorithm::Strings::CompareCi(key, allowed);
-}
-
 //! Loads configuration from the fixed Data file.
 //! \return true if the file was loaded successfully
 //! \sa #Save() const
@@ -51,45 +42,76 @@ bool Config::Load() noexcept {
     if (!root->LoadFile(configFileName))
 	return false;
 
-    for (const auto& entry: root->GetEntries()) {
-	if (!KeyIs(entry.first, "Colors") &&
-		!KeyIs(entry.first, "Network"))
-	    return false;
-    }
+    this->ReadData(root);
 
-    String address;
-    auto port = port_;
-    if (auto network = root->Get("Network")) {
-	for (const auto& entry: network->GetEntries()) {
-	    if (!KeyIs(entry.first, "Address") &&
-		    !KeyIs(entry.first, "Port"))
-		return false;
-	}
-	address = network->GetString("Address");
-	if (network->Get("Port")) {
-	    const auto value = network->GetNumber("Port");
-	    if (value < 1.0 || value > 65535.0)
-		return false;
-	    port = static_cast<std::uint16_t>(value);
-	}
-    }
+    if (bootstrapState_.empty())
+	return false;
 
-    std::map<Color::ColorEnum, Color::ColorEnum> metaColors;
-    if (auto colors = root->Get("Colors")) {
-	for (const auto& entry: colors->GetEntries()) {
-	    const auto meta = Color::ByName(entry.first);
-	    const auto color = Color::ByName(
-		colors->GetString(entry.first));
-	    if (!Color::IsMetaColor(meta) || Color::IsMetaColor(color))
-		return false;
-	    metaColors[meta] = color;
-	}
-    }
-
-    address_ = std::move(address);
-    metaColors_ = std::move(metaColors);
-    port_ = port;
     return true;
+}
+
+//! Reads configuration from a data node.
+//! \param data the data node to read
+//! \sa #WriteData(const DataPtr&) const
+void Config::ReadData(const DataPtr& data) noexcept {
+    address_.clear();
+    bootstrapState_ = "Login";
+    metaColors_.clear();
+    port_ = 6767;
+
+    // Read game settings.
+    auto gameData = data->Get("Game", std::make_shared<Data>());
+    this->ReadGameData(gameData);
+
+    // Read network settings.
+    auto networkData = data->Get("Network", std::make_shared<Data>());
+    this->ReadNetworkData(networkData);
+
+    // Read default colors.
+    auto colorsData = data->Get("Colors", std::make_shared<Data>());
+    this->ReadColorsData(colorsData);
+}
+
+//! Reads default colors from a data node.
+//! \param data the Colors data node to read
+//! \sa #ReadData(const DataPtr&)
+//! \sa #WriteColorsData(const DataPtr&) const
+void Config::ReadColorsData(const DataPtr& data) noexcept {
+    metaColors_.clear();
+    for (const auto& entry: data->GetStringMap("")) {
+	const auto meta = Color::ByName(entry.first);
+	const auto assigned = Color::ByName(entry.second);
+	if (!Color::IsMetaColor(meta) || Color::IsMetaColor(assigned)) {
+	    LOGGER_STORAGE() << "Unknown color " << entry.first << ": " << entry.second << ".";
+	    continue;
+	}
+	metaColors_[meta] = assigned;
+    }
+}
+
+//! Reads game settings from a data node.
+//! \param data the Game data node to read
+//! \sa #ReadData(const DataPtr&)
+//! \sa #WriteGameData(const DataPtr&) const
+void Config::ReadGameData(const DataPtr& data) noexcept {
+    const auto bootstrapState = data->GetString("BootstrapState");
+    if (!bootstrapState.empty())
+	bootstrapState_ = bootstrapState;
+}
+
+//! Reads network settings from a data node.
+//! \param data the Network data node to read
+//! \sa #ReadData(const DataPtr&)
+//! \sa #WriteNetworkData(const DataPtr&) const
+void Config::ReadNetworkData(const DataPtr& data) noexcept {
+    address_ = data->GetString("Address");
+    if (data->Get("Port")) {
+	const auto value = data->GetNumber("Port");
+	if (value < 1.0 || value > 65535.0)
+	    LOGGER_STORAGE() << "Invalid network port " << value << ".";
+	else
+	    port_ = static_cast<std::uint16_t>(value);
+    }
 }
 
 //! Saves configuration to the fixed Data file.
@@ -97,25 +119,31 @@ bool Config::Load() noexcept {
 //! \sa #Load()
 bool Config::Save() const noexcept {
     auto root = std::make_shared<Data>();
-    if (!metaColors_.empty()) {
-	auto colors = root->Put("Colors");
-	if (!colors)
-	    return false;
-	for (const auto& entry: metaColors_) {
-	    colors->PutString(
-		Color::ToString(entry.first),
-		Color::ToString(entry.second));
-	}
-    }
-
-    auto network = root->Put("Network");
-    if (!network)
-	return false;
-    if (!address_.empty())
-	network->PutString("Address", address_);
-    network->PutNumber("Port", static_cast<double>(port_));
-
+    this->WriteData(root);
     return root->SaveFile(configFileName);
+}
+
+//! Writes configuration to a data node.
+//! \param data the data node to write
+//! \sa #ReadData(const DataPtr&)
+void Config::WriteData(const DataPtr& data) const noexcept {
+    // Write game settings.
+    auto gameData = std::make_shared<Data>();
+    this->WriteGameData(gameData);
+    if (gameData->Size())
+	data->Put("Game", gameData);
+
+    // Write network settings.
+    auto networkData = std::make_shared<Data>();
+    this->WriteNetworkData(networkData);
+    if (networkData->Size())
+	data->Put("Network", networkData);
+
+    // Write default colors.
+    auto colorsData = std::make_shared<Data>();
+    this->WriteColorsData(colorsData);
+    if (colorsData->Size())
+	data->Put("Colors", colorsData);
 }
 
 //! Sets a house metacolor.
@@ -149,6 +177,39 @@ Color::ColorEnum Config::GetMetaColorProxy(
 	}
     }
     return result;
+}
+
+//! Writes default colors to a data node.
+//! \param data the Colors data node to write
+//! \sa #ReadColorsData(const DataPtr&)
+//! \sa #WriteData(const DataPtr&) const
+void Config::WriteColorsData(const DataPtr& data) const noexcept {
+    StringMapCi<String> map;
+    for (const auto& entry: metaColors_) {
+	map[Color::ToString(entry.first)] =
+	    Color::ToString(entry.second);
+    }
+    data->PutStringMap("", map);
+}
+
+//! Writes game settings to a data node.
+//! \param data the Game data node to write
+//! \sa #ReadGameData(const DataPtr&)
+//! \sa #WriteData(const DataPtr&) const
+void Config::WriteGameData(const DataPtr& data) const noexcept {
+    if (bootstrapState_.size())
+	data->PutString("BootstrapState", bootstrapState_);
+}
+
+//! Writes network settings to a data node.
+//! \param data the Network data node to write
+//! \sa #ReadNetworkData(const DataPtr&)
+//! \sa #WriteData(const DataPtr&) const
+void Config::WriteNetworkData(const DataPtr& data) const noexcept {
+    if (!address_.empty())
+	data->PutString("Address", address_);
+    if (port_)
+	data->PutNumber("Port", static_cast<double>(port_));
 }
 
 }; // namespace Core
