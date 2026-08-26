@@ -17,6 +17,7 @@
 #include <scratch/server.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file_multi.hpp>
+#include <scratch/user.hpp>
 
 namespace Scratch {
 namespace Core {
@@ -32,7 +33,10 @@ Game::Game() :
 	signals_(ioContext_),
 	states_(std::make_shared<StateRepository>(
 		Scratch::Storage::MultiFileStorage<State>(
-			"data", "state", ".dat"))) {
+			"data", "state", ".dat"))),
+	users_(std::make_shared<UserRepository>(
+		Scratch::Storage::MultiFileStorage<User>(
+			"data", "user", ".dat"))) {
     // Nothing.
 }
 
@@ -43,7 +47,8 @@ Game::~Game() noexcept {
     this->Shutdown();
     if (server_)
 	server_.reset();
-    // Close Lua before states_ tears down.
+    // Close Lua before states_ / users_ tear down.
+
     lua_.reset();
 }
 
@@ -72,6 +77,11 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
 //! Gets the connection-state repository.
 StateRepositoryPtr Game::GetStates() const noexcept {
     return states_;
+}
+
+//! Gets the user repository.
+UserRepositoryPtr Game::GetUsers() const noexcept {
+    return users_;
 }
 
 //! Applies Quiet and Prompt bits to descriptors in \p state.
@@ -166,6 +176,10 @@ void Game::LoadRepositories() {
     } else if (!states_->Get(config_->GetBootstrapState())) {
 	throw std::runtime_error("Couldn't resolve bootstrap state.");
     }
+    if (!users_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load user index.");
+    }
+
 }
 
 //! Parses command line arguments.

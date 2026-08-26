@@ -1,0 +1,38 @@
+Hooks:
+  Focus:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    d:print_format(
+      "%sType %s%s%s to permanently delete this user record:%s ",
+      Q.PROMPT, Q.NAME, user:get_name(), Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    local name = user:get_name();
+    local word = line:match("%S+") or "";
+    if word == "" then
+      d:set_state("Lobby");
+    elseif word:lower() == name:lower() then
+      d:clear_edit_user();
+      -- Close before erase: Descriptor::Close saves LastLogout while user_
+      -- is still in the repository; erase then removes the account file.
+      -- Avoids a spurious STORAGE log and needs no C++ logout helper.
+      d:close();
+      get_users():erase(name);
+    else
+      d:print_format("%sUsername did not match.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LobbyDelete");
+    end
+    ~
+  ~
+Name: LobbyDelete~
+~

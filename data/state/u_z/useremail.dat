@@ -1,0 +1,18 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEmail:%s ", Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    if line == "" then
+      d:print("Email entry cancelled.\r\n");
+    else
+      local edit = d:get_edit_user();
+      if edit then
+        edit:set_email(line);
+      end
+    end
+    d:pop_state();
+    ~
+  ~
+Name: UserEmail~
+~

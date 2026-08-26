@@ -18,6 +18,7 @@
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
+#include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -82,12 +83,22 @@ static int GetDescriptorProxy(lua_State* L) {
 }
 
 //! Handles lua get_states.
-//! \param L the lua state
+//! \param L the \c lua_State
 static int GetStatesProxy(lua_State* L) {
     if (lua_gettop(L) != 0)
 	return luaL_error(L, "get_states expects no arguments");
     auto& lua = Lua::CheckLua(L);
     StateBindings::PushRepository(lua);
+    return 1;
+}
+
+//! Handles lua get_users.
+//! \param L the \c lua_State
+static int GetUsersProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_users expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    UserBindings::PushRepository(lua);
     return 1;
 }
 
@@ -140,22 +151,16 @@ static int CryptProxy(lua_State* L) {
 //! Registers Game free functions on \p lua.
 //! \param lua the Lua facade
 void GameBindings::Register(Lua& lua) {
-    lua.PushFunction(BroadcastProxy);
-    lua.SetSafe("broadcast");
-    lua.PushFunction(CryptProxy);
-    lua.SetSafe("crypt");
-    lua.PushFunction(GetConfigProxy);
-    lua.SetSafe("get_config");
-    lua.PushFunction(GetDescriptorProxy);
-    lua.SetSafe("get_descriptor");
-    lua.PushFunction(DescriptorNamesProxy);
-    lua.SetSafe("get_descriptor_names");
-    lua.PushFunction(GetStatesProxy);
-    lua.SetSafe("get_states");
-    lua.PushFunction(PrintProxy);
-    lua.SetSafe("print");
-    lua.PushFunction(ShutdownProxy);
-    lua.SetSafe("shutdown");
+    lua.SetSafe("broadcast", BroadcastProxy);
+    lua.SetSafe("crypt", CryptProxy);
+    lua.SetSafe("get_config", GetConfigProxy);
+    lua.SetSafe("get_descriptor", GetDescriptorProxy);
+    lua.SetSafe("get_descriptor_names", DescriptorNamesProxy);
+    lua.SetSafe("get_states", GetStatesProxy);
+    lua.SetSafe("get_users", GetUsersProxy);
+    lua.SetSafe("print", PrintProxy);
+    lua.SetSafe("shutdown", ShutdownProxy);
+
 }
 
 }; // namespace Scripting

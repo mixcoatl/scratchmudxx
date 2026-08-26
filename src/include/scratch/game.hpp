@@ -13,6 +13,7 @@
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
 #include <scratch/string.hpp>
+#include <scratch/user.hpp>
 
 // Forward declarations.
 namespace Scratch {
@@ -51,6 +52,9 @@ using ServerPtr = std::shared_ptr<Server>;
 using StateRepository = Scratch::Storage::Repository<
 	State, Scratch::Storage::MultiFileStorage<State>>;
 using StateRepositoryPtr = std::shared_ptr<StateRepository>;
+using UserRepository = Scratch::Storage::Repository<
+	User, Scratch::Storage::MultiFileStorage<User>>;
+using UserRepositoryPtr = std::shared_ptr<UserRepository>;
 
 //! The game class. \{
 class Game {
@@ -85,6 +89,9 @@ public:
 
     //! Gets the connection-state repository.
     StateRepositoryPtr GetStates() const noexcept;
+
+    //! Gets the user repository.
+    UserRepositoryPtr GetUsers() const noexcept;
 
     //! Applies Quiet and Prompt bits to descriptors in \p state.
     //! \param state the connection state
@@ -156,6 +163,10 @@ protected:
     //! The connection-state repository.
     //! \sa #GetStates() const
     StateRepositoryPtr states_;
+
+    //! The user repository.
+    //! \sa #GetUsers() const
+    UserRepositoryPtr users_;
 
     //! Begins waiting for process termination signals.
     void InitSignals();
