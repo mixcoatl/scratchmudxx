@@ -23,23 +23,11 @@ const char ConfigBindings::MetaName[] = "Scratch.Config";
 
 // ScratchMUD types.
 using Color = Scratch::Net::Color;
-using WeakConfigPtr = std::weak_ptr<Config>;
-
-//! Returns a copy of the weak Config handle stored in userdata.
-//! \param L the \c lua_State
-//! \param index the stack index of the userdata
-static WeakConfigPtr CheckWeakConfigPtr(
-	lua_State* L,
-	const int index) {
-    return *static_cast<WeakConfigPtr*>(
-	luaL_checkudata(L, index, ConfigBindings::MetaName));
-}
 
 //! Handles Config userdata garbage collection.
 static int ConfigGc(lua_State* L) {
-    static_cast<WeakConfigPtr*>(
-	luaL_checkudata(L, 1, ConfigBindings::MetaName))->~WeakConfigPtr();
-    return 0;
+    return Lua::DestroyWeakUserdata<Config>(
+	L, ConfigBindings::MetaName);
 }
 
 //! Handles Config:get_address().
@@ -51,6 +39,18 @@ static int ConfigGetAddress(lua_State* L) {
     auto address = config->GetAddress();
     config.reset();
     lua.PushString(std::move(address));
+    return 1;
+}
+
+//! Handles Config:get_bootstrap_state().
+static int ConfigGetBootstrapState(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "get_bootstrap_state expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    auto config = ConfigBindings::Check(L, 1);
+    auto bootstrapState = config->GetBootstrapState();
+    config.reset();
+    lua.PushString(std::move(bootstrapState));
     return 1;
 }
 
@@ -118,10 +118,8 @@ static int ConfigGetPort(lua_State* L) {
 ConfigPtr ConfigBindings::Check(
 	lua_State* L,
 	const int index) {
-    ConfigPtr config = CheckWeakConfigPtr(L, index).lock();
-    if (!config)
-	luaL_argerror(L, index, "invalid config");
-    return config;
+    return Lua::CheckWeakUserdata<Config>(
+	L, MetaName, "invalid config", index);
 }
 
 //! Pushes a Config userdata, or nil.
@@ -137,13 +135,12 @@ void ConfigBindings::Push(
 //! \param lua the Lua facade
 void ConfigBindings::Register(Lua& lua) {
     auto* L = lua.GetState();
-    luaL_newmetatable(L, MetaName);
-    lua_pushvalue(L, -1);
-    lua_setfield(L, -2, "__index");
+    Lua::RegisterMetatable(L, MetaName);
 
     static const luaL_Reg methods[] = {
 	{"__gc", ConfigGc},
 	{"get_address", ConfigGetAddress},
+	{"get_bootstrap_state", ConfigGetBootstrapState},
 	{"get_metacolor", ConfigGetMetaColor},
 	{"get_metacolors", ConfigGetMetaColors},
 	{"get_port", ConfigGetPort},

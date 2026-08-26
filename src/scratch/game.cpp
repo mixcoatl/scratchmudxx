@@ -15,6 +15,8 @@
 #include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/server.hpp>
+#include <scratch/state.hpp>
+#include <scratch/storage_file_multi.hpp>
 
 namespace Scratch {
 namespace Core {
@@ -27,9 +29,13 @@ Game::Game() :
 	lua_(std::make_unique<Lua>(*this)),
 	server_(),
 	shutdown_(false),
-	signals_(ioContext_) {
+	signals_(ioContext_),
+	states_(std::make_shared<StateRepository>(
+		Scratch::Storage::MultiFileStorage<State>(
+			"data", "state", ".dat"))) {
     // Nothing.
 }
+
 
 //! Destructor.
 //! \sa #Shutdown()
@@ -37,6 +43,8 @@ Game::~Game() noexcept {
     this->Shutdown();
     if (server_)
 	server_.reset();
+    // Close Lua before states_ tears down.
+    lua_.reset();
 }
 
 //! Gets the host configuration.
@@ -59,6 +67,30 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
 	descriptorSet.insert(pair.second);
     }
     return descriptorSet;
+}
+
+//! Gets the connection-state repository.
+StateRepositoryPtr Game::GetStates() const noexcept {
+    return states_;
+}
+
+//! Applies Quiet and Prompt bits to descriptors in \p state.
+//! \param state the connection state
+//! \sa #GetDescriptors() const
+//! \sa Descriptor::SetState(const StatePtr&)
+void Game::ApplyStateBits(const StatePtr& state) noexcept {
+    if (!state)
+	return;
+
+    const bool quiet = state->GetQuietBit();
+    const bool prompt = state->GetPromptBit();
+    for (auto& d: this->GetDescriptors()) {
+	if (!d || d->Closed() || d->GetState() != state)
+	    continue;
+	d->SetQuiet(quiet);
+	if (prompt)
+	    d->SetPromptBit(true);
+    }
 }
 
 //! Returns the IO context.
@@ -121,6 +153,21 @@ void Game::EraseDescriptor(const String& descriptorName) noexcept {
     boost::asio::post(ioContext_, [d]() mutable {});
 }
 
+//! Loads game repositories from disk.
+//! \throw std::runtime_error if a required repository cannot be loaded
+//! \sa #GetStates() const
+//! \sa #Run()
+void Game::LoadRepositories() {
+    if (!config_ || !config_->Load()) {
+	throw std::runtime_error("Couldn't load configuration.");
+    }
+    if (!states_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load state index.");
+    } else if (!states_->Get(config_->GetBootstrapState())) {
+	throw std::runtime_error("Couldn't resolve bootstrap state.");
+    }
+}
+
 //! Parses command line arguments.
 //! \param argc the number of command line arguments
 //! \param argv an array containing the command line arguments
@@ -132,8 +179,7 @@ void Game::ParseArguments(
 
 //! Runs the game.
 void Game::Run() {
-    if (!config_->Load())
-	throw std::runtime_error("Couldn't load configuration.");
+    this->LoadRepositories();
 
     // Configure acceptor.
     server_ = std::make_shared<Server>(*this);

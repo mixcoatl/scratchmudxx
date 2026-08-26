@@ -1,0 +1,20 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEnable ANSI color?%s [Y/n]: ", Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    local word = line:match("%w+") or "";
+    local word_lower = word:lower();
+    local is_yes = word_lower == "" or word_lower == "yes" or word_lower == "y";
+    local is_no = word_lower == "no" or word_lower == "n";
+    if is_yes or is_no then
+      d:set_color(is_yes);
+      d:set_state("Playing");
+    else
+      d:print_format("%sPlease answer Y or N.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("Login");
+    end
+    ~
+  ~
+Name: Login~
+~

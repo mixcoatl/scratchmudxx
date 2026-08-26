@@ -8,6 +8,7 @@
 
 #define _SCRATCH_LUA_CPP_
 
+#include <scratch/color_bindings.hpp>
 #include <scratch/config_bindings.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/game.hpp>
@@ -15,6 +16,7 @@
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/scratch.hpp>
+#include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
 
 namespace Scratch {
@@ -93,9 +95,11 @@ Lua::Lua(Game& game) :
 
     this->InitSafe();
 
+    ColorBindings::Register(*this);
     ConfigBindings::Register(*this);
     DescriptorBindings::Register(*this);
     GameBindings::Register(*this);
+    StateBindings::Register(*this);
 
     // Strip loaders from real _G.
     static const char* const denied[] = {
