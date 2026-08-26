@@ -106,6 +106,7 @@ protected:
 
 //! Logger shortcuts. \{
 #define LOGGER_ASSERT()         LOGGER("Assert")        //!< Code assertions.
+#define LOGGER_STORAGE()        LOGGER("Storage")       //!< Storage system.
 #define LOGGER_MAIN()           LOGGER("Main")          //!< Program entry point.
 #define LOGGER_SYSTEM()         LOGGER("System")        //!< System errors, etc.
 //! \}
