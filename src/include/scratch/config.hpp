@@ -10,6 +10,7 @@
 #define _SCRATCH_CONFIG_HPP_
 
 #include <scratch/scratch.hpp>
+#include <scratch/string.hpp>
 
 namespace Scratch {
 namespace Core {
@@ -24,6 +25,18 @@ public:
     //! Destructor.
     virtual ~Config() noexcept;
 
+    //! Gets the network bind address.
+    //! \sa #SetAddress(const String&)
+    String GetAddress() const noexcept {
+	return address_;
+    }
+
+    //! Gets the network listen port.
+    //! \sa #SetPort(const std::uint16_t)
+    std::uint16_t GetPort() const noexcept {
+	return port_;
+    }
+
     //! Loads configuration from the fixed Data file.
     //! \return true if the file was loaded successfully
     //! \sa #Save() const
@@ -33,6 +46,27 @@ public:
     //! \return true if the file was written successfully
     //! \sa #Load()
     bool Save() const noexcept;
+
+    //! Sets the network bind address.
+    //! \sa #GetAddress() const
+    void SetAddress(const String& address) {
+	address_ = address;
+    }
+
+    //! Sets the network listen port.
+    //! \sa #GetPort() const
+    void SetPort(const std::uint16_t port) {
+	port_ = port;
+    }
+
+protected:
+    //! Network bind address.
+    //! \sa #GetAddress() const
+    String address_;
+
+    //! Network listen port.
+    //! \sa #GetPort() const
+    std::uint16_t port_;
 };
 //! \}
 
