@@ -21,6 +21,7 @@ __top_builddir__bin_scratch_SOURCES = \
 	editor_verbs.cpp \
 	game.cpp \
 	game_bindings.cpp \
+	gender.cpp \
 	logger.cpp \
 	lua.cpp \
 	lua_bindings.cpp \
@@ -33,7 +34,10 @@ __top_builddir__bin_scratch_SOURCES = \
 	state.cpp \
 	state_bindings.cpp \
 	string.cpp \
-	thing.cpp
+	thing.cpp \
+	trust.cpp \
+	user.cpp \
+	user_bindings.cpp
 
 noinst_HEADERS = \
 	../include/scratch/color.hpp \
@@ -46,6 +50,7 @@ noinst_HEADERS = \
 	../include/scratch/editor_verbs.hpp \
 	../include/scratch/game.hpp \
 	../include/scratch/game_bindings.hpp \
+	../include/scratch/gender.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/lua.hpp \
 	../include/scratch/lua_bindings.hpp \
@@ -64,4 +69,7 @@ noinst_HEADERS = \
 	../include/scratch/storage_file_multi.hpp \
 	../include/scratch/storage_null.hpp \
 	../include/scratch/string.hpp \
-	../include/scratch/thing.hpp
+	../include/scratch/thing.hpp \
+	../include/scratch/trust.hpp \
+	../include/scratch/user.hpp \
+	../include/scratch/user_bindings.hpp

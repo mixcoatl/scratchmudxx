@@ -1,6 +1,8 @@
 Hooks:
   Focus:-
-    d:print_format("%sEnable ANSI color?%s [Y/n]: ", Q.PROMPT, Q.NORMAL);
+    d:print_format("%sEnable ANSI color? %s[%sY%s/%sn%s]%s:%s ",
+      Q.PROMPT, Q.PUNCTUATION, Q.EMPHASIS, Q.PUNCTUATION,
+      Q.PROMPT, Q.PUNCTUATION, Q.PUNCTUATION, Q.NORMAL);
     ~
   Received:-
     local word = line:match("%w+") or "";

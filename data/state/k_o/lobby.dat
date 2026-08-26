@@ -1,0 +1,128 @@
+Hooks:
+  Focus:-
+    local user = require("user").ensure_user(d, Q)
+    if not user then
+      return
+    end
+    local players = user:get_players() or {};
+    local n = 0;
+    local function next_key()
+      n = n + 1;
+      return tostring(n);
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Lobby");
+    m:add_named_choices("Characters");
+    for _, name in ipairs(players) do
+      m:add_item(next_key(), name);
+    end
+    m:add_item(next_key(), "Create a new character.");
+    if #players > 0 then
+      m:add_item(next_key(), "Delete a character.");
+    end
+    m:add_named_choices("Account");
+    m:add_item(next_key(), "Edit user record.");
+    m:add_item(next_key(), "Delete user record.");
+    m:add_item("q", "Quit.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local io = require("io")
+    local user = require("user").ensure_user(d, Q)
+    if not user then
+      return
+    end
+    local players = user:get_players() or {};
+    local n = 0;
+    local function next_key()
+      n = n + 1;
+      return tostring(n);
+    end
+    for _ in ipairs(players) do
+      next_key();
+    end
+    local keyCreate = next_key();
+    local keyDelete = nil;
+    if #players > 0 then
+      keyDelete = next_key();
+    end
+    local keyEdit = next_key();
+    local keyUserDelete = next_key();
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "q" then
+      local who = user:get_name();
+      d:close();
+      broadcast(who .. " has disconnected.\r\n");
+    elseif not key then
+      io.show_unknown_choice(d, Q, "Lobby");
+    else
+      local index = tonumber(key);
+      if index and index >= 1 and index <= #players then
+        local who = user:get_name();
+        d:print_format("%sWelcome to ScratchMUD, %s%s%s!%s\r\n",
+          Q.PROMPT, Q.EMPHASIS, who, Q.PROMPT, Q.NORMAL);
+        local last_logout = user:get_last_logout();
+        if last_logout and last_logout > 0 then
+          d:print_format("%sYour last visit ended %s%s%s.%s\r\n",
+            Q.PROMPT, Q.EMPHASIS, os.date("%Y-%m-%d %H:%M:%S", last_logout), Q.PROMPT, Q.NORMAL);
+        end
+        local player = get_players():get(players[index]);
+        if not player then
+          io.fail(d, Q, "Missing player record.");
+          d:set_state("Lobby");
+          return
+        end
+        local inst = get_instance_for(player);
+        if inst then
+          if inst:get_descriptor() then
+            io.fail(d, Q, "That character is presently active.");
+            d:set_state("Lobby");
+            return
+          end
+          d:set_character(inst);
+        else
+          d:create_character(player);
+        end
+        local inst = d:get_character();
+        if inst then
+          local room = inst:get_parent_room()
+          if not room then
+            room = get_start_room(player)
+            if not room then
+              io.fail(d, Q, "No valid entry room is available.");
+              d:close();
+              return
+            end
+            room:add_child(inst);
+          end
+          dispatch_command(inst, "look");
+          d:set_state("Playing");
+        else
+          d:set_state("Playing");
+        end
+      elseif key == keyCreate then
+        local player = d:set_edit_player(nil);
+        player:set_owner(user:get_name());
+        local gender = user:get_gender();
+        if gender then
+          player:set_gender(gender);
+        end
+        d:set_state("Player");
+      elseif keyDelete and key == keyDelete then
+        d:set_state("LobbyPlayerDelete");
+      elseif key == keyEdit then
+        d:set_edit_user(user);
+        d:push_state("User");
+      elseif key == keyUserDelete then
+        d:set_state("LobbyDelete");
+      else
+        io.show_unknown_choice(d, Q, "Lobby");
+      end
+    end
+    ~
+  ~
+Name: Lobby~
+~
