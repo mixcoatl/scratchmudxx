@@ -69,7 +69,9 @@
 #endif // HAVE_CMATH
 
 #ifdef HAVE_CRYPT_H
+extern "C" {
 #include <crypt.h>
+}
 #endif // HAVE_CRYPT_H
 
 #ifdef HAVE_CSIGNAL
