@@ -26,7 +26,8 @@ __top_builddir__bin_scratch_SOURCES = \
 	random.cpp \
 	scheduler.cpp \
 	server.cpp \
-	string.cpp
+	string.cpp \
+	thing.cpp
 
 noinst_HEADERS = \
 	../include/scratch/color.hpp \
@@ -42,7 +43,13 @@ noinst_HEADERS = \
 	../include/scratch/protocol.hpp \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
+	../include/scratch/repository.hpp \
 	../include/scratch/scheduler.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
-	../include/scratch/string.hpp
+	../include/scratch/storage.hpp \
+	../include/scratch/storage_file.hpp \
+	../include/scratch/storage_file_multi.hpp \
+	../include/scratch/storage_null.hpp \
+	../include/scratch/string.hpp \
+	../include/scratch/thing.hpp
