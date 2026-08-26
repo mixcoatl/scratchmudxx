@@ -11,6 +11,8 @@
 
 #include <boost/optional.hpp>
 #include <scratch/color.hpp>
+#include <scratch/gender.hpp>
+#include <scratch/trust.hpp>
 #include <exception>
 #include <functional>
 #include <typeindex>
@@ -126,6 +128,16 @@ struct LuaEnumValue {
 template<>
 struct LuaValue<Scratch::Net::Color::ColorEnum, void>:
     LuaEnumValue<Scratch::Net::Color> {};
+
+//! Converts Gender values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Gender::GenderEnum, void>:
+    LuaEnumValue<Scratch::Core::Gender> {};
+
+//! Converts Trust values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Trust::TrustEnum, void>:
+    LuaEnumValue<Scratch::Core::Trust> {};
 
 //! Converts String values to and from Lua strings.
 template<>

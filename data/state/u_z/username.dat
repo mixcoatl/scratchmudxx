@@ -1,0 +1,34 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "New username");
+    ~
+  Received:-
+    local edit = d:get_edit_user();
+    if not edit then
+      d:pop_state();
+    else
+      local name = line:match("%S+") or "";
+      local original = d:get_edit_name();
+      local existing = get_users():get(name);
+      if name == "" then
+        d:print("Username entry cancelled.\r\n");
+        d:pop_state();
+      elseif name:lower() == "new" then
+        require("io").fail(d, Q, "That username is reserved.");
+        d:set_state("UserName");
+      elseif not name:match("^[%w_]+$") then
+        require("io").fail(d, Q,
+          "Usernames may contain only letters, digits, and underscores.");
+        d:set_state("UserName");
+      elseif existing and (original == "" or original:lower() ~~= name:lower()) then
+        require("io").fail(d, Q, "That username is already taken.");
+        d:set_state("UserName");
+      else
+        edit:set_name(name);
+        d:pop_state();
+      end
+    end
+    ~
+  ~
+Name: UserName~
+~

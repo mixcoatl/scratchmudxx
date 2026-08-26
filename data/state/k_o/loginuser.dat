@@ -1,0 +1,28 @@
+Hooks:
+  Focus:-
+    d:print_format("%sUsername %s(%sor \"%sNEW%s\"%s):%s ",
+      Q.PROMPT, Q.PUNCTUATION, Q.PROMPT, Q.EMPHASIS,
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL);
+    ~
+  Received:-
+    local name = line:match("%S+") or "";
+    local name_lower = name:lower();
+    local user = get_users():get(name);
+    if name_lower == "" then
+      require("io").fail(d, Q, "Please enter a username.");
+      d:set_state("LoginUser");
+    elseif name_lower == "new" then
+      local edit = d:set_edit_user(nil);
+      edit:set_gender("Common");
+      d:push_state("User");
+    elseif user then
+      d:set_edit_string(name);
+      d:set_state("LoginPassword");
+    else
+      require("io").fail(d, Q, "Unknown user.");
+      d:set_state("LoginUser");
+    end
+    ~
+  ~
+Name: LoginUser~
+~

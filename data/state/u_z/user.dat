@@ -1,0 +1,81 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_user();
+    if not edit then
+      require("io").fail(d, Q, "No user draft; returning.");
+      d:pop_state();
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    local gender = edit:get_gender() or "";
+    m:set_title("User", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_field("1", "Name", edit:get_name(), "name");
+    m:add_field("2", "Password", edit:get_password(), "text", "<Unset>", "<Set>");
+    m:add_field("3", "Gender", gender, "enum");
+    m:add_field("4", "Email", edit:get_email());
+    m:add_choices();
+    m:add_item("q", "Save and quit.");
+    m:add_item("x", "Abort without saving.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_user();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "1" then
+      d:push_state("UserName");
+    elseif key == "2" then
+      if edit:get_password() ~~= "" then
+        d:push_state("UserPasswordCurrent");
+      else
+        d:push_state("UserPassword");
+      end
+    elseif key == "3" then
+      d:push_state("UserGender");
+    elseif key == "4" then
+      d:push_state("UserEmail");
+    elseif key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        require("io").fail(d, Q, "Name is required before saving.");
+        d:set_state("User");
+      elseif name:lower() == "new" then
+        require("io").fail(d, Q, "That username is reserved.");
+        d:set_state("User");
+      elseif edit:get_password() == "" then
+        require("io").fail(d, Q, "Password is required before saving.");
+        d:set_state("User");
+      else
+        local is_new = d:get_edit_name() == "";
+        require("thing").set_audit_metadata(edit, d:get_user() or edit, is_new);
+        get_users():store(name, edit);
+        local original = d:get_edit_name();
+        if original ~~= "" and original:lower() ~~= name:lower() then
+          get_users():erase(original);
+        end
+        d:login(get_users():get(name));
+        d:clear_edit_user();
+        d:set_edit_string("");
+        if is_new then
+          d:set_state("Lobby");
+        else
+          d:pop_state();
+        end
+      end
+    elseif key == "x" then
+      d:clear_edit_user();
+      d:pop_state();
+    else
+      require("io").show_unknown_choice(d, Q, "User");
+    end
+    ~
+  ~
+Name: User~
+~

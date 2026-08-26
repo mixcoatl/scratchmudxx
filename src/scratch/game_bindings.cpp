@@ -113,6 +113,7 @@ void GameBindings::Register(Lua& lua) {
     lua.Function("get_descriptor", &Game::GetDescriptor);
     lua.RawFunction("get_descriptor_names", DescriptorNamesProxy);
     lua.Function("get_states", &Game::GetStates);
+    lua.Function("get_users", &Game::GetUsers);
     lua.RawFunction("print", PrintProxy);
     lua.RawFunction("shutdown", ShutdownProxy);
 }

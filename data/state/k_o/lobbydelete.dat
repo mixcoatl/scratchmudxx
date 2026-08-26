@@ -1,0 +1,34 @@
+Hooks:
+  Focus:-
+    local user = require("user").ensure_user(d, Q);
+    if not user then
+      return;
+    end
+    d:print_format(
+      "%sType %s%s%s to permanently delete this user record:%s ",
+      Q.PROMPT, Q.NAME, user:get_name(), Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    local user = require("user").ensure_user(d, Q);
+    if not user then
+      return;
+    end
+    local name = user:get_name();
+    local word = line:match("%S+") or "";
+    if word == "" then
+      d:set_state("Lobby");
+    elseif word:lower() == name:lower() then
+      d:clear_edit_user();
+      -- Close before erase: Descriptor::Close saves LastLogout while user_
+      -- is still in the repository; erase then removes the account file.
+      -- Avoids a spurious STORAGE log and needs no C++ logout helper.
+      d:close();
+      get_users():erase(name);
+    else
+      require("io").fail(d, Q, "Username did not match.");
+      d:set_state("LobbyDelete");
+    end
+    ~
+  ~
+Name: LobbyDelete~
+~

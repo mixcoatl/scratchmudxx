@@ -8,11 +8,14 @@
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor.hpp>
 #include <scratch/game_bindings.hpp>
+#include <scratch/gender.hpp>
 #include <scratch/lua_bindings.hpp>
 #include <scratch/menu.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
+#include <scratch/trust.hpp>
+#include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -20,9 +23,12 @@ namespace Scripting {
 using Color = Scratch::Net::Color;
 using Config = Scratch::Core::Config;
 using Editor = Scratch::Net::Editor;
+using Gender = Scratch::Core::Gender;
 using Menu = Scratch::Net::Menu;
 using StateRepository = Scratch::Core::StateRepository;
 using Strings = Scratch::Algorithm::Strings;
+using Trust = Scratch::Core::Trust;
+using UserRepository = Scratch::Core::UserRepository;
 
 //! Handles StateRepository:erase(name).
 static int StateRepositoryErase(lua_State* L) {
@@ -65,7 +71,12 @@ static std::vector<String> GetMetaColorNames() {
 }
 
 void LuaBindings::Register(Lua& lua) {
+    lua.Function("parse_gender", &Gender::ByName);
+    lua.Function("parse_trust", &Trust::ByName);
     lua.Function("get_color_names", GetColorNames);
+    lua.Function(
+	"get_gender_names",
+	&Detail::GetEnumNames<Gender>);
     lua.Function("get_metacolor_names", GetMetaColorNames);
     lua.Class<Config>("Scratch.Config").
 	Function("get_address", &Config::GetAddress).
@@ -107,6 +118,18 @@ void LuaBindings::Register(Lua& lua) {
 	Function("save", &StateRepository::Save).
 	Function("save_index", &StateRepository::SaveIndex).
 	Function("store", &StateRepository::Store);
+    lua.Function("get_trust_names", &Detail::GetEnumNames<Trust>);
+    lua.Function("trust_allows", &Trust::Allows);
+    UserBindings::Register(lua);
+    lua.Class<UserRepository>(UserBindings::RepositoryMetaName).
+	Function("erase", &UserRepository::Erase).
+	Function("get", &UserRepository::Get).
+	Function("get_ids", &UserRepository::GetIds).
+	Function("load", &UserRepository::Load).
+	Function("load_index", &UserRepository::LoadIndex).
+	Function("save", &UserRepository::Save).
+	Function("save_index", &UserRepository::SaveIndex).
+	Function("store", &UserRepository::Store);
 }
 
 }; // namespace Scripting
