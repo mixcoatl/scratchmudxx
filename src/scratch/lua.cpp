@@ -9,6 +9,7 @@
 #define _SCRATCH_LUA_CPP_
 
 #include <scratch/color_bindings.hpp>
+#include <scratch/command_bindings.hpp>
 #include <scratch/config_bindings.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor_bindings.hpp>
@@ -17,6 +18,7 @@
 #include <scratch/gender_bindings.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/parser_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
@@ -100,11 +102,13 @@ Lua::Lua(Game& game) :
     this->InitSafe();
 
     ColorBindings::Register(*this);
+    CommandBindings::Register(*this);
     ConfigBindings::Register(*this);
     DescriptorBindings::Register(*this);
     EditorBindings::Register(*this);
     GameBindings::Register(*this);
     GenderBindings::Register(*this);
+    ParserBindings::Register(*this);
     StateBindings::Register(*this);
     TrustBindings::Register(*this);
     UserBindings::Register(*this);

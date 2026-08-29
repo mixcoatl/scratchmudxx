@@ -10,6 +10,8 @@
 
 #include <scratch/color.hpp>
 #include <scratch/color_bindings.hpp>
+#include <scratch/command.hpp>
+#include <scratch/command_bindings.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor.hpp>
@@ -26,21 +28,20 @@
 namespace Scratch {
 namespace Scripting {
 
-using Descriptor = Scratch::Net::Descriptor;
-
-using WeakDescriptorPtr = std::weak_ptr<Descriptor>;
+// ScratchMUD types.
+using Color = Scratch::Net::Color;
+using Menu = Scratch::Net::Menu;
 
 //! Metatable name for Descriptor userdata.
 const char DescriptorBindings::MetaName[] = "Scratch.Descriptor";
 
-using Color = Scratch::Net::Color;
-using Menu = Scratch::Net::Menu;
+using WeakDescriptorPtr = std::weak_ptr<Descriptor>;
 
 static WeakDescriptorPtr CheckWeakDescriptorPtr(
 	lua_State* L,
 	const int index = 1);
 
-//! Raises if the descriptor's editor is intercepting input.
+//! Errors if the editor is intercepting input.
 //! \param L the \c lua_State
 //! \param d the descriptor
 //! \remark Resets \a d before \c luaL_error.
@@ -92,6 +93,41 @@ static WeakDescriptorPtr CheckWeakDescriptorPtr(
 	luaL_checkudata(L, index, DescriptorBindings::MetaName));
 }
 
+//! Handles Descriptor:clear_edit_command().
+static int DescriptorClearEditCommand(lua_State* L) {
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    d->SetEditCommand(nullptr);
+    d->SetEditName(String());
+    d->SetEditString(String());
+    return 0;
+}
+
+//! Handles Descriptor:clear_edit_state().
+static int DescriptorClearEditState(lua_State* L) {
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    d->SetEditState(nullptr);
+    d->SetEditName(String());
+    d->SetEditString(String());
+    return 0;
+}
+
+//! Handles Descriptor:clear_edit_user().
+static int DescriptorClearEditUser(lua_State* L) {
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    d->SetEditUser(nullptr);
+    d->SetEditName(String());
+    d->SetEditString(String());
+    return 0;
+}
+
+//! Handles Descriptor:clear_editor().
+static int DescriptorClearEditor(lua_State* L) {
+    DescriptorBindings::Check(L)->ClearEditor();
+    return 0;
+}
 //! Handles Descriptor:clear_menu().
 static int DescriptorClearMenu(lua_State* L) {
     if (lua_gettop(L) != 1)
@@ -102,7 +138,166 @@ static int DescriptorClearMenu(lua_State* L) {
     return 0;
 }
 
+//! Handles Descriptor:close().
+static int DescriptorClose(lua_State* L) {
+    DescriptorBindings::Check(L)->Close();
+    return 0;
+}
 
+//! Handles Descriptor userdata garbage collection.
+static int DescriptorGc(lua_State* L) {
+    return Lua::DestroyWeakUserdata<Descriptor>(
+	L, DescriptorBindings::MetaName);
+}
+
+//! Handles Descriptor:get_edit_command().
+static int DescriptorGetEditCommand(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    CommandBindings::Push(lua, DescriptorBindings::Check(L)->GetEditCommand());
+    return 1;
+}
+
+//! Handles Descriptor:get_edit_name().
+static int DescriptorGetEditName(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto name = DescriptorBindings::Check(L)->GetEditName();
+    lua.PushString(std::move(name));
+    return 1;
+}
+
+//! Handles Descriptor:get_edit_state().
+static int DescriptorGetEditState(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    StateBindings::Push(lua, DescriptorBindings::Check(L)->GetEditState());
+    return 1;
+}
+
+//! Handles Descriptor:get_edit_string().
+static int DescriptorGetEditString(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto value = DescriptorBindings::Check(L)->GetEditString();
+    lua.PushString(std::move(value));
+    return 1;
+}
+
+//! Handles Descriptor:get_edit_user().
+static int DescriptorGetEditUser(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    UserBindings::Push(lua, DescriptorBindings::Check(L)->GetEditUser());
+    return 1;
+}
+
+//! Handles Descriptor:get_editor().
+//! \remark Returns a finished editor only (\c nil while active or absent).
+static int DescriptorGetEditor(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto d = DescriptorBindings::Check(L);
+    auto editor = d->GetEditor();
+    d.reset();
+    if (!editor || editor->IsActive()) {
+	editor.reset();
+	lua_pushnil(L);
+	return 1;
+    }
+    EditorBindings::Push(lua, std::move(editor));
+    return 1;
+}
+
+//! Handles Descriptor:get_name().
+static int DescriptorGetName(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto name = DescriptorBindings::Check(L)->GetName();
+    lua.PushString(std::move(name));
+    return 1;
+}
+
+//! Handles Descriptor:get_state().
+static int DescriptorGetState(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    StateBindings::Push(lua, DescriptorBindings::Check(L)->GetState());
+    return 1;
+}
+
+//! Handles Descriptor:get_terminal_type().
+static int DescriptorGetTerminalType(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto terminalType = DescriptorBindings::Check(L)->GetTerminalType();
+    lua.PushString(std::move(terminalType));
+    return 1;
+}
+
+//! Handles Descriptor:get_user().
+static int DescriptorGetUser(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    UserBindings::Push(lua, DescriptorBindings::Check(L)->GetUser());
+    return 1;
+}
+
+//! Handles Descriptor:get_window_height().
+static int DescriptorGetWindowHeight(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    const auto height = DescriptorBindings::Check(L)->GetWindowHeight();
+    lua.PushInt(height);
+    return 1;
+}
+
+//! Handles Descriptor:get_window_width().
+static int DescriptorGetWindowWidth(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    const auto width = DescriptorBindings::Check(L)->GetWindowWidth();
+    lua.PushInt(width);
+    return 1;
+}
+
+//! Handles Descriptor:is_closed().
+static int DescriptorIsClosed(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto d = CheckWeakDescriptorPtr(L).lock();
+    const bool closed = !d || d->Closed();
+    d.reset();
+    lua.PushBool(closed);
+    return 1;
+}
+
+//! Handles Descriptor:is_color().
+static int DescriptorIsColor(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "is_color expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    const bool color = DescriptorBindings::Check(L)->GetColorBit();
+    lua.PushBool(color);
+    return 1;
+}
+
+//! Handles Descriptor:is_prompt().
+static int DescriptorIsPrompt(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "is_prompt expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    const bool prompt = DescriptorBindings::Check(L)->GetPromptBit();
+    lua.PushBool(prompt);
+    return 1;
+}
+
+//! Handles Descriptor:login(user).
+static int DescriptorLogin(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "login expects 1 argument");
+    auto& lua = Lua::CheckLua(L);
+    auto self = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, self);
+    auto user = UserBindings::Check(L, 2);
+    self->Login(user);
+    user.reset();
+    Descriptor& desc = *self;
+    self.reset();
+    ColorBindings::RefillGlobalQ(L, lua, desc);
+    return 0;
+}
+
+//! Parses a metacolor name for menu value coloring.
+//! \param L the \c lua_State
+//! \param index the stack index of the color name
 static Color::ColorEnum CheckMetaColorName(
 	lua_State* L,
 	const int index) {
@@ -338,191 +533,6 @@ static int DescriptorMenuTitle(lua_State* L) {
     return 0;
 }
 
-//! Handles Descriptor:print_menu().
-static int DescriptorPrintMenu(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "print_menu expects no arguments");
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    auto menu = d->GetMenu();
-    if (!menu) {
-	d.reset();
-	return luaL_error(L, "print_menu requires a menu");
-    }
-    if (!menu->HasPrompt()) {
-	d.reset();
-	menu.reset();
-	return luaL_error(L, "print_menu requires menu_prompt");
-    }
-    if (!d->PrintMenu()) {
-	d.reset();
-	menu.reset();
-	return luaL_error(L, "print_menu failed");
-    }
-    return 0;
-}
-
-//! Handles Descriptor:clear_edit_state().
-static int DescriptorClearEditState(lua_State* L) {
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->SetEditState(nullptr);
-    return 0;
-}
-
-//! Handles Descriptor:clear_editor().
-static int DescriptorClearEditor(lua_State* L) {
-    DescriptorBindings::Check(L)->ClearEditor();
-    return 0;
-}
-
-//! Handles Descriptor:clear_edit_user().
-static int DescriptorClearEditUser(lua_State* L) {
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->SetEditUser(nullptr);
-    d->SetEditName(String());
-    d->SetEditString(String());
-    return 0;
-}
-
-//! Handles Descriptor:close().
-static int DescriptorClose(lua_State* L) {
-    DescriptorBindings::Check(L)->Close();
-    return 0;
-}
-
-//! Handles Descriptor userdata garbage collection.
-static int DescriptorGc(lua_State* L) {
-    return Lua::DestroyWeakUserdata<Descriptor>(
-	L, DescriptorBindings::MetaName);
-}
-
-//! Handles Descriptor:get_edit_state().
-static int DescriptorGetEditState(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    StateBindings::Push(lua, DescriptorBindings::Check(L)->GetEditState());
-    return 1;
-}
-
-//! Handles Descriptor:get_edit_string().
-static int DescriptorGetEditString(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto value = DescriptorBindings::Check(L)->GetEditString();
-    lua.PushString(std::move(value));
-    return 1;
-}
-
-//! Handles Descriptor:get_edit_user().
-static int DescriptorGetEditUser(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    UserBindings::Push(lua, DescriptorBindings::Check(L)->GetEditUser());
-    return 1;
-}
-
-//! Handles Descriptor:get_editor().
-//! \remark Returns a finished editor only (\c nil while active or absent).
-static int DescriptorGetEditor(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto d = DescriptorBindings::Check(L);
-    auto editor = d->GetEditor();
-    d.reset();
-    if (!editor || editor->IsActive()) {
-	editor.reset();
-	lua_pushnil(L);
-	return 1;
-    }
-    EditorBindings::Push(lua, std::move(editor));
-    return 1;
-}
-
-//! Handles Descriptor:get_name().
-static int DescriptorGetName(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto name = DescriptorBindings::Check(L)->GetName();
-    lua.PushString(std::move(name));
-    return 1;
-}
-
-//! Handles Descriptor:get_state().
-static int DescriptorGetState(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    StateBindings::Push(lua, DescriptorBindings::Check(L)->GetState());
-    return 1;
-}
-
-//! Handles Descriptor:get_terminal_type().
-static int DescriptorGetTerminalType(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto terminalType = DescriptorBindings::Check(L)->GetTerminalType();
-    lua.PushString(std::move(terminalType));
-    return 1;
-}
-
-//! Handles Descriptor:get_user().
-static int DescriptorGetUser(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    UserBindings::Push(lua, DescriptorBindings::Check(L)->GetUser());
-    return 1;
-}
-
-//! Handles Descriptor:get_window_height().
-static int DescriptorGetWindowHeight(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    const auto height = DescriptorBindings::Check(L)->GetWindowHeight();
-    lua.PushInt(height);
-    return 1;
-}
-
-//! Handles Descriptor:get_window_width().
-static int DescriptorGetWindowWidth(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    const auto width = DescriptorBindings::Check(L)->GetWindowWidth();
-    lua.PushInt(width);
-    return 1;
-}
-
-//! Handles Descriptor:is_closed().
-static int DescriptorIsClosed(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto d = CheckWeakDescriptorPtr(L).lock();
-    const bool closed = !d || d->Closed();
-    d.reset();
-    lua.PushBool(closed);
-    return 1;
-}
-
-//! Handles Descriptor:is_color().
-static int DescriptorIsColor(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "is_color expects no arguments");
-    auto& lua = Lua::CheckLua(L);
-    const bool color = DescriptorBindings::Check(L)->GetColorBit();
-    lua.PushBool(color);
-    return 1;
-}
-
-//! Handles Descriptor:is_prompt().
-static int DescriptorIsPrompt(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "is_prompt expects no arguments");
-    auto& lua = Lua::CheckLua(L);
-    const bool prompt = DescriptorBindings::Check(L)->GetPromptBit();
-    lua.PushBool(prompt);
-    return 1;
-}
-
-//! Handles Descriptor:login(user).
-static int DescriptorLogin(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "login expects 1 argument");
-    auto self = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, self);
-    auto user = UserBindings::Check(L, 2);
-    self->Login(user);
-    return 0;
-}
-
 //! Prints \p message to the Descriptor at stack index 1.
 //! \return \c true if the Descriptor was valid
 static bool TryDescriptorPrint(
@@ -533,47 +543,6 @@ static bool TryDescriptorPrint(
 	return false;
     d->Print(message);
     return true;
-}
-
-//! Handles Descriptor:pop_state().
-static int DescriptorPopState(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "pop_state expects no arguments");
-    ForbidNavigationFromFocusLost(L, "pop_state");
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->PopState();
-    return 0;
-}
-
-//! Handles Descriptor:pop_state_until(name|state).
-static int DescriptorPopStateUntil(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "pop_state_until expects 1 argument");
-    ForbidNavigationFromFocusLost(L, "pop_state_until");
-    const auto weakD = CheckWeakDescriptorPtr(L);
-    if (weakD.expired())
-	return luaL_error(L, "invalid descriptor");
-    {
-	auto d = weakD.lock();
-	RequireNoEditorActive(L, d);
-    }
-    if (luaL_testudata(L, 2, StateBindings::MetaName)) {
-	auto state = StateBindings::Check(L, 2);
-	auto d = weakD.lock();
-	if (!d) {
-	    state.reset();
-	    return luaL_error(L, "invalid descriptor");
-	}
-	d->PopStateUntil(state);
-    } else {
-	const auto stateName = Lua::CheckString(L, 2);
-	auto d = weakD.lock();
-	if (!d)
-	    return luaL_error(L, "invalid descriptor");
-	d->PopStateUntilByName(stateName);
-    }
-    return 0;
 }
 
 //! Handles Descriptor:print(...).
@@ -636,32 +605,26 @@ static int DescriptorPrintColumns(lua_State* L) {
     return 0;
 }
 
-//! Handles Descriptor:push_state(name|state).
-static int DescriptorPushState(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "push_state expects 1 argument");
-    ForbidNavigationFromFocusLost(L, "push_state");
-    const auto weakD = CheckWeakDescriptorPtr(L);
-    if (weakD.expired())
-	return luaL_error(L, "invalid descriptor");
-    {
-	auto d = weakD.lock();
-	RequireNoEditorActive(L, d);
+//! Handles Descriptor:print_menu().
+static int DescriptorPrintMenu(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "print_menu expects no arguments");
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    auto menu = d->GetMenu();
+    if (!menu) {
+	d.reset();
+	return luaL_error(L, "print_menu requires a menu");
     }
-    if (luaL_testudata(L, 2, StateBindings::MetaName)) {
-	auto state = StateBindings::Check(L, 2);
-	auto d = weakD.lock();
-	if (!d) {
-	    state.reset();
-	    return luaL_error(L, "invalid descriptor");
-	}
-	d->PushState(state);
-    } else {
-	const auto stateName = Lua::CheckString(L, 2);
-	auto d = weakD.lock();
-	if (!d)
-	    return luaL_error(L, "invalid descriptor");
-	d->PushStateByName(stateName);
+    if (!menu->HasPrompt()) {
+	d.reset();
+	menu.reset();
+	return luaL_error(L, "print_menu requires menu_prompt");
+    }
+    if (!d->PrintMenu()) {
+	d.reset();
+	menu.reset();
+	return luaL_error(L, "print_menu failed");
     }
     return 0;
 }
@@ -681,6 +644,43 @@ static int DescriptorSetColor(lua_State* L) {
     return 0;
 }
 
+//! Handles Descriptor:set_edit_command([command]).
+//! \remark Draft copy of \p command, or blank when omitted.
+static int DescriptorSetEditCommand(lua_State* L) {
+    const int argc = lua_gettop(L);
+    if (argc != 1 && argc != 2)
+	return luaL_error(L, "set_edit_command expects 0 or 1 arguments");
+    const auto weakD = CheckWeakDescriptorPtr(L);
+    if (weakD.expired())
+	return luaL_error(L, "invalid descriptor");
+    {
+	auto d = weakD.lock();
+	RequireNoEditorActive(L, d);
+    }
+    auto& lua = Lua::CheckLua(L);
+    CommandPtr editCommand;
+    String originalName;
+    if (argc == 2) {
+	auto source = CommandBindings::Check(L, 2);
+	originalName = source->GetName();
+	editCommand = std::make_shared<Command>(*source);
+	source.reset();
+    } else {
+	editCommand = std::make_shared<Command>();
+    }
+    auto d = weakD.lock();
+    if (!d) {
+	editCommand.reset();
+	return luaL_error(L, "invalid descriptor");
+    }
+    d->SetEditCommand(editCommand);
+    d->SetEditName(originalName);
+    d->SetEditString(String());
+    d.reset();
+    CommandBindings::Push(lua, std::move(editCommand));
+    return 1;
+}
+
 //! Handles Descriptor:set_edit_state([state]).
 //! \remark Draft copy of \p state, or blank when omitted.
 static int DescriptorSetEditState(lua_State* L) {
@@ -696,8 +696,10 @@ static int DescriptorSetEditState(lua_State* L) {
     }
     auto& lua = Lua::CheckLua(L);
     StatePtr editState;
+    String originalName;
     if (argc == 2) {
 	auto source = StateBindings::Check(L, 2);
+	originalName = source->GetName();
 	editState = std::make_shared<State>(*source);
 	source.reset();
     } else {
@@ -709,6 +711,8 @@ static int DescriptorSetEditState(lua_State* L) {
 	return luaL_error(L, "invalid descriptor");
     }
     d->SetEditState(editState);
+    d->SetEditName(originalName);
+    d->SetEditString(String());
     d.reset();
     StateBindings::Push(lua, std::move(editState));
     return 1;
@@ -770,6 +774,77 @@ static int DescriptorSetPrompt(lua_State* L) {
     auto d = DescriptorBindings::Check(L);
     RequireNoEditorActive(L, d);
     d->SetPromptBit(lua_toboolean(L, 2) != 0);
+    return 0;
+}
+
+//! Handles Descriptor:pop_state().
+static int DescriptorPopState(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "pop_state expects no arguments");
+    ForbidNavigationFromFocusLost(L, "pop_state");
+    auto d = DescriptorBindings::Check(L);
+    RequireNoEditorActive(L, d);
+    d->PopState();
+    return 0;
+}
+
+//! Handles Descriptor:pop_state_until(name|state).
+static int DescriptorPopStateUntil(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "pop_state_until expects 1 argument");
+    ForbidNavigationFromFocusLost(L, "pop_state_until");
+    const auto weakD = CheckWeakDescriptorPtr(L);
+    if (weakD.expired())
+	return luaL_error(L, "invalid descriptor");
+    {
+	auto d = weakD.lock();
+	RequireNoEditorActive(L, d);
+    }
+    if (luaL_testudata(L, 2, StateBindings::MetaName)) {
+	auto state = StateBindings::Check(L, 2);
+	auto d = weakD.lock();
+	if (!d) {
+	    state.reset();
+	    return luaL_error(L, "invalid descriptor");
+	}
+	d->PopStateUntil(state);
+    } else {
+	const auto stateName = Lua::CheckString(L, 2);
+	auto d = weakD.lock();
+	if (!d)
+	    return luaL_error(L, "invalid descriptor");
+	d->PopStateUntilByName(stateName);
+    }
+    return 0;
+}
+
+//! Handles Descriptor:push_state(name|state).
+static int DescriptorPushState(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "push_state expects 1 argument");
+    ForbidNavigationFromFocusLost(L, "push_state");
+    const auto weakD = CheckWeakDescriptorPtr(L);
+    if (weakD.expired())
+	return luaL_error(L, "invalid descriptor");
+    {
+	auto d = weakD.lock();
+	RequireNoEditorActive(L, d);
+    }
+    if (luaL_testudata(L, 2, StateBindings::MetaName)) {
+	auto state = StateBindings::Check(L, 2);
+	auto d = weakD.lock();
+	if (!d) {
+	    state.reset();
+	    return luaL_error(L, "invalid descriptor");
+	}
+	d->PushState(state);
+    } else {
+	const auto stateName = Lua::CheckString(L, 2);
+	auto d = weakD.lock();
+	if (!d)
+	    return luaL_error(L, "invalid descriptor");
+	d->PushStateByName(stateName);
+    }
     return 0;
 }
 
@@ -846,18 +921,20 @@ void DescriptorBindings::Push(
 }
 
 //! Registers the Descriptor metatable.
-//! \param lua the Lua facade
-void DescriptorBindings::Register(Lua& lua) {
-    lua_State* L = lua.GetState();
-    Lua::RegisterMetatable(L, MetaName);
+//! \param L the \c lua_State
+static void RegisterDescriptorMeta(lua_State* L) {
+    Lua::RegisterMetatable(L, DescriptorBindings::MetaName);
 
     static const luaL_Reg methods[] = {
 	{"__gc", DescriptorGc},
+	{"clear_edit_command", DescriptorClearEditCommand},
 	{"clear_edit_state", DescriptorClearEditState},
 	{"clear_edit_user", DescriptorClearEditUser},
 	{"clear_editor", DescriptorClearEditor},
 	{"clear_menu", DescriptorClearMenu},
 	{"close", DescriptorClose},
+	{"get_edit_command", DescriptorGetEditCommand},
+	{"get_edit_name", DescriptorGetEditName},
 	{"get_edit_state", DescriptorGetEditState},
 	{"get_edit_string", DescriptorGetEditString},
 	{"get_edit_user", DescriptorGetEditUser},
@@ -890,6 +967,7 @@ void DescriptorBindings::Register(Lua& lua) {
 	{"print_menu", DescriptorPrintMenu},
 	{"push_state", DescriptorPushState},
 	{"set_color", DescriptorSetColor},
+	{"set_edit_command", DescriptorSetEditCommand},
 	{"set_edit_state", DescriptorSetEditState},
 	{"set_edit_string", DescriptorSetEditString},
 	{"set_edit_user", DescriptorSetEditUser},
@@ -900,6 +978,12 @@ void DescriptorBindings::Register(Lua& lua) {
     };
     luaL_setfuncs(L, methods, 0);
     lua_pop(L, 1);
+}
+
+//! Registers the Descriptor metatable.
+//! \param lua the Lua facade
+void DescriptorBindings::Register(Lua& lua) {
+    RegisterDescriptorMeta(lua.GetState());
 }
 
 }; // namespace Scripting

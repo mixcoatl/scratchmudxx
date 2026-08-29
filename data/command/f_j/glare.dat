@@ -1,0 +1,7 @@
+Name: Glare~
+Social:
+  Found: ${S.Name} glare${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} glare${:s} at ${S.Reflexive}.~
+  NoArgument: $${S.Name} glares.~
+  ~
+~

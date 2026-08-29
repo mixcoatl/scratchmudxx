@@ -1,0 +1,31 @@
+Name: Revoke~
+Trust: Wizard~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  local who = line:match("^%s*(%S+)")
+  if not who then
+    d:print_format("%sUsage: revoke <user>%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local user = get_users():get(who)
+  if not user then
+    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local granter = d:get_user()
+  local granter_trust = "Player"
+  if granter then
+    granter_trust = granter:get_trust()
+  end
+  if not trust_allows(granter_trust, user:get_trust()) then
+    d:print_format("%sInsufficient trust.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  user:set_trust("Player")
+  get_users():save(user:get_name())
+  d:print_format("%sRevoked trust from %s.%s\r\n", Q.OKAY, user:get_name(), Q.NORMAL)
+  ~
+~

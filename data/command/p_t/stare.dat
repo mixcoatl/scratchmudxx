@@ -1,0 +1,7 @@
+Name: Stare~
+Social:
+  Found: ${S.Name} stare${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} stare${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} stare${:s} off.~
+  ~
+~

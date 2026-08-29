@@ -1,0 +1,59 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local current = edit:get_trust();
+    d:clear_menu();
+    d:menu_title("Trust", edit:get_name(), "name", "<New>");
+    d:menu_named_choices("Required Trust");
+    local names = get_trust_names();
+    for i, name in ipairs(names) do
+      d:menu_item(tostring(i), name);
+    end
+    d:menu_choices();
+    d:menu_item("0", "Open (no requirement).");
+    d:menu_item("x", "Return.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local key = d:menu_match(line);
+    if key == "x" then
+      d:pop_state();
+      return;
+    end
+    if not key then
+      if line:match("%S+") then
+        d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("CommandTrust");
+      else
+        d:pop_state();
+      end
+      return;
+    end
+    if key == "0" then
+      edit:set_trust("");
+      d:set_state("CommandTrust");
+      return;
+    end
+    local names = get_trust_names();
+    local n = tonumber(key);
+    local trust = n and names[n];
+    if trust then
+      edit:set_trust(trust);
+    else
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+    end
+    d:set_state("CommandTrust");
+    ~
+  ~
+Name: CommandTrust~
+~

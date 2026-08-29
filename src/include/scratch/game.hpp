@@ -9,6 +9,8 @@
 #ifndef _SCRATCH_GAME_HPP_
 #define _SCRATCH_GAME_HPP_
 
+#include <scratch/action.hpp>
+#include <scratch/command.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
@@ -42,7 +44,11 @@ using SignalSet = boost::asio::signal_set;
 using Socket = boost::asio::ip::tcp::socket;
 
 // ScratchMUD types.
+using Color = Scratch::Net::Color;
 using ConfigPtr = std::shared_ptr<Config>;
+using CommandRepository = Scratch::Storage::Repository<
+	Command, Scratch::Storage::MultiFileStorage<Command>>;
+using CommandRepositoryPtr = std::shared_ptr<CommandRepository>;
 using Descriptor = Scratch::Net::Descriptor;
 using DescriptorPtr = std::shared_ptr<Descriptor>;
 using Lua = Scratch::Scripting::Lua;
@@ -66,13 +72,71 @@ public:
     //! \sa #Shutdown()
     ~Game() noexcept;
 
+    //! Sends an action message.
+    //! \param metacolor the message metacolor
+    //! \param targets the audience bits
+    //! \param message the message template
+    //! \param subject the subject slot
+    //! \param direct the direct slot
+    //! \param indirect the indirect slot
+    //! \param extra the extra slot
+    void Action(
+	const Color::ColorEnum metacolor,
+	const unsigned targets,
+	const String& message,
+	const ActionParam& subject,
+	const ActionParam& direct = ActionParam(),
+	const ActionParam& indirect = ActionParam(),
+	const ActionParam& extra = ActionParam());
+
+    //! Applies Quiet and Prompt bits.
+    //! \param state the connection state
+    //! \sa #GetDescriptors() const
+    //! \sa Descriptor::SetState(const StatePtr&)
+    void ApplyStateBits(const StatePtr& state) noexcept;
+
+    //! Dispatches a command line.
+    //! \param performer the performing thing
+    //! \param line the raw input line
+    void DispatchCommand(
+	const ThingPtr& performer,
+	const String& line);
+
+    //! Erases a descriptor.
+    //! \param descriptorName the descriptor name to erase
+    void EraseDescriptor(const String& descriptorName) noexcept;
+
+    //! Finds a command.
+    //! \param word the first input word
+    //! \param performer the performing thing
+    //! \return the matched command, or \c nullptr
+    //! \sa Command::Allows(const UserPtr&) const
+    //! \sa #GetCommandsIndex() const
+    CommandPtr FindCommand(
+	const String& word,
+	const ThingPtr& performer) const noexcept;
+
+    //! Gets the command repository.
+    CommandRepositoryPtr GetCommands() const noexcept;
+
     //! Gets the host configuration.
     ConfigPtr GetConfig() const noexcept;
 
-    //! Searches for a descriptor.
-    //! \param descriptorName the descriptor name of the descriptor to return
-    //! \return the descriptor indicated by the specified descriptor name
+    //! Gets the keyword command index.
+    //! \sa #RebuildCommandIndex()
+    const StringMapCi<CommandPtr>& GetCommandsIndex() const noexcept {
+	return commandsIndex_;
+    }
+
+    //! Gets a descriptor.
+    //! \param descriptorName the descriptor name
+    //! \return the descriptor, or \c nullptr
     DescriptorPtr GetDescriptor(const String& descriptorName) noexcept;
+
+    //! Gets the controlling descriptor.
+    //! \param thing the thing
+    //! \return the controlling descriptor, or \c nullptr
+    DescriptorPtr GetDescriptorFor(const ThingPtr& thing) noexcept;
 
     //! Gets the descriptors.
     std::set<DescriptorPtr> GetDescriptors() const noexcept;
@@ -80,7 +144,7 @@ public:
     //! Gets the IO context.
     IoContext& GetIoContext() noexcept;
 
-    //! Gets the Lua state.
+    //! Gets the Lua facade.
     Lua& GetLua() noexcept;
 
     //! Gets the shutdown flag.
@@ -93,26 +157,15 @@ public:
     //! Gets the user repository.
     UserRepositoryPtr GetUsers() const noexcept;
 
-    //! Applies Quiet and Prompt bits to descriptors in \p state.
-    //! \param state the connection state
-    //! \sa #GetDescriptors() const
-    //! \sa Descriptor::SetState(const StatePtr&)
-    void ApplyStateBits(const StatePtr& state) noexcept;
-
-    //! Constructs and returns a new descriptor.
-    //! \param socket the Boost socket
-    DescriptorPtr MakeDescriptor(Socket&& socket) noexcept;
-
-    //! Closes a descriptor if needed and removes it from the index.
-    //! \param descriptorName the descriptor name to erase
-    //! \remark Safe to call for an already-closed or unknown name; idempotent.
-    void EraseDescriptor(const String& descriptorName) noexcept;
-
     //! Loads game repositories from disk.
     //! \throw std::runtime_error if a required repository cannot be loaded
     //! \sa #GetStates() const
     //! \sa #Run()
     void LoadRepositories();
+
+    //! Constructs a descriptor.
+    //! \param socket the Boost socket
+    DescriptorPtr MakeDescriptor(Socket&& socket) noexcept;
 
     //! Parses command line arguments.
     //! \param argc the number of command line arguments
@@ -121,8 +174,32 @@ public:
 	const int argc,
 	const char **argv);
 
+    //! Rebuilds the keyword command index.
+    //! \throw std::runtime_error on keyword conflicts
+    //! \sa #GetCommandsIndex() const
+    void RebuildCommandIndex();
+
     //! Runs the game.
     virtual void Run();
+
+    //! Runs a command Action Lua hook with \c actor, \c command, \c line, and \c Q.
+    //! \param command the command
+    //! \param performer the performing thing
+    //! \param line the remainder after the matched word
+    void RunCommandHook(
+	const CommandPtr& command,
+	const ThingPtr& performer,
+	const String& line);
+
+    //! Runs social templates for \p actor.
+    //! \param actor the performing user
+    //! \param social the social templates
+    //! \param line the remainder after the matched command word
+    //! \sa #RunCommandHook(const CommandPtr&, const ThingPtr&, const String&)
+    void RunSocial(
+	const UserPtr& actor,
+	const SocialPtr& social,
+	const String& line);
 
     //! Sets the shutdown flag.
     //! \param shutdown the shutdown flag value
@@ -131,11 +208,47 @@ public:
     void SetShutdown(const bool shutdown) noexcept;
 
 protected:
+    //! Expands and prints one action message.
+    //! \param metacolor the message metacolor
+    //! \param message the message template
+    //! \param subject the subject slot
+    //! \param direct the direct slot
+    //! \param indirect the indirect slot
+    //! \param extra the extra slot
+    //! \param recipient the recipient thing
+    //! \param to the recipient descriptor
+    //! \sa #Action
+    void ActionPerform(
+	const Color::ColorEnum metacolor,
+	const String& message,
+	const ActionParam& subject,
+	const ActionParam& direct,
+	const ActionParam& indirect,
+	const ActionParam& extra,
+	const ThingPtr& recipient,
+	Descriptor& to);
+
+    //! Begins waiting for process termination signals.
+    void InitSignals();
+
+    //! Stops the acceptor, descriptors, and I/O context.
+    //! \sa #SetShutdown(const bool)
+    void Shutdown() noexcept;
+
     //! The IO context.
     //! \sa #GetIoContext() const
     //! \remark Must precede ASIO-dependent members (\ref descriptors_,
     //!     \ref server_, \ref signals_) so it outlives them on teardown.
     IoContext ioContext_;
+
+    //! The command repository.
+    //! \sa #GetCommands() const
+    CommandRepositoryPtr commands_;
+
+    //! The keyword command index.
+    //! \sa #GetCommandsIndex() const
+    //! \sa #RebuildCommandIndex()
+    StringMapCi<CommandPtr> commandsIndex_;
 
     //! Host configuration.
     ConfigPtr config_;
@@ -144,7 +257,7 @@ protected:
     //! \sa #GetDescriptors() const
     StringMapCi<DescriptorPtr> descriptors_;
 
-    //! The Lua state.
+    //! The Lua facade.
     //! \sa #GetLua()
     LuaPtr lua_;
 
@@ -167,13 +280,6 @@ protected:
     //! The user repository.
     //! \sa #GetUsers() const
     UserRepositoryPtr users_;
-
-    //! Begins waiting for process termination signals.
-    void InitSignals();
-
-    //! Stops the acceptor, descriptors, and I/O context.
-    //! \sa #SetShutdown(const bool)
-    void Shutdown() noexcept;
 };
 //! \}
 

@@ -1,0 +1,7 @@
+Name: Cough~
+Social:
+  Found: ${S.Name} cough${:s} on ${D.Name}.~
+  FoundAuto: ${S.Name} cough${:s} on ${S.Reflexive}.~
+  NoArgument: ${S.Name} cough${:s}.~
+  ~
+~

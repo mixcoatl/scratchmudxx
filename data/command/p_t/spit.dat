@@ -1,0 +1,7 @@
+Name: Spit~
+Social:
+  Found: ${S.Name} spit${:s} in ${D.NamePossessive} face.~
+  FoundAuto: ${S.Name} spit${:s} on ${S.Reflexive}.~
+  NoArgument: ${S.Name} spit${:s}.~
+  ~
+~

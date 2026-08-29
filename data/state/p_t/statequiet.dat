@@ -1,0 +1,28 @@
+Hooks:
+  Focus:-
+    d:print_format("%sQuiet (Yes/No)%s:%s ", Q.PROMPT, Q.PUNCTUATION, Q.NORMAL);
+    ~
+  Received:-
+    local edit = d:get_edit_state();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local ans = (line:match("%S+") or ""):lower();
+    if ans == "" then
+      d:print_format("%sQuiet entry cancelled.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:pop_state();
+    elseif ans == "y" or ans == "yes" then
+      edit:set_quiet(true);
+      d:pop_state();
+    elseif ans == "n" or ans == "no" then
+      edit:set_quiet(false);
+      d:pop_state();
+    else
+      d:print_format("%sEnter Yes or No.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("StateQuiet");
+    end
+    ~
+  ~
+Name: StateQuiet~
+~

@@ -1,0 +1,32 @@
+Name: Socials~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local player = actor:get_player()
+  if not player then
+    return
+  end
+  local cells = {}
+  for _, id in ipairs(get_commands():get_ids()) do
+    local c = get_commands():get(id)
+    if c and c:get_social() ~~= nil then
+      local required = c:get_trust()
+      local allowed = required == "" or trust_allows(player:get_trust(), required)
+      if allowed then
+        local name = string.lower(c:get_name())
+        local color = Q.SOCIAL
+        if required ~~= "" then
+          color = Q.RESTRICTED
+        end
+        cells[#cells + 1] = color .. name .. Q.NORMAL
+      end
+    end
+  end
+  if #cells == 0 then
+    return
+  end
+  d:print_columns(cells)
+  ~
+~
