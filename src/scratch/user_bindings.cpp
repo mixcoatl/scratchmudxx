@@ -69,8 +69,10 @@ void UserBindings::Push(
 //! \param L the \c lua_State
 static void RegisterUserMeta(Lua& lua) {
     lua.Class<User>(UserBindings::MetaName).
+	Function("add_player", &User::AddPlayer).
 	Function("add_preference", &User::AddPreference).
 	Function("clear_metacolor", &User::ClearMetaColor).
+	Function("erase_player", &User::ErasePlayer).
 	Function("erase_preference", &User::ErasePreference).
 	Function("get_created", &User::GetCreated).
 	Function("get_created_by", &User::GetCreatedBy).
@@ -83,7 +85,9 @@ static void RegisterUserMeta(Lua& lua) {
 	Function("get_modified_by", &User::GetModifiedBy).
 	Function("get_name", &User::GetName).
 	Function("get_password", &User::GetPassword).
+	Function("get_players", &User::GetPlayers).
 	Function("get_preferences", &User::GetPreferences).
+	Function("has_player", &User::HasPlayer).
 	Function("has_preference", &User::HasPreference).
 	Function("set_created", &User::SetCreated).
 	Function("set_created_by", &User::SetCreatedBy).

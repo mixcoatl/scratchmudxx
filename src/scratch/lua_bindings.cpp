@@ -14,6 +14,8 @@
 #include <scratch/lua_bindings.hpp>
 #include <scratch/menu.hpp>
 #include <scratch/parser.hpp>
+#include <scratch/player_bindings.hpp>
+#include <scratch/preference.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
@@ -31,6 +33,8 @@ using Gender = Scratch::Core::Gender;
 using Instance = Scratch::Core::Instance;
 using Menu = Scratch::Net::Menu;
 using Parser = Scratch::Core::Parser;
+using PlayerRepository = Scratch::Core::PlayerRepository;
+using Preference = Scratch::Core::Preference;
 using StateRepository = Scratch::Core::StateRepository;
 using Strings = Scratch::Algorithm::Strings;
 using Trust = Scratch::Core::Trust;
@@ -144,6 +148,7 @@ static int ParseProxy(lua_State* L) {
 void LuaBindings::Register(Lua& lua) {
     lua.Function("parse_gender", &Gender::ByName);
     lua.Function("parse_trust", &Trust::ByName);
+    lua.Function("parse_preference", &Preference::ByName);
     lua.Function("get_color_names", GetColorNames);
     lua.Function(
 	"get_gender_names",
@@ -193,13 +198,18 @@ void LuaBindings::Register(Lua& lua) {
 	Function("add_child", &Instance::AddChild).
 	Function("get_contents", &Instance::GetContents).
 	Function("get_contents_weight", &Instance::GetContentsWeight).
+	Function("get_descriptor", &Instance::GetDescriptor).
+	Function("get_gender", &Instance::GetGender).
 	Function("get_name", &Instance::GetName).
 	Function("get_parent", &Instance::GetParent).
+	Function("get_player", &Instance::GetPlayer).
 	Function("get_total_weight", &Instance::GetTotalWeight).
 	Function("get_weight", &Instance::GetWeight).
 	Function("get_world", &Instance::GetWorld).
+	Function("matches", &Instance::Matches, Optional()).
 	Function("remove", &Instance::Remove).
 	Function("remove_child", &Instance::RemoveChild).
+	Function("set_gender", &Instance::SetGender).
 	Function("set_weight", &Instance::SetWeight);
     lua.Class<Parser::Phrase>("Scratch.ParserPhrase").
 	Value().
@@ -210,6 +220,17 @@ void LuaBindings::Register(Lua& lua) {
 	Function("is_single", &Parser::Phrase::IsSingle);
     lua.RawFunction("match_phrase", MatchPhraseProxy);
     lua.RawFunction("parse", ParseProxy);
+    PlayerBindings::Register(lua);
+    lua.Class<PlayerRepository>(PlayerBindings::RepositoryMetaName).
+	Function("erase", &PlayerRepository::Erase).
+	Function("get", &PlayerRepository::Get).
+	Function("get_ids", &PlayerRepository::GetIds).
+	Function("load", &PlayerRepository::Load).
+	Function("load_index", &PlayerRepository::LoadIndex).
+	Function("save", &PlayerRepository::Save).
+	Function("save_index", &PlayerRepository::SaveIndex).
+	Function("store", &PlayerRepository::Store);
+    lua.Function("get_preference_names", &Detail::GetEnumNames<Preference>);
     StateBindings::Register(lua);
     lua.Class<StateRepository>(StateBindings::RepositoryMetaName).
 	RawFunction("erase", StateRepositoryErase).

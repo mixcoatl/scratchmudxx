@@ -13,7 +13,9 @@
 #include <scratch/action.hpp>
 #include <scratch/color.hpp>
 #include <scratch/gender.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/parser.hpp>
+#include <scratch/preference.hpp>
 #include <scratch/trust.hpp>
 #include <exception>
 #include <functional>
@@ -136,6 +138,11 @@ template<>
 struct LuaValue<Scratch::Core::Gender::GenderEnum, void>:
     LuaEnumValue<Scratch::Core::Gender> {};
 
+//! Converts Preference values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Preference::PreferenceEnum, void>:
+    LuaEnumValue<Scratch::Core::Preference> {};
+
 //! Converts Trust values to and from Lua strings.
 template<>
 struct LuaValue<Scratch::Core::Trust::TrustEnum, void>:
@@ -203,7 +210,6 @@ struct LuaValue<bool, void> {
     }
 };
 
-
 //! Converts action parameters from Lua.
 template<>
 struct LuaValue<Scratch::Core::ActionParam, void> {
@@ -212,13 +218,19 @@ struct LuaValue<Scratch::Core::ActionParam, void> {
 	    const int index) {
 	if (lua_isnoneornil(L, index))
 	    return Scratch::Core::ActionParam();
+	if (lua_isuserdata(L, index)) {
+	    auto* instance = static_cast<
+		std::weak_ptr<Scratch::Core::Instance>*>(
+		luaL_checkudata(L, index, "Scratch.Instance"));
+	    return Scratch::Core::ActionParam(instance->lock());
+	}
 	if (lua_isnumber(L, index))
 	    return Scratch::Core::ActionParam(lua_tonumber(L, index));
 	if (lua_isstring(L, index))
 	    return Scratch::Core::ActionParam(
 		Lua::CheckString(L, index));
 	luaL_argerror(
-	    L, index, "expected string, number, or nil");
+	    L, index, "expected instance, string, number, or nil");
 	return Scratch::Core::ActionParam();
     }
 };

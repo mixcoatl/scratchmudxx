@@ -11,8 +11,10 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/player_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
@@ -21,6 +23,8 @@
 namespace Scratch {
 namespace Scripting {
 
+using Instance = Scratch::Core::Instance;
+using InstancePtr = Scratch::Core::InstancePtr;
 using World = Scratch::Core::World;
 
 //! Handles lua broadcast.
@@ -107,6 +111,20 @@ static int DescriptorNamesProxy(lua_State* L) {
     return 1;
 }
 
+//! Handles lua erase_instance(instance).
+//! \param L the \c lua_State
+static int EraseInstanceProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "erase_instance expects 1 argument");
+    InstancePtr instance;
+    if (!lua_isnil(L, 1))
+	instance = Lua::CheckWeakUserdata<Instance>(
+	    L, "Scratch.Instance", "invalid instance", 1);
+    if (instance)
+	instance->Remove();
+    return 0;
+}
+
 //! Registers Game free functions on \p lua.
 //! \param lua the Lua facade
 void GameBindings::Register(Lua& lua) {
@@ -118,9 +136,11 @@ void GameBindings::Register(Lua& lua) {
     lua.Function("get_config", &Game::GetConfig);
     lua.RawFunction("broadcast", BroadcastProxy);
     lua.RawFunction("crypt", CryptProxy);
-    lua.Function("get_commands", &Game::GetCommands);
     lua.Function("get_descriptor", &Game::GetDescriptor);
     lua.RawFunction("get_descriptor_names", DescriptorNamesProxy);
+    lua.Function("get_instance_for", &Game::GetInstanceFor);
+    lua.RawFunction("erase_instance", EraseInstanceProxy);
+    lua.Function("get_players", &Game::GetPlayers);
     lua.Function("get_states", &Game::GetStates);
     lua.Function("get_users", &Game::GetUsers);
     lua.Function("get_world", &Game::GetWorld);

@@ -23,7 +23,6 @@ namespace Scratch {
 namespace Core {
 
 // Forward declarations.
-class Game;
 class Thing;
 
 //! The type of a shared thing pointer.
@@ -49,14 +48,6 @@ public:
     //! Default assignment.
     //! \param other the \sa thing to assign
     Thing& operator=(const Thing& other) noexcept;
-
-    //! Finds a thing by name.
-    //! \param game the game state
-    //! \param name the name token
-    //! \return the matched thing, or \c nullptr
-    virtual ThingPtr Find(
-	const Game& game,
-	const String& name) const noexcept;
 
     //! Gets the creation time.
     //! \sa #SetCreated(const std::time_t)

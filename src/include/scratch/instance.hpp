@@ -9,6 +9,9 @@
 #ifndef _SCRATCH_INSTANCE_HPP_
 #define _SCRATCH_INSTANCE_HPP_
 
+#include <scratch/gender.hpp>
+#include <scratch/parser.hpp>
+#include <scratch/player.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 #include <scratch/world.hpp>
@@ -22,7 +25,13 @@ class Descriptor;
 namespace Scratch {
 namespace Core {
 
+// Forward declarations.
+class Game;
+
 // ScratchMUD types.
+using Descriptor = Scratch::Net::Descriptor;
+using DescriptorPtr = std::shared_ptr<Descriptor>;
+using WeakDescriptorPtr = std::weak_ptr<Descriptor>;
 using WeakInstancePtr = std::weak_ptr<Instance>;
 using WeakInstancePtrSet =
 	std::set<WeakInstancePtr, std::owner_less<WeakInstancePtr>>;
@@ -53,6 +62,22 @@ public:
     //! \sa #RemoveChild(const InstancePtr&)
     bool AddChild(const InstancePtr& instance) noexcept;
 
+    //! Finds an instance matching \p line.
+    //! \param game the game state
+    //! \param line the targeting line
+    //! \return the matched instance, or \c nullptr
+    std::shared_ptr<Instance> Find(
+	const Game& game,
+	const String& line) const noexcept;
+
+    //! Finds an instance matching \p phrase.
+    //! \param game the game state
+    //! \param phrase the targeting phrase
+    //! \return the matched instance, or \c nullptr
+    std::shared_ptr<Instance> Find(
+	const Game& game,
+	const Parser::Phrase& phrase) const noexcept;
+
     //! Gets the contained instances.
     //! \sa #AddChild(const InstancePtr&)
     //! \sa #RemoveChild(const InstancePtr&)
@@ -79,6 +104,16 @@ public:
 	return weight_;
     }
 
+    //! Gets the controlling descriptor.
+    //! \sa #SetDescriptor(const DescriptorPtr&)
+    DescriptorPtr GetDescriptor() noexcept;
+
+    //! Gets the gender.
+    //! \sa #SetGender(Gender::GenderEnum)
+    Gender::GenderEnum GetGender() const noexcept {
+	return gender_;
+    }
+
     //! Gets the instance name.
     //! \sa #SetName(const String&)
     String GetName() const noexcept {
@@ -90,6 +125,12 @@ public:
     //! \sa #RemoveChild(const InstancePtr&)
     InstancePtr GetParent() const noexcept {
 	return parent_.lock();
+    }
+
+    //! Gets the player.
+    //! \sa #SetPlayer(const PlayerPtr&)
+    PlayerPtr GetPlayer() const noexcept {
+	return player_;
     }
 
     //! Gets the world object.
@@ -115,12 +156,27 @@ public:
     //! \sa #AddChild(const InstancePtr&)
     void RemoveChild(const InstancePtr& instance) noexcept;
 
+    //! Sets the controlling descriptor.
+    //! \param descriptor the descriptor, or null to clear
+    //! \sa #GetDescriptor()
+    void SetDescriptor(const DescriptorPtr& descriptor) noexcept;
+
+    //! Sets the gender.
+    //! \param gender the gender
+    //! \sa #GetGender() const
+    void SetGender(Gender::GenderEnum gender) noexcept;
+
     //! Sets the instance name.
     //! \param name the instance name
     //! \sa #GetName() const
     void SetName(const String& name) {
 	name_ = name;
     }
+
+    //! Sets the player.
+    //! \param player the player
+    //! \sa #GetPlayer() const
+    void SetPlayer(const PlayerPtr& player) noexcept;
 
     //! Sets the intrinsic weight.
     //! \param weight the nonnegative finite weight
@@ -145,6 +201,16 @@ protected:
     //! \sa #GetContentsWeight() const
     double contentsWeight_;
 
+    //! The controlling descriptor.
+    //! \sa #GetDescriptor()
+    //! \sa #SetDescriptor(const DescriptorPtr&)
+    WeakDescriptorPtr descriptor_;
+
+    //! The gender.
+    //! \sa #GetGender() const
+    //! \sa #SetGender(Gender::GenderEnum)
+    Gender::GenderEnum gender_;
+
     //! The instance name.
     //! \sa #GetName() const
     //! \sa #SetName(const String&)
@@ -153,6 +219,11 @@ protected:
     //! The parent instance.
     //! \sa #GetParent() const
     WeakInstancePtr parent_;
+
+    //! The player.
+    //! \sa #GetPlayer() const
+    //! \sa #SetPlayer(const PlayerPtr&)
+    PlayerPtr player_;
 
     //! The intrinsic weight.
     //! \sa #GetWeight() const

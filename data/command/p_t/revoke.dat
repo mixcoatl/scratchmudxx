@@ -1,31 +1,44 @@
 Name: Revoke~
 Trust: Wizard~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
     return
   end
-  local who = line:match("^%s*(%S+)")
-  if not who then
-    d:print_format("%sUsage: revoke <user>%s\r\n", Q.FAILED, Q.NORMAL)
+  local io = require("io")
+  local thing = require("thing")
+  local who, trust_name = line:match("^%s*(%S+)%s+(%S+)")
+  if not who or not trust_name then
+    io.usage(d, Q, "revoke <player> <trust>")
     return
   end
-  local user = get_users():get(who)
-  if not user then
-    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+  trust_name = parse_trust(trust_name)
+  if not trust_name then
+    io.fail(d, Q, "Unknown trust.")
     return
   end
-  local granter = d:get_user()
-  local granter_trust = "Player"
-  if granter then
-    granter_trust = granter:get_trust()
+  local names = get_trust_names()
+  local revoke_idx
+  for i, name in ipairs(names) do
+    if name == trust_name then
+      revoke_idx = i
+      break
+    end
   end
-  if not trust_allows(granter_trust, user:get_trust()) then
-    d:print_format("%sInsufficient trust.%s\r\n", Q.FAILED, Q.NORMAL)
+  local player = get_players():get(who)
+  if not player then
+    io.fail(d, Q, "No such player.")
     return
   end
-  user:set_trust("Player")
-  get_users():save(user:get_name())
-  d:print_format("%sRevoked trust from %s.%s\r\n", Q.OKAY, user:get_name(), Q.NORMAL)
+  if not trust_allows(player:get_trust(), trust_name) then
+    io.fail(d, Q, "Player does not have that trust.")
+    return
+  end
+  local new_trust = revoke_idx > 1 and names[revoke_idx - 1] or "Player"
+  player:set_trust(new_trust)
+  thing.set_audit_metadata(player, actor)
+  get_players():save(player:get_name())
+  io.okay(d, Q, "Revoked " .. trust_name .. " from " .. player:get_name()
+    .. "; trust is now " .. new_trust .. ".")
   ~
 ~

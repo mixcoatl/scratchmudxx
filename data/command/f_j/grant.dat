@@ -1,43 +1,39 @@
 Name: Grant~
 Trust: Wizard~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
     return
   end
+  local io = require("io")
+  local thing = require("thing")
   local who, trust_name = line:match("^%s*(%S+)%s+(%S+)")
   if not who or not trust_name then
-    d:print_format("%sUsage: grant <user> <trust>%s\r\n", Q.FAILED, Q.NORMAL)
+    io.usage(d, Q, "grant <player> <trust>")
     return
   end
-  local canonical = nil
-  for _, name in ipairs(get_trust_names()) do
-    if name:lower() == trust_name:lower() then
-      canonical = name
-      break
-    end
-  end
-  if not canonical then
-    d:print_format("%sUnknown trust.%s\r\n", Q.FAILED, Q.NORMAL)
+  trust_name = parse_trust(trust_name)
+  if not trust_name then
+    io.fail(d, Q, "Unknown trust.")
     return
   end
-  trust_name = canonical
-  local user = get_users():get(who)
-  if not user then
-    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+  local player = get_players():get(who)
+  if not player then
+    io.fail(d, Q, "No such player.")
     return
   end
-  local granter = d:get_user()
   local granter_trust = "Player"
-  if granter then
-    granter_trust = granter:get_trust()
+  local actor_player = actor:get_player()
+  if actor_player then
+    granter_trust = actor_player:get_trust()
   end
   if not trust_allows(granter_trust, trust_name) then
-    d:print_format("%sInsufficient trust.%s\r\n", Q.FAILED, Q.NORMAL)
+    io.fail(d, Q, "Insufficient trust.")
     return
   end
-  user:set_trust(trust_name)
-  get_users():save(user:get_name())
-  d:print_format("%sGranted %s trust to %s.%s\r\n", Q.OKAY, trust_name, user:get_name(), Q.NORMAL)
+  player:set_trust(trust_name)
+  thing.set_audit_metadata(player, actor)
+  get_players():save(player:get_name())
+  io.okay(d, Q, "Granted " .. trust_name .. " trust to " .. player:get_name() .. ".")
   ~
 ~
