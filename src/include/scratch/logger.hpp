@@ -111,6 +111,7 @@ protected:
 #define LOGGER_MAIN()           LOGGER("Main")          //!< Program entry point.
 #define LOGGER_NETWORK()        LOGGER("Network")       //!< Network activity.
 #define LOGGER_SYSTEM()         LOGGER("System")        //!< System errors, etc.
+#define LOGGER_WORLD()          LOGGER("World")         //!< World lifecycle.
 //! \}
 
 #endif // _SCRATCH_LOGGER_HXX_

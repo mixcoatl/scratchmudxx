@@ -10,6 +10,7 @@
 #define _SCRATCH_CONFIG_HPP_
 
 #include <scratch/color.hpp>
+#include <scratch/scheduler.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 
@@ -53,6 +54,17 @@ public:
 	return bootstrapState_;
     }
 
+    //! Gets an entry room by kind.
+    //! \param kind the entry room kind
+    //! \sa #GetEntryRooms() const
+    String GetEntryRoom(const String& kind) const noexcept;
+
+    //! Gets the entry room map.
+    //! \sa #GetEntryRoom(const String&) const
+    StringMapCi<String> GetEntryRooms() const noexcept {
+	return entryRooms_;
+    }
+
     //! Gets the house metacolor map.
     //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
     std::map<Color::ColorEnum, Color::ColorEnum> GetMetaColors() const noexcept {
@@ -63,6 +75,12 @@ public:
     //! \sa #SetPort(const std::uint16_t)
     std::uint16_t GetPort() const noexcept {
 	return port_;
+    }
+
+    //! Gets the instanced-world grace period.
+    //! \sa #ReadWorldData(const DataPtr&)
+    Scheduler::Task::Duration GetWorldGracePeriod() const noexcept {
+	return worldGracePeriod_;
     }
 
     //! Loads configuration from the fixed Data file.
@@ -81,6 +99,12 @@ public:
     //! \sa #WriteData(const DataPtr&) const
     void ReadData(const DataPtr& data) noexcept;
 
+    //! Reads entry rooms from a data node.
+    //! \param data the Rooms data node to read
+    //! \sa #ReadGameData(const DataPtr&)
+    //! \sa #WriteEntryRoomsData(const DataPtr&) const
+    void ReadEntryRoomsData(const DataPtr& data) noexcept;
+
     //! Reads game settings from a data node.
     //! \param data the Game data node to read
     //! \sa #ReadData(const DataPtr&)
@@ -92,6 +116,12 @@ public:
     //! \sa #ReadData(const DataPtr&)
     //! \sa #WriteNetworkData(const DataPtr&) const
     void ReadNetworkData(const DataPtr& data) noexcept;
+
+    //! Reads world settings from a data node.
+    //! \param data the World data node to read
+    //! \sa #ReadGameData(const DataPtr&)
+    //! \sa #WriteWorldData(const DataPtr&) const
+    void ReadWorldData(const DataPtr& data) noexcept;
 
     //! Saves configuration to the fixed Data file.
     //! \return true if the file was written successfully
@@ -119,6 +149,12 @@ public:
 	Color::ColorEnum meta,
 	Color::ColorEnum color) noexcept;
 
+    //! Sets the network listen port.
+    //! \sa #GetPort() const
+    void SetPort(const std::uint16_t port) {
+	port_ = port;
+    }
+
     //! Writes default colors to a data node.
     //! \param data the Colors data node to write
     //! \sa #ReadColorsData(const DataPtr&)
@@ -129,6 +165,12 @@ public:
     //! \param data the data node to write
     //! \sa #ReadData(const DataPtr&)
     void WriteData(const DataPtr& data) const noexcept;
+
+    //! Writes entry rooms to a data node.
+    //! \param data the Rooms data node to write
+    //! \sa #ReadEntryRoomsData(const DataPtr&)
+    //! \sa #WriteGameData(const DataPtr&) const
+    void WriteEntryRoomsData(const DataPtr& data) const noexcept;
 
     //! Writes game settings to a data node.
     //! \param data the Game data node to write
@@ -142,11 +184,11 @@ public:
     //! \sa #WriteData(const DataPtr&) const
     void WriteNetworkData(const DataPtr& data) const noexcept;
 
-    //! Sets the network listen port.
-    //! \sa #GetPort() const
-    void SetPort(const std::uint16_t port) {
-	port_ = port;
-    }
+    //! Writes world settings to a data node.
+    //! \param data the World data node to write
+    //! \sa #ReadWorldData(const DataPtr&)
+    //! \sa #WriteGameData(const DataPtr&) const
+    void WriteWorldData(const DataPtr& data) const noexcept;
 
 protected:
     friend class Scratch::Scripting::LuaBindings;
@@ -167,6 +209,10 @@ protected:
     //! \sa #GetBootstrapState() const
     String bootstrapState_;
 
+    //! Entry room map.
+    //! \sa #GetEntryRooms() const
+    StringMapCi<String> entryRooms_;
+
     //! House metacolor map.
     //! \sa #GetMetaColors() const
     std::map<Color::ColorEnum, Color::ColorEnum> metaColors_;
@@ -174,6 +220,10 @@ protected:
     //! Network listen port.
     //! \sa #GetPort() const
     std::uint16_t port_;
+
+    //! Instanced-world grace period.
+    //! \sa #GetWorldGracePeriod() const
+    Scheduler::Task::Duration worldGracePeriod_;
 };
 //! \}
 

@@ -28,8 +28,6 @@ World::World(const String& id) noexcept :
 
 //! Destructor.
 World::~World() noexcept {
-    while (!instances_.empty())
-	RemoveInstance(*instances_.begin());
 }
 
 //! Adds an instance.

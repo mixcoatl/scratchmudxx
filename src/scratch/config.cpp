@@ -21,11 +21,24 @@ namespace Core {
 static const char configFileName[] = "data/config.dat";
 
 //! Default constructor.
+namespace {
+
+using Strings = Scratch::Algorithm::Strings;
+using TaskDuration = Scheduler::Task::Duration;
+
+//! Default instanced-world grace period.
+const TaskDuration defaultWorldGracePeriod =
+	boost::chrono::minutes(5);
+
+} // namespace
+
 Config::Config() noexcept :
 	address_(),
 	bootstrapState_("Login"),
+	entryRooms_(),
 	metaColors_(),
-	port_(6767) {
+	port_(6767),
+	worldGracePeriod_(defaultWorldGracePeriod) {
     // Nothing.
 }
 
@@ -56,8 +69,10 @@ bool Config::Load() noexcept {
 void Config::ReadData(const DataPtr& data) noexcept {
     address_.clear();
     bootstrapState_ = "Login";
+    entryRooms_.clear();
     metaColors_.clear();
     port_ = 6767;
+    worldGracePeriod_ = defaultWorldGracePeriod;
 
     // Read game settings.
     auto gameData = data->Get("Game", std::make_shared<Data>());
@@ -93,10 +108,24 @@ void Config::ReadColorsData(const DataPtr& data) noexcept {
 //! \param data the Game data node to read
 //! \sa #ReadData(const DataPtr&)
 //! \sa #WriteGameData(const DataPtr&) const
+void Config::ReadEntryRoomsData(const DataPtr& data) noexcept {
+    entryRooms_.clear();
+    for (const auto& entry: data->GetStringMap("")) {
+	if (!entry.first.empty() && !entry.second.empty())
+	    entryRooms_[entry.first] = entry.second;
+    }
+}
+
 void Config::ReadGameData(const DataPtr& data) noexcept {
     const auto bootstrapState = data->GetString("BootstrapState");
     if (!bootstrapState.empty())
 	bootstrapState_ = bootstrapState;
+
+    auto roomsData = data->Get("Rooms", std::make_shared<Data>());
+    this->ReadEntryRoomsData(roomsData);
+
+    auto worldData = data->Get("World", std::make_shared<Data>());
+    this->ReadWorldData(worldData);
 }
 
 //! Reads network settings from a data node.
@@ -112,6 +141,31 @@ void Config::ReadNetworkData(const DataPtr& data) noexcept {
 	else
 	    port_ = static_cast<std::uint16_t>(value);
     }
+}
+
+//! Reads world settings from a data node.
+//! \param data the World data node to read
+//! \sa #ReadGameData(const DataPtr&)
+//! \sa #WriteWorldData(const DataPtr&) const
+void Config::ReadWorldData(const DataPtr& data) noexcept {
+    const auto gracePeriod = data->GetString("GracePeriod");
+    if (gracePeriod.empty())
+	return;
+
+    TaskDuration parsed;
+    if (!Strings::ParseDuration(gracePeriod, parsed)) {
+	LOGGER_STORAGE() << "Invalid world grace period " << gracePeriod << ".";
+	return;
+    }
+    worldGracePeriod_ = parsed;
+}
+
+//! Gets an entry room by kind.
+//! \param kind the entry room kind
+//! \sa #GetEntryRooms() const
+String Config::GetEntryRoom(const String& kind) const noexcept {
+    const auto found = entryRooms_.find(kind);
+    return found != std::end(entryRooms_) ? found->second : String();
 }
 
 //! Saves configuration to the fixed Data file.
@@ -196,9 +250,23 @@ void Config::WriteColorsData(const DataPtr& data) const noexcept {
 //! \param data the Game data node to write
 //! \sa #ReadGameData(const DataPtr&)
 //! \sa #WriteData(const DataPtr&) const
+void Config::WriteEntryRoomsData(const DataPtr& data) const noexcept {
+    data->PutStringMap("", entryRooms_);
+}
+
 void Config::WriteGameData(const DataPtr& data) const noexcept {
     if (bootstrapState_.size())
 	data->PutString("BootstrapState", bootstrapState_);
+
+    auto roomsData = std::make_shared<Data>();
+    this->WriteEntryRoomsData(roomsData);
+    if (roomsData->Size())
+	data->Put("Rooms", roomsData);
+
+    auto worldData = std::make_shared<Data>();
+    this->WriteWorldData(worldData);
+    if (worldData->Size())
+	data->Put("World", worldData);
 }
 
 //! Writes network settings to a data node.
@@ -210,6 +278,17 @@ void Config::WriteNetworkData(const DataPtr& data) const noexcept {
 	data->PutString("Address", address_);
     if (port_)
 	data->PutNumber("Port", static_cast<double>(port_));
+}
+
+//! Writes world settings to a data node.
+//! \param data the World data node to write
+//! \sa #ReadWorldData(const DataPtr&)
+//! \sa #WriteGameData(const DataPtr&) const
+void Config::WriteWorldData(const DataPtr& data) const noexcept {
+    if (worldGracePeriod_ != defaultWorldGracePeriod)
+	data->PutString(
+	    "GracePeriod",
+	    Strings::FormatDuration(worldGracePeriod_));
 }
 
 }; // namespace Core
