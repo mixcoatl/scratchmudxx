@@ -19,6 +19,7 @@
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
 #include <scratch/user_bindings.hpp>
+#include <scratch/world_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -102,6 +103,31 @@ static int GetUsersProxy(lua_State* L) {
     return 1;
 }
 
+//! Handles lua get_world(id).
+static int GetWorldProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "get_world expects 1 argument");
+    auto& lua = Lua::CheckLua(L);
+    auto& game = Lua::CheckGame(L);
+    WorldBindings::Push(lua, game.GetWorld(Lua::CheckString(L, 1)));
+    return 1;
+}
+
+//! Handles lua get_worlds().
+static int GetWorldsProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_worlds expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    const auto worlds = Lua::CheckGame(L).GetWorlds();
+    lua_createtable(L, static_cast<int>(worlds.size()), 0);
+    lua_Integer index = 1;
+    for (auto& world: worlds) {
+	WorldBindings::Push(lua, world);
+	lua_rawseti(L, -2, index++);
+    }
+    return 1;
+}
+
 //! Handles lua print — writes to LOGGER_LUA.
 //! \param L the \c lua_State
 static int PrintProxy(lua_State* L) {
@@ -158,6 +184,8 @@ void GameBindings::Register(Lua& lua) {
     lua.SetSafe("get_descriptor_names", DescriptorNamesProxy);
     lua.SetSafe("get_states", GetStatesProxy);
     lua.SetSafe("get_users", GetUsersProxy);
+    lua.SetSafe("get_world", GetWorldProxy);
+    lua.SetSafe("get_worlds", GetWorldsProxy);
     lua.SetSafe("print", PrintProxy);
     lua.SetSafe("shutdown", ShutdownProxy);
 

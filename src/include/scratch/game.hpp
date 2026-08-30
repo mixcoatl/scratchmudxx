@@ -11,11 +11,13 @@
 
 #include <scratch/action.hpp>
 #include <scratch/command.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
 #include <scratch/string.hpp>
 #include <scratch/user.hpp>
+#include <scratch/world.hpp>
 
 // Forward declarations.
 namespace Scratch {
@@ -141,6 +143,22 @@ public:
     //! Gets the descriptors.
     std::set<DescriptorPtr> GetDescriptors() const noexcept;
 
+    //! Gets an instance.
+    //! \param instanceName the instance name
+    //! \return the instance, or \c nullptr
+    InstancePtr GetInstance(const String& instanceName) const noexcept;
+
+    //! Gets the instances.
+    std::set<InstancePtr> GetInstances() const noexcept;
+
+    //! Gets a world object.
+    //! \param worldId the world object identity
+    //! \return the world object, or \c nullptr
+    WorldPtr GetWorld(const String& worldId) const noexcept;
+
+    //! Gets the world objects.
+    std::set<WorldPtr> GetWorlds() const noexcept;
+
     //! Gets the IO context.
     IoContext& GetIoContext() noexcept;
 
@@ -256,6 +274,10 @@ protected:
     //! The descriptors.
     //! \sa #GetDescriptors() const
     StringMapCi<DescriptorPtr> descriptors_;
+
+    //! The world objects.
+    //! \sa #GetWorlds() const
+    StringMapCi<WorldPtr> worlds_;
 
     //! The Lua facade.
     //! \sa #GetLua()

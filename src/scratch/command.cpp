@@ -10,6 +10,7 @@
 
 #include <scratch/command.hpp>
 #include <scratch/data.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/social.hpp>
 #include <scratch/string.hpp>

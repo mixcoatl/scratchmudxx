@@ -22,6 +22,8 @@ class CommandBindings;
 }; // namespace Scripting
 namespace Core {
 class Game;
+class Instance;
+using InstancePtr = std::shared_ptr<Instance>;
 }; // namespace Core
 namespace Utility {
 class Data;

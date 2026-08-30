@@ -29,6 +29,8 @@ __top_builddir__bin_scratch_SOURCES = \
 	game_bindings.cpp \
 	gender.cpp \
 	gender_bindings.cpp \
+	instance.cpp \
+	instance_bindings.cpp \
 	logger.cpp \
 	lua.cpp \
 	main.cpp \
@@ -46,7 +48,9 @@ __top_builddir__bin_scratch_SOURCES = \
 	trust.cpp \
 	trust_bindings.cpp \
 	user.cpp \
-	user_bindings.cpp
+	user_bindings.cpp \
+	world.cpp \
+	world_bindings.cpp
 
 noinst_HEADERS = \
 	../include/scratch/action.hpp \
@@ -66,6 +70,8 @@ noinst_HEADERS = \
 	../include/scratch/game_bindings.hpp \
 	../include/scratch/gender.hpp \
 	../include/scratch/gender_bindings.hpp \
+	../include/scratch/instance.hpp \
+	../include/scratch/instance_bindings.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/lua.hpp \
 	../include/scratch/lua_bindings.hpp \
@@ -90,4 +96,6 @@ noinst_HEADERS = \
 	../include/scratch/trust.hpp \
 	../include/scratch/trust_bindings.hpp \
 	../include/scratch/user.hpp \
-	../include/scratch/user_bindings.hpp
+	../include/scratch/user_bindings.hpp \
+	../include/scratch/world.hpp \
+	../include/scratch/world_bindings.hpp
