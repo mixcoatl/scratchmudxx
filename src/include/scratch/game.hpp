@@ -12,6 +12,7 @@
 #include <scratch/action.hpp>
 #include <scratch/command.hpp>
 #include <scratch/instance.hpp>
+#include <scratch/player.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
@@ -29,6 +30,8 @@ namespace Scripting {
 class Lua;
 }; // namespace Scripting
 namespace Storage {
+template<typename ThingT>
+class FileStorage;
 template<typename ThingT>
 class MultiFileStorage;
 }; // namespace Storage
@@ -55,6 +58,9 @@ using Descriptor = Scratch::Net::Descriptor;
 using DescriptorPtr = std::shared_ptr<Descriptor>;
 using Lua = Scratch::Scripting::Lua;
 using LuaPtr = std::unique_ptr<Lua>;
+using PlayerRepository = Scratch::Storage::Repository<
+	Player, Scratch::Storage::MultiFileStorage<Player>>;
+using PlayerRepositoryPtr = std::shared_ptr<PlayerRepository>;
 using Server = Scratch::Net::Server;
 using ServerPtr = std::shared_ptr<Server>;
 using StateRepository = Scratch::Storage::Repository<
@@ -98,10 +104,10 @@ public:
     void ApplyStateBits(const StatePtr& state) noexcept;
 
     //! Dispatches a command line.
-    //! \param performer the performing thing
+    //! \param performer the performing instance
     //! \param line the raw input line
     void DispatchCommand(
-	const ThingPtr& performer,
+	const InstancePtr& performer,
 	const String& line);
 
     //! Erases a descriptor.
@@ -110,13 +116,13 @@ public:
 
     //! Finds a command.
     //! \param word the first input word
-    //! \param performer the performing thing
+    //! \param performer the performing instance
     //! \return the matched command, or \c nullptr
-    //! \sa Command::Allows(const UserPtr&) const
+    //! \sa Command::Allows(const InstancePtr&) const
     //! \sa #GetCommandsIndex() const
     CommandPtr FindCommand(
 	const String& word,
-	const ThingPtr& performer) const noexcept;
+	const InstancePtr& performer) const noexcept;
 
     //! Gets the command repository.
     CommandRepositoryPtr GetCommands() const noexcept;
@@ -135,11 +141,6 @@ public:
     //! \return the descriptor, or \c nullptr
     DescriptorPtr GetDescriptor(const String& descriptorName) noexcept;
 
-    //! Gets the controlling descriptor.
-    //! \param thing the thing
-    //! \return the controlling descriptor, or \c nullptr
-    DescriptorPtr GetDescriptorFor(const ThingPtr& thing) noexcept;
-
     //! Gets the descriptors.
     std::set<DescriptorPtr> GetDescriptors() const noexcept;
 
@@ -148,8 +149,13 @@ public:
     //! \return the instance, or \c nullptr
     InstancePtr GetInstance(const String& instanceName) const noexcept;
 
+    //! Gets the instance for \p player.
+    //! \param player the player
+    //! \return the instance, or \c nullptr
+    InstancePtr GetInstanceFor(const PlayerPtr& player) noexcept;
+
     //! Gets the instances.
-    std::set<InstancePtr> GetInstances() const noexcept;
+    InstancePtrSet GetInstances() const noexcept;
 
     //! Gets a world object.
     //! \param worldId the world object identity
@@ -165,6 +171,9 @@ public:
     //! Gets the Lua facade.
     Lua& GetLua() noexcept;
 
+    //! Gets the player repository.
+    PlayerRepositoryPtr GetPlayers() const noexcept;
+
     //! Gets the shutdown flag.
     //! \sa #SetShutdown(const bool)
     bool GetShutdown() const noexcept;
@@ -177,7 +186,6 @@ public:
 
     //! Loads game repositories from disk.
     //! \throw std::runtime_error if a required repository cannot be loaded
-    //! \sa #GetStates() const
     //! \sa #Run()
     void LoadRepositories();
 
@@ -202,20 +210,20 @@ public:
 
     //! Runs a command Action Lua hook with \c actor, \c command, \c line, and \c Q.
     //! \param command the command
-    //! \param performer the performing thing
+    //! \param performer the performing instance
     //! \param line the remainder after the matched word
     void RunCommandHook(
 	const CommandPtr& command,
-	const ThingPtr& performer,
+	const InstancePtr& performer,
 	const String& line);
 
     //! Runs social templates for \p actor.
-    //! \param actor the performing user
+    //! \param actor the performing instance
     //! \param social the social templates
     //! \param line the remainder after the matched command word
-    //! \sa #RunCommandHook(const CommandPtr&, const ThingPtr&, const String&)
+    //! \sa #RunCommandHook(const CommandPtr&, const InstancePtr&, const String&)
     void RunSocial(
-	const UserPtr& actor,
+	const InstancePtr& actor,
 	const SocialPtr& social,
 	const String& line);
 
@@ -233,7 +241,7 @@ protected:
     //! \param direct the direct slot
     //! \param indirect the indirect slot
     //! \param extra the extra slot
-    //! \param recipient the recipient thing
+    //! \param recipient the recipient instance
     //! \param to the recipient descriptor
     //! \sa #Action
     void ActionPerform(
@@ -243,7 +251,7 @@ protected:
 	const ActionParam& direct,
 	const ActionParam& indirect,
 	const ActionParam& extra,
-	const ThingPtr& recipient,
+	const InstancePtr& recipient,
 	Descriptor& to);
 
     //! Begins waiting for process termination signals.
@@ -268,7 +276,8 @@ protected:
     //! \sa #RebuildCommandIndex()
     StringMapCi<CommandPtr> commandsIndex_;
 
-    //! Host configuration.
+    //! The host configuration.
+    //! \sa #GetConfig() const
     ConfigPtr config_;
 
     //! The descriptors.
@@ -282,6 +291,10 @@ protected:
     //! The Lua facade.
     //! \sa #GetLua()
     LuaPtr lua_;
+
+    //! The player repository.
+    //! \sa #GetPlayers() const
+    PlayerRepositoryPtr players_;
 
     //! The server.
     ServerPtr server_;

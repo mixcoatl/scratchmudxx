@@ -1,7 +1,12 @@
 Name: Quit~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if d then
+    local inst = d:get_character()
+    d:set_character(nil)
+    if inst then
+      erase_instance(inst)
+    end
     d:set_state("Lobby")
   end
   ~

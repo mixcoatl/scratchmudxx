@@ -37,6 +37,10 @@ __top_builddir__bin_scratch_SOURCES = \
 	menu.cpp \
 	parser.cpp \
 	parser_bindings.cpp \
+	player.cpp \
+	player_bindings.cpp \
+	preference.cpp \
+	preference_bindings.cpp \
 	protocol_telnet.cpp \
 	random.cpp \
 	server.cpp \
@@ -78,6 +82,10 @@ noinst_HEADERS = \
 	../include/scratch/menu.hpp \
 	../include/scratch/parser.hpp \
 	../include/scratch/parser_bindings.hpp \
+	../include/scratch/player.hpp \
+	../include/scratch/player_bindings.hpp \
+	../include/scratch/preference.hpp \
+	../include/scratch/preference_bindings.hpp \
 	../include/scratch/protocol.hpp \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \

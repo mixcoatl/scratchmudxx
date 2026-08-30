@@ -12,12 +12,16 @@
 #include <scratch/config.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/player.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/server.hpp>
 #include <scratch/state.hpp>
+#include <scratch/storage_file.hpp>
 #include <scratch/storage_file_multi.hpp>
+#include <scratch/string.hpp>
 #include <scratch/user.hpp>
 
 namespace Scratch {
@@ -34,6 +38,9 @@ Game::Game() :
 	descriptors_(),
 	worlds_(),
 	lua_(std::make_unique<Lua>(*this)),
+	players_(std::make_shared<PlayerRepository>(
+		Scratch::Storage::MultiFileStorage<Player>(
+			"data", "player", ".dat"))),
 	server_(),
 	shutdown_(false),
 	signals_(ioContext_),
@@ -53,7 +60,7 @@ Game::~Game() noexcept {
     this->Shutdown();
     if (server_)
 	server_.reset();
-    // Close Lua before states_ / users_ tear down.
+    // Lua before repositories.
     lua_.reset();
 }
 
@@ -84,15 +91,43 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
     return descriptorSet;
 }
 
+//! Gets the connection-state repository.
+StateRepositoryPtr Game::GetStates() const noexcept {
+    return states_;
+}
+
+//! Gets the user repository.
+UserRepositoryPtr Game::GetUsers() const noexcept {
+    return users_;
+}
+
+//! Gets the player repository.
+PlayerRepositoryPtr Game::GetPlayers() const noexcept {
+    return players_;
+}
+
 //! Gets an instance.
 //! \param instanceName the instance name
 //! \return the instance, or \c nullptr
 InstancePtr Game::GetInstance(const String& instanceName) const noexcept {
-    for (auto& world: this->GetWorlds()) {
-	if (!world)
+    for (auto& pair: worlds_) {
+	if (!pair.second)
 	    continue;
-	auto instance = world->GetInstance(instanceName);
+	auto instance = pair.second->GetInstance(instanceName);
 	if (instance)
+	    return instance;
+    }
+    return nullptr;
+}
+
+//! Gets the instance for \p player.
+//! \param player the player
+//! \return the instance, or \c nullptr
+InstancePtr Game::GetInstanceFor(const PlayerPtr& player) noexcept {
+    if (!player)
+	return nullptr;
+    for (auto& instance: this->GetInstances()) {
+	if (instance && instance->GetPlayer() == player)
 	    return instance;
     }
     return nullptr;
@@ -100,14 +135,14 @@ InstancePtr Game::GetInstance(const String& instanceName) const noexcept {
 
 //! Gets the instances.
 InstancePtrSet Game::GetInstances() const noexcept {
-    InstancePtrSet instances;
+    InstancePtrSet instanceSet;
     for (auto& world: this->GetWorlds()) {
 	if (!world)
 	    continue;
 	for (auto& instance: world->GetInstances())
-	    instances.insert(instance);
+	    instanceSet.insert(instance);
     }
-    return instances;
+    return instanceSet;
 }
 
 //! Gets a world object.
@@ -120,20 +155,10 @@ WorldPtr Game::GetWorld(const String& worldId) const noexcept {
 
 //! Gets the world objects.
 std::set<WorldPtr> Game::GetWorlds() const noexcept {
-    std::set<WorldPtr> worlds;
+    std::set<WorldPtr> worldSet;
     for (auto& pair: worlds_)
-	worlds.insert(pair.second);
-    return worlds;
-}
-
-//! Gets the connection-state repository.
-StateRepositoryPtr Game::GetStates() const noexcept {
-    return states_;
-}
-
-//! Gets the user repository.
-UserRepositoryPtr Game::GetUsers() const noexcept {
-    return users_;
+	worldSet.insert(pair.second);
+    return worldSet;
 }
 
 //! Applies Quiet and Prompt bits.
@@ -216,8 +241,7 @@ void Game::EraseDescriptor(const String& descriptorName) noexcept {
 
 //! Loads game repositories from disk.
 //! \throw std::runtime_error if a required repository cannot be loaded
-    //! \sa #GetStates() const
-    //! \sa #Run()
+//! \sa #Run()
 void Game::LoadRepositories() {
     if (!config_ || !config_->Load()) {
 	throw std::runtime_error("Couldn't load configuration.");
@@ -234,7 +258,9 @@ void Game::LoadRepositories() {
     if (!users_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load user index.");
     }
-
+    if (!players_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load player index.");
+    }
 }
 
 //! Parses command line arguments.
@@ -270,7 +296,7 @@ void Game::Run() {
 	    ioContext_.run();
     }
 
-    // Stop acceotr.
+    // Stop acceptor.
     if (server_) {
 	server_->StopAcceptor();
 	server_.reset();

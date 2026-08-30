@@ -1,0 +1,33 @@
+Hooks:
+  Focus:-
+    d:clear_menu();
+    d:menu_title("Gender");
+    d:menu_choices();
+    for i, name in ipairs(get_gender_names()) do
+      d:menu_item(tostring(i), name);
+    end
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    if line == "" then
+      d:pop_state();
+      return;
+    end
+    local key = d:menu_match(line);
+    local names = get_gender_names();
+    local name = key and names[tonumber(key)];
+    if not name then
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("PlayerGender");
+      return;
+    end
+    local edit = d:get_edit_player();
+    if edit then
+      edit:set_gender(name);
+    end
+    d:pop_state();
+    ~
+  ~
+Name: PlayerGender~
+~

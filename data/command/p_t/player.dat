@@ -1,0 +1,78 @@
+Name: Player~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local phrases = parse(line, {"edit", "erase", "stat"})
+  if not phrases or #phrases ~~= 1 then
+    action("Failed", A.TO_CHAR, "Usage: player edit|erase|stat <name>.", actor)
+    return
+  end
+  local target_phrase = phrases[1]
+  local mode = target_phrase:get_delimiter():lower()
+  local words = target_phrase:get_words()
+  if (mode ~~= "edit" and mode ~~= "erase" and mode ~~= "stat")
+      or (#words ~~= 1 and (mode ~~= "edit" or #words ~~= 0))
+      or not target_phrase:is_single() then
+    action("Failed", A.TO_CHAR, "Usage: player edit|erase|stat <name>.", actor)
+    return
+  end
+  local player = actor:get_player()
+  local name = words[1]
+  if #words == 0 then
+    name = player and player:get_name() or ""
+  end
+  local target = get_players():get(name)
+  if not target then
+    action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
+    return
+  end
+  local self = player and player:get_name():lower() == name:lower()
+  if mode == "stat" then
+    if not player or not trust_allows(player:get_trust(), "Wizard") then
+      action("Failed", A.TO_CHAR, "You're not allowed to stat ${D.Text}!", actor, name)
+      return
+    end
+    d:print_format("%sName:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
+    d:print_format("%sOwner:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_owner(), Q.NORMAL)
+    d:print_format("%sGender:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_gender(), Q.NORMAL)
+    d:print_format("%sTrust:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_trust(), Q.NORMAL)
+    d:print_format("%sPreferences:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT,
+      table.concat(target:get_preferences(), ", "), Q.NORMAL)
+  elseif mode == "edit" then
+    if not self then
+      if not player
+          or not trust_allows(player:get_trust(), "Wizard")
+          or player:get_trust() == target:get_trust()
+          or not trust_allows(player:get_trust(), target:get_trust()) then
+        action("Failed", A.TO_CHAR, "You're not allowed to edit ${D.Text}!", actor, name)
+        return
+      end
+    end
+    d:set_edit_player(target)
+    d:push_state("Player")
+  elseif mode == "erase" then
+    if not player or not trust_allows(player:get_trust(), "Owner") then
+      action("Failed", A.TO_CHAR, "You're not allowed to erase ${D.Text}!", actor, name)
+      return
+    end
+    if get_instance_for(target) then
+      action("Failed", A.TO_CHAR, "You can't erase ${D.Text} because it's presently active.", actor, name)
+      return
+    end
+    local owner = get_users():get(target:get_owner())
+    if owner then
+      owner:erase_player(name)
+      get_users():save(owner:get_name())
+    end
+    get_players():erase(name)
+    action("Okay", A.TO_CHAR | A.NOREPEAT, "Erased ${D.Text}!", actor, name)
+  end
+  ~
+~

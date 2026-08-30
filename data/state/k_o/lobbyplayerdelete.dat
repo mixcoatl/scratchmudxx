@@ -1,0 +1,49 @@
+Hooks:
+  Focus:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    local players = user:get_players() or {};
+    if #players == 0 then
+      d:set_state("Lobby");
+      return;
+    end
+    d:clear_menu();
+    d:menu_title("Delete Character");
+    d:menu_choices();
+    for i, name in ipairs(players) do
+      d:menu_item(tostring(i), name);
+    end
+    d:menu_item("x", "Cancel.");
+    d:menu_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local user = d:get_user();
+    if not user then
+      d:print_format("%sNot logged in.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LoginUser");
+      return;
+    end
+    local players = user:get_players() or {};
+    local key = d:menu_match(line);
+    if key == "x" then
+      d:set_edit_string("");
+      d:set_state("Lobby");
+      return;
+    end
+    local index = tonumber(key);
+    if not index or index < 1 or index > #players then
+      d:print_format("%sUnknown choice.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("LobbyPlayerDelete");
+      return;
+    end
+    d:set_edit_string(players[index]);
+    d:set_state("LobbyPlayerDeleteConfirm");
+    ~
+  ~
+Name: LobbyPlayerDelete~
+~

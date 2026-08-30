@@ -13,8 +13,10 @@
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
+#include <scratch/instance_bindings.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/player_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
@@ -93,6 +95,41 @@ static int GetStatesProxy(lua_State* L) {
     return 1;
 }
 
+//! Handles lua erase_instance(instance).
+//! \param L the \c lua_State
+static int EraseInstanceProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "erase_instance expects 1 argument");
+    InstancePtr instance;
+    if (!lua_isnil(L, 1))
+	instance = InstanceBindings::Check(L, 1);
+    if (instance)
+	instance->Remove();
+    return 0;
+}
+
+//! Handles lua get_instance_for(player).
+//! \param L the \c lua_State
+static int GetInstanceForProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "get_instance_for expects 1 argument");
+    auto& lua = Lua::CheckLua(L);
+    auto& game = Lua::CheckGame(L);
+    auto player = PlayerBindings::Check(L, 1);
+    InstanceBindings::Push(lua, game.GetInstanceFor(player));
+    return 1;
+}
+
+//! Handles lua get_players.
+//! \param L the \c lua_State
+static int GetPlayersProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "get_players expects no arguments");
+    auto& lua = Lua::CheckLua(L);
+    PlayerBindings::PushRepository(lua);
+    return 1;
+}
+
 //! Handles lua get_users.
 //! \param L the \c lua_State
 static int GetUsersProxy(lua_State* L) {
@@ -107,6 +144,7 @@ static int GetUsersProxy(lua_State* L) {
 static int GetWorldProxy(lua_State* L) {
     if (lua_gettop(L) != 1)
 	return luaL_error(L, "get_world expects 1 argument");
+    luaL_checktype(L, 1, LUA_TSTRING);
     auto& lua = Lua::CheckLua(L);
     auto& game = Lua::CheckGame(L);
     WorldBindings::Push(lua, game.GetWorld(Lua::CheckString(L, 1)));
@@ -118,7 +156,8 @@ static int GetWorldsProxy(lua_State* L) {
     if (lua_gettop(L) != 0)
 	return luaL_error(L, "get_worlds expects no arguments");
     auto& lua = Lua::CheckLua(L);
-    const auto worlds = Lua::CheckGame(L).GetWorlds();
+    auto& game = Lua::CheckGame(L);
+    const auto worlds = game.GetWorlds();
     lua_createtable(L, static_cast<int>(worlds.size()), 0);
     lua_Integer index = 1;
     for (auto& world: worlds) {
@@ -179,16 +218,18 @@ static int CryptProxy(lua_State* L) {
 void GameBindings::Register(Lua& lua) {
     lua.SetSafe("broadcast", BroadcastProxy);
     lua.SetSafe("crypt", CryptProxy);
+    lua.SetSafe("erase_instance", EraseInstanceProxy);
     lua.SetSafe("get_config", GetConfigProxy);
     lua.SetSafe("get_descriptor", GetDescriptorProxy);
     lua.SetSafe("get_descriptor_names", DescriptorNamesProxy);
+    lua.SetSafe("get_instance_for", GetInstanceForProxy);
+    lua.SetSafe("get_players", GetPlayersProxy);
     lua.SetSafe("get_states", GetStatesProxy);
     lua.SetSafe("get_users", GetUsersProxy);
     lua.SetSafe("get_world", GetWorldProxy);
     lua.SetSafe("get_worlds", GetWorldsProxy);
     lua.SetSafe("print", PrintProxy);
     lua.SetSafe("shutdown", ShutdownProxy);
-
 }
 
 }; // namespace Scripting

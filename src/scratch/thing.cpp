@@ -55,23 +55,6 @@ Thing& Thing::operator=(const Thing& other) noexcept {
     return *this;
 }
 
-//! Finds a thing by name.
-//! \param game the game state
-//! \param name the name token
-//! \return the matched thing, or \c nullptr
-ThingPtr Thing::Find(
-	const Game& /*game*/,
-	const String& name) const noexcept {
-    if (Scratch::Algorithm::Strings::CompareCi(name, "me") != 0 &&
-	    Scratch::Algorithm::Strings::CompareCi(name, "self") != 0)
-	return nullptr;
-    try {
-	return std::const_pointer_cast<Thing>(this->shared_from_this());
-    } catch (const std::bad_weak_ptr&) {
-	return nullptr;
-    }
-}
-
 //! Reads metadata from a data node.
 //! \param data the Metadata data node to read
 //! \sa #WriteMetadataData(const DataPtr&) const

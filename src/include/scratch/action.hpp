@@ -9,9 +9,9 @@
 #ifndef _SCRATCH_ACTION_HPP_
 #define _SCRATCH_ACTION_HPP_
 
+#include <scratch/instance.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
-#include <scratch/thing.hpp>
 
 namespace Scratch {
 namespace Core {
@@ -57,28 +57,28 @@ public:
     //! \param text the text
     ActionParam(const String& text) noexcept;
 
-    //! Constructs from thing.
-    //! \param thing the thing
-    ActionParam(const ThingPtr& thing) noexcept;
+    //! Constructs from instance.
+    //! \param instance the instance
+    ActionParam(const InstancePtr& instance) noexcept;
 
     //! Gets the text.
-    //! \sa #GetThing() const
+    //! \sa #GetInstance() const
     String GetText() const noexcept {
 	return text_;
     }
 
-    //! Gets the thing.
+    //! Gets the instance.
     //! \sa #GetText() const
-    ThingPtr GetThing() const noexcept {
-	return thing_;
+    InstancePtr GetInstance() const noexcept {
+	return instance_;
     }
 
 private:
     //! The text.
     String text_;
 
-    //! The thing.
-    ThingPtr thing_;
+    //! The instance.
+    InstancePtr instance_;
 };
 //! \}
 

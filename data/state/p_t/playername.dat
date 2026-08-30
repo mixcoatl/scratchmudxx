@@ -1,0 +1,32 @@
+Hooks:
+  Focus:-
+    d:print_format("%sNew player name:%s ", Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    local edit = d:get_edit_player();
+    if not edit then
+      d:set_state("Lobby");
+      return;
+    end
+    local name = line:match("%S+") or "";
+    if name == "" then
+      d:print("Player name entry cancelled.\r\n");
+      d:pop_state();
+    elseif name:lower() == "new" then
+      d:print_format("%sThat name is reserved.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("PlayerName");
+    elseif not name:match("^[%w_]+$") then
+      d:print_format("%sPlayer names may contain only letters, digits, and underscores.%s\r\n",
+        Q.FAILED, Q.NORMAL);
+      d:set_state("PlayerName");
+    elseif get_players():get(name) then
+      d:print_format("%sThat name is already taken.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("PlayerName");
+    else
+      edit:set_name(name);
+      d:pop_state();
+    end
+    ~
+  ~
+Name: PlayerName~
+~

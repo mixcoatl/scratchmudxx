@@ -1,31 +1,49 @@
 Name: Revoke~
 Trust: Wizard~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
     return
   end
-  local who = line:match("^%s*(%S+)")
-  if not who then
-    d:print_format("%sUsage: revoke <user>%s\r\n", Q.FAILED, Q.NORMAL)
+  local who, trust_name = line:match("^%s*(%S+)%s+(%S+)")
+  if not who or not trust_name then
+    d:print_format("%sUsage: revoke <player> <trust>%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
-  local user = get_users():get(who)
-  if not user then
-    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+  local names = get_trust_names()
+  local revoke_idx = nil
+  for i, name in ipairs(names) do
+    if name:lower() == trust_name:lower() then
+      revoke_idx = i
+      trust_name = name
+      break
+    end
+  end
+  if not revoke_idx then
+    d:print_format("%sUnknown trust.%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
-  local granter = d:get_user()
-  local granter_trust = "Player"
-  if granter then
-    granter_trust = granter:get_trust()
-  end
-  if not trust_allows(granter_trust, user:get_trust()) then
-    d:print_format("%sInsufficient trust.%s\r\n", Q.FAILED, Q.NORMAL)
+  local player = get_players():get(who)
+  if not player then
+    d:print_format("%sNo such player.%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
-  user:set_trust("Player")
-  get_users():save(user:get_name())
-  d:print_format("%sRevoked trust from %s.%s\r\n", Q.OKAY, user:get_name(), Q.NORMAL)
+  if not trust_allows(player:get_trust(), trust_name) then
+    d:print_format("%sPlayer does not have that trust.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local user = d:get_user()
+  local by = user and user:get_name() or ""
+  local actor_player = actor:get_player()
+  if by == "" and actor_player then
+    by = actor_player:get_name()
+  end
+  local new_trust = revoke_idx > 1 and names[revoke_idx - 1] or "Player"
+  player:set_trust(new_trust)
+  player:set_modified(os.time())
+  player:set_modified_by(by)
+  get_players():save(player:get_name())
+  d:print_format("%sRevoked %s from %s; trust is now %s.%s\r\n",
+    Q.OKAY, trust_name, player:get_name(), new_trust, Q.NORMAL)
   ~
 ~

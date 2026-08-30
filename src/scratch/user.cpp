@@ -9,8 +9,8 @@
 #define _SCRATCH_USER_CPP_
 
 #include <scratch/data.hpp>
-#include <scratch/descriptor.hpp>
-#include <scratch/game.hpp>
+#include <scratch/logger.hpp>
+#include <scratch/preference.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 #include <scratch/user.hpp>
@@ -30,9 +30,8 @@ User::User() noexcept :
 	lastLogout_(0),
 	metaColors_(),
 	password_(),
-	permissions_(),
-	preferences_(),
-	trust_(Trust::TRUST_PLAYER) {
+	players_(),
+	preferences_() {
     // Nothing.
 }
 
@@ -46,9 +45,8 @@ User::User(const User& other) noexcept :
 	lastLogout_(other.lastLogout_),
 	metaColors_(other.metaColors_),
 	password_(other.password_),
-	permissions_(other.permissions_),
-	preferences_(other.preferences_),
-	trust_(other.trust_) {
+	players_(other.players_),
+	preferences_(other.preferences_) {
     // Nothing.
 }
 
@@ -67,9 +65,8 @@ User& User::operator=(const User& other) noexcept {
     lastLogout_ = other.lastLogout_;
     metaColors_ = other.metaColors_;
     password_ = other.password_;
-    permissions_ = other.permissions_;
+    players_ = other.players_;
     preferences_ = other.preferences_;
-    trust_ = other.trust_;
     return *this;
 }
 
@@ -89,53 +86,20 @@ void User::ClearMetaColor(Color::ColorEnum meta) noexcept {
     metaColors_.erase(meta);
 }
 
-//! Finds a thing by name.
-//! \param game the game state
-//! \param name the name token
-//! \return the matched thing, or \c nullptr
-ThingPtr User::Find(
-	const Game& game,
-	const String& name) const noexcept {
-    auto self = Thing::Find(game, name);
-    if (self)
-	return self;
-    if (name.empty())
-	return nullptr;
-
-    ThingPtr best;
-    std::size_t bestLen = static_cast<std::size_t>(-1);
-    for (auto& d: game.GetDescriptors()) {
-	if (!d || d->Closed())
-	    continue;
-	// Controlling User as Thing.
-	ThingPtr thing = d->GetUser();
-	if (!thing)
-	    continue;
-	const auto thingName = thing->GetName();
-	if (Scratch::Algorithm::Strings::CompareCi(thingName, name) == 0)
-	    return thing;
-	if (name.size() <= thingName.size() &&
-		Scratch::Algorithm::Strings::CompareCi(
-			thingName.substr(0, name.size()), name) == 0) {
-	    if (thingName.size() < bestLen) {
-		best = thing;
-		bestLen = thingName.size();
-	    }
-	}
-    }
-    return best;
-}
-
 //! Reads colors from a data node.
 //! \param data the Colors data node to read
 //! \sa #ReadData(const DataPtr&)
 //! \sa #WriteColorsData(const DataPtr&) const
 void User::ReadColorsData(const DataPtr& data) noexcept {
     metaColors_.clear();
-    for (const auto& entry: data->GetEntries()) {
-	auto meta = Color::ByName(entry.first);
-	auto assigned = Color::ByName(data->GetString(entry.first));
-	this->SetMetaColor(meta, assigned);
+    for (const auto& entry: data->GetStringMap("")) {
+	const auto meta = Color::ByName(entry.first);
+	const auto assigned = Color::ByName(entry.second);
+	if (!Color::IsMetaColor(meta) || Color::IsMetaColor(assigned)) {
+	    LOGGER_STORAGE() << "Unknown color " << entry.first << ": " << entry.second << ".";
+	    continue;
+	}
+	metaColors_[meta] = assigned;
     }
 }
 
@@ -150,52 +114,34 @@ void User::ReadData(const DataPtr& data) noexcept {
     email_ = data->GetString("Email");
     gender_ = Gender::ByName(data->GetString("Gender"));
     password_ = data->GetString("Password");
-    trust_ = Trust::ByName(data->GetString("Trust"));
-    if (!Trust::IsDefined(trust_))
-	trust_ = Trust::TRUST_PLAYER;
-
-    // Read permissions.
-    auto permissionsData = data->Get("Permissions");
-    if (!permissionsData)
-	permissionsData = std::make_shared<Data>();
-    this->ReadPermissionsData(permissionsData);
 
     // Read preferences.
-    auto preferencesData = data->Get("Preferences");
-    if (!preferencesData)
-	preferencesData = std::make_shared<Data>();
+    auto preferencesData = data->Get("Preferences", std::make_shared<Data>());
     this->ReadPreferencesData(preferencesData);
 
+    // Read players.
+    auto playersData = data->Get("Players", std::make_shared<Data>());
+    this->ReadPlayersData(playersData);
+
     // Read colors.
-    auto colorsData = data->Get("Colors");
-    if (!colorsData)
-	colorsData = std::make_shared<Data>();
+    auto colorsData = data->Get("Colors", std::make_shared<Data>());
     this->ReadColorsData(colorsData);
 
     // Read time.
-    auto timeData = data->Get("Time");
-    if (!timeData)
-	timeData = std::make_shared<Data>();
+    auto timeData = data->Get("Time", std::make_shared<Data>());
     this->ReadTimeData(timeData);
 
     // Read metadata.
-    auto metadataData = data->Get("Metadata");
-    if (!metadataData)
-	metadataData = std::make_shared<Data>();
+    auto metadataData = data->Get("Metadata", std::make_shared<Data>());
     this->ReadMetadataData(metadataData);
 }
 
-//! Reads permissions from a data node.
-//! \param data the Permissions data node to read
+//! Reads players from a data node.
+//! \param data the Players data node to read
 //! \sa #ReadData(const DataPtr&)
-//! \sa #WritePermissionsData(const DataPtr&) const
-void User::ReadPermissionsData(const DataPtr& data) noexcept {
-    permissions_.clear();
-    for (const auto& entry: data->GetEntries()) {
-	const auto permission = data->GetString(entry.first);
-	if (!permission.empty())
-	    permissions_.insert(permission);
-    }
+//! \sa #WritePlayersData(const DataPtr&) const
+void User::ReadPlayersData(const DataPtr& data) noexcept {
+    players_ = data->GetStringSet("");
 }
 
 //! Reads preferences from a data node.
@@ -252,11 +198,12 @@ bool User::SetPassword(const String& plain) noexcept {
 //! \sa #ReadColorsData(const DataPtr&)
 //! \sa #WriteData(const DataPtr&) const
 void User::WriteColorsData(const DataPtr& data) const noexcept {
+    StringMapCi<String> map;
     for (const auto& entry: metaColors_) {
-	data->PutString(
-	    Color::ToString(entry.first),
-	    Color::ToString(entry.second));
+	map[Color::ToString(entry.first)] =
+	    Color::ToString(entry.second);
     }
+    data->PutStringMap("", map);
 }
 
 //! Writes this user to a data node.
@@ -275,20 +222,17 @@ void User::WriteData(const DataPtr& data) const noexcept {
     if (!password_.empty())
 	data->PutString("Password", password_);
 
-    if (trust_ != Trust::TRUST_PLAYER)
-	data->PutString("Trust", Trust::ToString(trust_));
-
-    // Write permissions.
-    auto permissionsData = std::make_shared<Data>();
-    this->WritePermissionsData(permissionsData);
-    if (permissionsData->Size())
-	data->Put("Permissions", permissionsData);
-
     // Write preferences.
     auto preferencesData = std::make_shared<Data>();
     this->WritePreferencesData(preferencesData);
     if (preferencesData->Size())
 	data->Put("Preferences", preferencesData);
+
+    // Write players.
+    auto playersData = std::make_shared<Data>();
+    this->WritePlayersData(playersData);
+    if (playersData->Size())
+	data->Put("Players", playersData);
 
     // Write colors.
     auto colorsData = std::make_shared<Data>();
@@ -309,13 +253,12 @@ void User::WriteData(const DataPtr& data) const noexcept {
 	data->Put("Metadata", metadataData);
 }
 
-//! Writes permissions to a data node.
-//! \param data the Permissions data node to write
-//! \sa #ReadPermissionsData(const DataPtr&)
+//! Writes players to a data node.
+//! \param data the Players data node to write
+//! \sa #ReadPlayersData(const DataPtr&)
 //! \sa #WriteData(const DataPtr&) const
-void User::WritePermissionsData(const DataPtr& data) const noexcept {
-    for (const auto& permission: permissions_)
-	data->PutString("%", permission);
+void User::WritePlayersData(const DataPtr& data) const noexcept {
+    data->PutStringSet("", players_);
 }
 
 //! Writes preferences to a data node.
@@ -323,8 +266,7 @@ void User::WritePermissionsData(const DataPtr& data) const noexcept {
 //! \sa #ReadPreferencesData(const DataPtr&)
 //! \sa #WriteData(const DataPtr&) const
 void User::WritePreferencesData(const DataPtr& data) const noexcept {
-    for (const auto& preference: preferences_)
-	data->PutString("%", preference);
+    data->PutStringSet("", preferences_);
 }
 
 //! Writes time to a data node.

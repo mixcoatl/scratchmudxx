@@ -8,23 +8,18 @@
 
 #define _SCRATCH_USER_BINDINGS_CPP_
 
-#include <scratch/color.hpp>
-#include <scratch/game.hpp>
 #include <scratch/gender.hpp>
+#include <scratch/preference.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
-#include <scratch/trust.hpp>
 #include <scratch/user.hpp>
 #include <scratch/user_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
-
-using Gender = Scratch::Core::Gender;
-using Trust = Scratch::Core::Trust;
 
 //! Metatable name for User userdata.
 const char UserBindings::MetaName[] = "Scratch.User";
@@ -35,6 +30,8 @@ const char UserBindings::RepositoryMetaName[] = "Scratch.UserRepository";
 //! ScratchMUD types.
 using Color = Scratch::Net::Color;
 using Gender = Scratch::Core::Gender;
+using Preference = Scratch::Core::Preference;
+using Trust = Scratch::Core::Trust;
 using UserRepositoryPtr = Scratch::Core::UserRepositoryPtr;
 
 //! Handles User userdata garbage collection.
@@ -58,31 +55,58 @@ static int UserClearMetaColor(lua_State* L) {
     return 0;
 }
 
-//! Handles User:add_permission(permission).
-static int UserAddPermission(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "add_permission expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    UserBindings::Check(L, 1)->AddPermission(Lua::CheckString(L, 2));
-    return 0;
-}
-
 //! Handles User:add_preference(preference).
 static int UserAddPreference(lua_State* L) {
     if (lua_gettop(L) != 2)
 	return luaL_error(L, "add_preference expects 1 argument");
     luaL_checktype(L, 2, LUA_TSTRING);
-    UserBindings::Check(L, 1)->AddPreference(Lua::CheckString(L, 2));
+    auto user = UserBindings::Check(L, 1);
+    const auto name = Lua::CheckString(L, 2);
+    if (!Preference::IsDefined(Preference::ByName(name))) {
+	user.reset();
+	return luaL_argerror(L, 2, "unknown preference");
+    }
+    user->AddPreference(name);
     return 0;
 }
 
-//! Handles User:erase_permission(permission).
-static int UserErasePermission(lua_State* L) {
+//! Handles User:add_player(player).
+static int UserAddPlayer(lua_State* L) {
     if (lua_gettop(L) != 2)
-	return luaL_error(L, "erase_permission expects 1 argument");
+	return luaL_error(L, "add_player expects 1 argument");
     luaL_checktype(L, 2, LUA_TSTRING);
-    UserBindings::Check(L, 1)->ErasePermission(Lua::CheckString(L, 2));
+    UserBindings::Check(L, 1)->AddPlayer(Lua::CheckString(L, 2));
     return 0;
+}
+
+//! Handles User:erase_player(player).
+static int UserErasePlayer(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "erase_player expects 1 argument");
+    luaL_checktype(L, 2, LUA_TSTRING);
+    UserBindings::Check(L, 1)->ErasePlayer(Lua::CheckString(L, 2));
+    return 0;
+}
+
+//! Handles User:get_players().
+static int UserGetPlayers(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto user = UserBindings::Check(L, 1);
+    auto players = user->GetPlayers();
+    user.reset();
+    lua.PushStringSet(std::move(players));
+    return 1;
+}
+
+//! Handles User:has_player(player).
+static int UserHasPlayer(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "has_player expects 1 argument");
+    luaL_checktype(L, 2, LUA_TSTRING);
+    auto& lua = Lua::CheckLua(L);
+    auto user = UserBindings::Check(L, 1);
+    lua.PushBool(user->HasPlayer(Lua::CheckString(L, 2)));
+    return 1;
 }
 
 //! Handles User:erase_preference(preference).
@@ -213,16 +237,6 @@ static int UserGetPassword(lua_State* L) {
     return 1;
 }
 
-//! Handles User:get_permissions().
-static int UserGetPermissions(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto user = UserBindings::Check(L, 1);
-    auto permissions = user->GetPermissions();
-    user.reset();
-    lua.PushStringSet(std::move(permissions));
-    return 1;
-}
-
 //! Handles User:get_preferences().
 static int UserGetPreferences(lua_State* L) {
     auto& lua = Lua::CheckLua(L);
@@ -230,29 +244,6 @@ static int UserGetPreferences(lua_State* L) {
     auto preferences = user->GetPreferences();
     user.reset();
     lua.PushStringSet(std::move(preferences));
-    return 1;
-}
-
-//! Handles User:get_trust().
-static int UserGetTrust(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto user = UserBindings::Check(L, 1);
-    const auto trust = user->GetTrust();
-    user.reset();
-    lua.PushString(Trust::ToString(trust));
-    return 1;
-}
-
-//! Handles User:has_permission(permission).
-static int UserHasPermission(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "has_permission expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto& lua = Lua::CheckLua(L);
-    auto user = UserBindings::Check(L, 1);
-    const bool present = user->HasPermission(Lua::CheckString(L, 2));
-    user.reset();
-    lua.PushBool(present);
     return 1;
 }
 
@@ -395,38 +386,19 @@ static int UserSetPassword(lua_State* L) {
     return 1;
 }
 
-//! Handles User:set_permissions(table).
-static int UserSetPermissions(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_permissions expects 1 argument");
-    StringSetCi permissions;
-    Lua::CheckStringSet(L, permissions, 2);
-    UserBindings::Check(L, 1)->SetPermissions(permissions);
-    return 0;
-}
-
 //! Handles User:set_preferences(table).
 static int UserSetPreferences(lua_State* L) {
     if (lua_gettop(L) != 2)
 	return luaL_error(L, "set_preferences expects 1 argument");
     StringSetCi preferences;
     Lua::CheckStringSet(L, preferences, 2);
-    UserBindings::Check(L, 1)->SetPreferences(preferences);
-    return 0;
-}
-
-//! Handles User:set_trust(trust).
-static int UserSetTrust(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_trust expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto user = UserBindings::Check(L, 1);
-    const auto trust = Trust::ByName(Lua::CheckString(L, 2));
-    if (!Trust::IsDefined(trust)) {
-	user.reset();
-	return luaL_argerror(L, 2, "unknown trust");
+    for (const auto& name: preferences) {
+	if (!Preference::IsDefined(Preference::ByName(name))) {
+	    preferences.clear();
+	    return luaL_argerror(L, 2, "unknown preference");
+	}
     }
-    user->SetTrust(trust);
+    UserBindings::Check(L, 1)->SetPreferences(preferences);
     return 0;
 }
 
@@ -457,10 +429,10 @@ static void RegisterUserMeta(lua_State* L) {
 
     static const luaL_Reg methods[] = {
 	{"__gc", UserGc},
-	{"add_permission", UserAddPermission},
+	{"add_player", UserAddPlayer},
 	{"add_preference", UserAddPreference},
 	{"clear_metacolor", UserClearMetaColor},
-	{"erase_permission", UserErasePermission},
+	{"erase_player", UserErasePlayer},
 	{"erase_preference", UserErasePreference},
 	{"get_created", UserGetCreated},
 	{"get_created_by", UserGetCreatedBy},
@@ -473,10 +445,9 @@ static void RegisterUserMeta(lua_State* L) {
 	{"get_modified_by", UserGetModifiedBy},
 	{"get_name", UserGetName},
 	{"get_password", UserGetPassword},
-	{"get_permissions", UserGetPermissions},
+	{"get_players", UserGetPlayers},
 	{"get_preferences", UserGetPreferences},
-	{"get_trust", UserGetTrust},
-	{"has_permission", UserHasPermission},
+	{"has_player", UserHasPlayer},
 	{"has_preference", UserHasPreference},
 	{"set_created", UserSetCreated},
 	{"set_created_by", UserSetCreatedBy},
@@ -487,9 +458,7 @@ static void RegisterUserMeta(lua_State* L) {
 	{"set_modified_by", UserSetModifiedBy},
 	{"set_name", UserSetName},
 	{"set_password", UserSetPassword},
-	{"set_permissions", UserSetPermissions},
 	{"set_preferences", UserSetPreferences},
-	{"set_trust", UserSetTrust},
 	{nullptr, nullptr}
     };
     luaL_setfuncs(L, methods, 0);

@@ -8,9 +8,15 @@
 
 #define _SCRATCH_INSTANCE_BINDINGS_CPP_
 
+#include <scratch/descriptor_bindings.hpp>
+#include <scratch/game.hpp>
+#include <scratch/gender.hpp>
 #include <scratch/instance.hpp>
 #include <scratch/instance_bindings.hpp>
 #include <scratch/lua.hpp>
+#include <scratch/player_bindings.hpp>
+#include <scratch/scratch.hpp>
+#include <scratch/string.hpp>
 #include <scratch/world_bindings.hpp>
 
 namespace Scratch {
@@ -19,10 +25,47 @@ namespace Scripting {
 //! Metatable name for Instance userdata.
 const char InstanceBindings::MetaName[] = "Scratch.Instance";
 
+//! ScratchMUD types.
+using Gender = Scratch::Core::Gender;
+
 //! Handles Instance userdata garbage collection.
 static int InstanceGc(lua_State* L) {
     return Lua::DestroyWeakUserdata<Instance>(
 	L, InstanceBindings::MetaName);
+}
+
+//! Handles Instance:find(line).
+static int InstanceFind(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "find expects 1 argument");
+    luaL_checktype(L, 2, LUA_TSTRING);
+    auto& lua = Lua::CheckLua(L);
+    auto& game = Lua::CheckGame(L);
+    auto instance = InstanceBindings::Check(L, 1);
+    auto found = instance->Find(game, Lua::CheckString(L, 2));
+    instance.reset();
+    InstanceBindings::Push(lua, std::move(found));
+    return 1;
+}
+
+//! Handles Instance:get_descriptor().
+static int InstanceGetDescriptor(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto instance = InstanceBindings::Check(L, 1);
+    auto d = instance->GetDescriptor();
+    instance.reset();
+    DescriptorBindings::Push(lua, std::move(d));
+    return 1;
+}
+
+//! Handles Instance:get_gender().
+static int InstanceGetGender(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto instance = InstanceBindings::Check(L, 1);
+    auto gender = Gender::ToString(instance->GetGender());
+    instance.reset();
+    lua.PushString(std::move(gender));
+    return 1;
 }
 
 //! Handles Instance:get_contents().
@@ -58,6 +101,16 @@ static int InstanceGetName(lua_State* L) {
     auto name = instance->GetName();
     instance.reset();
     lua.PushString(std::move(name));
+    return 1;
+}
+
+//! Handles Instance:get_player().
+static int InstanceGetPlayer(lua_State* L) {
+    auto& lua = Lua::CheckLua(L);
+    auto instance = InstanceBindings::Check(L, 1);
+    auto player = instance->GetPlayer();
+    instance.reset();
+    PlayerBindings::Push(lua, std::move(player));
     return 1;
 }
 
@@ -101,6 +154,31 @@ static int InstanceGetWorld(lua_State* L) {
     return 1;
 }
 
+//! Handles Instance:matches(word) and Instance:matches(seeker, word).
+static int InstanceMatches(lua_State* L) {
+    const auto top = lua_gettop(L);
+    if (top != 2 && top != 3)
+	return luaL_error(L, "matches expects 1 or 2 arguments");
+    int wordIndex = 2;
+    if (top == 3) {
+	if (!lua_isnil(L, 2))
+	    luaL_checkudata(L, 2, InstanceBindings::MetaName);
+	wordIndex = 3;
+    }
+    luaL_checktype(L, wordIndex, LUA_TSTRING);
+    auto& lua = Lua::CheckLua(L);
+    auto instance = InstanceBindings::Check(L, 1);
+    InstancePtr seeker;
+    if (top == 3 && !lua_isnil(L, 2))
+	seeker = InstanceBindings::Check(L, 2);
+    const bool matched = instance->Matches(
+	    Lua::CheckString(L, wordIndex), seeker);
+    instance.reset();
+    seeker.reset();
+    lua.PushBool(matched);
+    return 1;
+}
+
 //! Handles Instance:set_weight(weight).
 static int InstanceSetWeight(lua_State* L) {
     if (lua_gettop(L) != 2)
@@ -108,6 +186,26 @@ static int InstanceSetWeight(lua_State* L) {
     luaL_checktype(L, 2, LUA_TNUMBER);
     auto instance = InstanceBindings::Check(L, 1);
     instance->SetWeight(lua_tonumber(L, 2));
+    return 0;
+}
+
+//! Handles Instance:set_gender(gender).
+static int InstanceSetGender(lua_State* L) {
+    if (lua_gettop(L) != 2)
+	return luaL_error(L, "set_gender expects 1 argument");
+    luaL_checktype(L, 2, LUA_TSTRING);
+    auto instance = InstanceBindings::Check(L, 1);
+    const auto name = Lua::CheckString(L, 2);
+    if (name.empty()) {
+	instance->SetGender(Gender::GENDER_UNDEFINED);
+	return 0;
+    }
+    const auto gender = Gender::ByName(name);
+    if (!Gender::IsDefined(gender)) {
+	instance.reset();
+	return luaL_argerror(L, 2, "unknown gender");
+    }
+    instance->SetGender(gender);
     return 0;
 }
 
@@ -132,23 +230,36 @@ void InstanceBindings::Push(
 }
 
 //! Registers Instance userdata bindings.
-//! \param lua the Lua facade
-void InstanceBindings::Register(Lua& lua) {
-    Lua::RegisterMetatable(lua.GetState(), InstanceBindings::MetaName);
+//! \param L the \c lua_State
+static void RegisterInstanceMeta(lua_State* L) {
+    Lua::RegisterMetatable(L, InstanceBindings::MetaName);
+
     static const luaL_Reg methods[] = {
 	{"__gc", InstanceGc},
+	{"find", InstanceFind},
 	{"get_contents", InstanceGetContents},
 	{"get_contents_weight", InstanceGetContentsWeight},
+	{"get_descriptor", InstanceGetDescriptor},
+	{"get_gender", InstanceGetGender},
 	{"get_name", InstanceGetName},
 	{"get_parent", InstanceGetParent},
+	{"get_player", InstanceGetPlayer},
 	{"get_total_weight", InstanceGetTotalWeight},
-	{"get_weight", InstanceGetWeight},
 	{"get_world", InstanceGetWorld},
+	{"get_weight", InstanceGetWeight},
+	{"matches", InstanceMatches},
+	{"set_gender", InstanceSetGender},
 	{"set_weight", InstanceSetWeight},
 	{nullptr, nullptr}
     };
-    luaL_setfuncs(lua.GetState(), methods, 0);
-    lua_pop(lua.GetState(), 1);
+    luaL_setfuncs(L, methods, 0);
+    lua_pop(L, 1);
+}
+
+//! Registers Instance metatable.
+//! \param lua the Lua facade
+void InstanceBindings::Register(Lua& lua) {
+    RegisterInstanceMeta(lua.GetState());
 }
 
 }; // namespace Scripting

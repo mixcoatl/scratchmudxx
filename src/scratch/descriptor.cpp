@@ -16,9 +16,11 @@
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor.hpp>
 #include <scratch/game.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/menu.hpp>
+#include <scratch/player.hpp>
 #include <scratch/protocol_telnet.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
@@ -42,6 +44,7 @@ Descriptor::Descriptor(
 	colorBit_(true),
 	editCommand_(),
 	editName_(),
+	editPlayer_(),
 	editState_(),
 	editString_(),
 	editUser_(),
@@ -58,6 +61,7 @@ Descriptor::Descriptor(
 	state_(),
 	stateStack_(),
 	terminalType_(),
+	instance_(),
 	user_(),
 	windowHeight_(24),
 	windowWidth_(80),
@@ -116,6 +120,8 @@ void Descriptor::Close() noexcept {
 
     this->ClearEditor();
 
+    this->SetCharacter(nullptr);
+
     if (user_) {
 	user_->SetLastLogout(std::time(nullptr));
 	game_.GetUsers()->Save(user_->GetName());
@@ -123,6 +129,7 @@ void Descriptor::Close() noexcept {
     user_.reset();
     editCommand_.reset();
     editName_.clear();
+    editPlayer_.reset();
     editState_.reset();
     editString_.clear();
     editUser_.reset();
@@ -261,8 +268,10 @@ void Descriptor::Login(const UserPtr& user) noexcept {
     if (!user) {
 	LOGGER_ASSERT() << "Descriptor " << name_ << " login with null user.";
     } else if (user_ != user) {
-	// Log out whoever was previously attached before logging in the
-	// newly-specified user; both edges get their own timestamp and save.
+	// Character detach before account swap.
+	this->SetCharacter(nullptr);
+
+	// Prior user logout edge.
 	if (user_) {
 	    user_->SetLastLogout(std::time(nullptr));
 	    game_.GetUsers()->Save(user_->GetName());
@@ -272,6 +281,68 @@ void Descriptor::Login(const UserPtr& user) noexcept {
 	user_->SetLastLogin(std::time(nullptr));
 	game_.GetUsers()->Save(user_->GetName());
     }
+}
+
+//! Creates a character from \p player and attaches it.
+//! \param player the player prototype
+//! \sa #GetCharacter() const
+//! \sa #SetCharacter(const InstancePtr&)
+void Descriptor::CreateCharacter(const PlayerPtr& player) noexcept {
+    if (!player)
+	return;
+    if (game_.GetInstanceFor(player))
+	return;
+    auto instance = std::make_shared<Instance>();
+    instance->SetPlayer(player);
+    this->SetCharacter(instance);
+}
+
+//! Sets the attached character.
+//! \param instance the instance, or null to clear
+//! \remark Does not erase the live instance.
+//! \sa #CreateCharacter(const PlayerPtr&)
+//! \sa #GetCharacter() const
+void Descriptor::SetCharacter(const InstancePtr& instance) noexcept {
+    if (instance_ == instance)
+	return;
+
+    // Control release. Instance left live.
+    if (instance_) {
+	auto player = instance_->GetPlayer();
+	if (player) {
+	    auto players = game_.GetPlayers();
+	    if (players)
+		players->Save(player->GetName());
+	}
+	instance_->SetDescriptor(nullptr);
+	instance_.reset();
+    }
+
+    if (!instance)
+	return;
+
+    // Control held elsewhere.
+    auto other = instance->GetDescriptor();
+    if (other && other.get() != this)
+	return;
+
+    // Live insert if needed.
+    bool alreadyLive = false;
+    if (!instance->GetName().empty()) {
+	auto mapped = game_.GetInstance(instance->GetName());
+	if (mapped == instance)
+	    alreadyLive = true;
+	else if (mapped)
+	    return;
+    }
+    if (!alreadyLive) {
+	auto world = game_.GetWorld(String());
+	if (!world || !world->AddInstance(instance))
+	    return;
+    }
+
+    instance_ = instance;
+    instance->SetDescriptor(this->shared_from_this());
 }
 
 //! Writes to the descriptor.

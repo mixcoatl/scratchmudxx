@@ -1,13 +1,13 @@
 Name: Grant~
 Trust: Wizard~
 Action:-
-  local d = get_descriptor_for(actor)
+  local d = actor:get_descriptor()
   if not d then
     return
   end
   local who, trust_name = line:match("^%s*(%S+)%s+(%S+)")
   if not who or not trust_name then
-    d:print_format("%sUsage: grant <user> <trust>%s\r\n", Q.FAILED, Q.NORMAL)
+    d:print_format("%sUsage: grant <player> <trust>%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
   local canonical = nil
@@ -22,22 +22,29 @@ Action:-
     return
   end
   trust_name = canonical
-  local user = get_users():get(who)
-  if not user then
-    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+  local player = get_players():get(who)
+  if not player then
+    d:print_format("%sNo such player.%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
-  local granter = d:get_user()
   local granter_trust = "Player"
-  if granter then
-    granter_trust = granter:get_trust()
+  local actor_player = actor:get_player()
+  if actor_player then
+    granter_trust = actor_player:get_trust()
   end
   if not trust_allows(granter_trust, trust_name) then
     d:print_format("%sInsufficient trust.%s\r\n", Q.FAILED, Q.NORMAL)
     return
   end
-  user:set_trust(trust_name)
-  get_users():save(user:get_name())
-  d:print_format("%sGranted %s trust to %s.%s\r\n", Q.OKAY, trust_name, user:get_name(), Q.NORMAL)
+  local user = d:get_user()
+  local by = user and user:get_name() or ""
+  if by == "" and actor_player then
+    by = actor_player:get_name()
+  end
+  player:set_trust(trust_name)
+  player:set_modified(os.time())
+  player:set_modified_by(by)
+  get_players():save(player:get_name())
+  d:print_format("%sGranted %s trust to %s.%s\r\n", Q.OKAY, trust_name, player:get_name(), Q.NORMAL)
   ~
 ~

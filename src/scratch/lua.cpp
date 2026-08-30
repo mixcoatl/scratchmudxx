@@ -20,6 +20,8 @@
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/parser_bindings.hpp>
+#include <scratch/player_bindings.hpp>
+#include <scratch/preference_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
@@ -112,6 +114,8 @@ Lua::Lua(Game& game) :
     GenderBindings::Register(*this);
     InstanceBindings::Register(*this);
     ParserBindings::Register(*this);
+    PlayerBindings::Register(*this);
+    PreferenceBindings::Register(*this);
     StateBindings::Register(*this);
     TrustBindings::Register(*this);
     UserBindings::Register(*this);
