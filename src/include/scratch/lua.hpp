@@ -297,13 +297,6 @@ public:
     //! \sa #SetEnv(const String&)
     void SetSafe(const String& name);
 
-    //! Sets a safe C function.
-    //! \param name the field name
-    //! \param function the C function
-    void SetSafe(
-	    const String& name,
-	    lua_CFunction function);
-
     //! Stores the value at the top of the stack in the safe table.
     //! \param name the field name
     void SetSafeValue(const String& name);

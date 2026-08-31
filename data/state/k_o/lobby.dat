@@ -13,20 +13,21 @@ Hooks:
       return tostring(n);
     end
     d:clear_menu();
-    d:menu_title("Lobby");
-    d:menu_named_choices("Characters");
+    local m = d:ensure_menu();
+    m:set_title("Lobby");
+    m:add_named_choices("Characters");
     for _, name in ipairs(players) do
-      d:menu_item(next_key(), name);
+      m:add_item(next_key(), name);
     end
-    d:menu_item(next_key(), "Create a new character.");
+    m:add_item(next_key(), "Create a new character.");
     if #players > 0 then
-      d:menu_item(next_key(), "Delete a character.");
+      m:add_item(next_key(), "Delete a character.");
     end
-    d:menu_named_choices("Account");
-    d:menu_item(next_key(), "Edit user record.");
-    d:menu_item(next_key(), "Delete user record.");
-    d:menu_item("q", "Quit.");
-    d:menu_prompt("Enter choice");
+    m:add_named_choices("Account");
+    m:add_item(next_key(), "Edit user record.");
+    m:add_item(next_key(), "Delete user record.");
+    m:add_item("q", "Quit.");
+    m:set_prompt("Enter choice");
     d:print_menu();
     ~
   Received:-
@@ -52,7 +53,8 @@ Hooks:
     end
     local keyEdit = next_key();
     local keyUserDelete = next_key();
-    local key = d:menu_match(line);
+    local m = d:get_menu();
+    local key = m:match_key(line);
     if key == "q" then
       local who = user:get_name();
       d:close();
@@ -90,7 +92,7 @@ Hooks:
         end
         d:set_state("Playing");
       elseif key == keyCreate then
-        local player = d:set_edit_player();
+        local player = d:set_edit_player(nil);
         player:set_owner(user:get_name());
         player:set_gender(user:get_gender());
         d:set_state("Player");

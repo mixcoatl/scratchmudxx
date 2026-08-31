@@ -17,30 +17,28 @@ __top_builddir__bin_scratch_SOURCES = \
 	command.cpp \
 	command_bindings.cpp \
 	config.cpp \
-	config_bindings.cpp \
 	data.cpp \
 	descriptor.cpp \
 	descriptor_bindings.cpp \
+	direction.cpp \
+	room.cpp \
+	room_exit.cpp \
 	editor.cpp \
-	editor_bindings.cpp \
 	editor_verbs.cpp \
 	game.cpp \
 	game_action.cpp \
 	game_bindings.cpp \
 	gender.cpp \
-	gender_bindings.cpp \
 	instance.cpp \
-	instance_bindings.cpp \
 	logger.cpp \
 	lua.cpp \
+	lua_bindings.cpp \
 	main.cpp \
 	menu.cpp \
 	parser.cpp \
-	parser_bindings.cpp \
 	player.cpp \
 	player_bindings.cpp \
 	preference.cpp \
-	preference_bindings.cpp \
 	protocol_telnet.cpp \
 	random.cpp \
 	server.cpp \
@@ -50,11 +48,10 @@ __top_builddir__bin_scratch_SOURCES = \
 	string.cpp \
 	thing.cpp \
 	trust.cpp \
-	trust_bindings.cpp \
 	user.cpp \
 	user_bindings.cpp \
 	world.cpp \
-	world_bindings.cpp
+	zone.cpp
 
 noinst_HEADERS = \
 	../include/scratch/action.hpp \
@@ -63,33 +60,30 @@ noinst_HEADERS = \
 	../include/scratch/command.hpp \
 	../include/scratch/command_bindings.hpp \
 	../include/scratch/config.hpp \
-	../include/scratch/config_bindings.hpp \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
 	../include/scratch/descriptor_bindings.hpp \
+	../include/scratch/direction.hpp \
 	../include/scratch/editor.hpp \
-	../include/scratch/editor_bindings.hpp \
 	../include/scratch/editor_verbs.hpp \
 	../include/scratch/game.hpp \
 	../include/scratch/game_bindings.hpp \
 	../include/scratch/gender.hpp \
-	../include/scratch/gender_bindings.hpp \
 	../include/scratch/instance.hpp \
-	../include/scratch/instance_bindings.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/lua.hpp \
 	../include/scratch/lua_bindings.hpp \
 	../include/scratch/menu.hpp \
 	../include/scratch/parser.hpp \
-	../include/scratch/parser_bindings.hpp \
 	../include/scratch/player.hpp \
 	../include/scratch/player_bindings.hpp \
 	../include/scratch/preference.hpp \
-	../include/scratch/preference_bindings.hpp \
 	../include/scratch/protocol.hpp \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
 	../include/scratch/repository.hpp \
+	../include/scratch/room.hpp \
+	../include/scratch/room_exit.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
 	../include/scratch/social.hpp \
@@ -102,8 +96,7 @@ noinst_HEADERS = \
 	../include/scratch/string.hpp \
 	../include/scratch/thing.hpp \
 	../include/scratch/trust.hpp \
-	../include/scratch/trust_bindings.hpp \
 	../include/scratch/user.hpp \
 	../include/scratch/user_bindings.hpp \
 	../include/scratch/world.hpp \
-	../include/scratch/world_bindings.hpp
+	../include/scratch/zone.hpp

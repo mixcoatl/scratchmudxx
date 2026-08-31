@@ -307,6 +307,7 @@ protected:
     //! \sa #GetPreferences() const
     //! \sa #SetPreferences(const StringSetCi&)
     StringSetCi preferences_;
+
 };
 //! \}
 

@@ -12,7 +12,7 @@ Hooks:
       d:print_format("%sPlease enter a username.%s\r\n", Q.FAILED, Q.NORMAL);
       d:set_state("LoginUser");
     elseif name_lower == "new" then
-      d:set_edit_user();
+      d:set_edit_user(nil);
       d:push_state("User");
     elseif user then
       d:set_edit_string(name);

@@ -1,0 +1,94 @@
+Name: Room~
+Trust: Builder~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local phrases = parse(line, {"create", "edit", "erase", "stat"})
+  if not phrases or #phrases ~~= 1 then
+    action("Failed", A.TO_CHAR, "Usage: room create|edit|erase|stat <zone>:<room>.", actor)
+    return
+  end
+  local target_phrase = phrases[1]
+  local mode = target_phrase:get_delimiter():lower()
+  local words = target_phrase:get_words()
+  if (mode ~~= "create" and mode ~~= "edit" and mode ~~= "erase" and mode ~~= "stat")
+      or #words ~~= 1
+      or not target_phrase:is_single() then
+    action("Failed", A.TO_CHAR, "Usage: room create|edit|erase|stat <zone>:<room>.", actor)
+    return
+  end
+  local zone_name, room_name = words[1]:match("^([^:]+):([^:]+)$")
+  if not zone_name or not room_name then
+    action("Failed", A.TO_CHAR, "Usage: room create|edit|erase|stat <zone>:<room>.", actor)
+    return
+  end
+  local zone = get_zones():get(zone_name)
+  if not zone then
+    action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, zone_name)
+    return
+  end
+  local room = get_room(words[1])
+  if mode == "stat" then
+    if not room then
+      action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, room_name)
+      return
+    end
+    d:print_format("%sZone%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, zone:get_name(), Q.NORMAL)
+    d:print_format("%sName%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, room:get_name(), Q.NORMAL)
+    d:print_format("%sTitle%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, room:get_title(), Q.NORMAL)
+    d:print_format("%sDescription%s:-%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL)
+    local description = room:get_description()
+    if description ~~= "" then
+      description = description:gsub("[\r\n]+$", "")
+      d:print_format("%s%s%s\r\n", Q.TEXT, description, Q.NORMAL)
+    end
+    local exits = room:get_exits()
+    local has_exits = false
+    for _ in pairs(exits) do
+      has_exits = true
+      break
+    end
+    if has_exits then
+      d:print_format("%s-- %sExits%s --%s\r\n",
+        Q.PUNCTUATION, Q.EMPHASIS, Q.PUNCTUATION, Q.NORMAL)
+      for direction, exit in pairs(exits) do
+        d:print_format("%s%s%s:%s %s%s%s\r\n",
+          Q.PROMPT, direction, Q.PUNCTUATION, Q.NORMAL,
+          Q.TEXT, exit:get_target(), Q.NORMAL)
+      end
+    end
+    return
+  end
+  if mode == "create" and room then
+    action("Failed", A.TO_CHAR, "That room already exists.", actor)
+    return
+  end
+  if mode == "erase" then
+    if not room then
+      action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, room_name)
+      return
+    end
+    d:set_edit_zone(zone)
+    local edit_zone = d:get_edit_zone()
+    edit_zone:erase_room(room_name)
+    get_zones():store(edit_zone:get_name(), edit_zone)
+    d:clear_edit_zone()
+    action("Okay", A.TO_CHAR | A.NOREPEAT, "Erased ${D.Text}!", actor, room_name)
+    return
+  end
+  d:set_edit_zone(zone)
+  if room then
+    d:set_edit_room(d:get_edit_zone():get_room(room_name))
+  else
+    local edit = d:set_edit_room(nil)
+    edit:set_name(room_name)
+  end
+  d:push_state("Room")
+  ~
+~

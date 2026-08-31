@@ -34,16 +34,16 @@ Action:-
       action("Failed", A.TO_CHAR, "You're not allowed to stat ${D.Text}!", actor, name)
       return
     end
-    d:print_format("%sName:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
-    d:print_format("%sOwner:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_owner(), Q.NORMAL)
-    d:print_format("%sGender:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_gender(), Q.NORMAL)
-    d:print_format("%sTrust:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_trust(), Q.NORMAL)
-    d:print_format("%sPreferences:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT,
+    d:print_format("%sName%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
+    d:print_format("%sOwner%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_owner(), Q.NORMAL)
+    d:print_format("%sGender%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_gender(), Q.NORMAL)
+    d:print_format("%sTrust%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_trust(), Q.NORMAL)
+    d:print_format("%sPreferences%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT,
       table.concat(target:get_preferences(), ", "), Q.NORMAL)
   elseif mode == "edit" then
     if not self then

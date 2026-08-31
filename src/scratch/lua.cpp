@@ -8,26 +8,12 @@
 
 #define _SCRATCH_LUA_CPP_
 
-#include <scratch/color_bindings.hpp>
-#include <scratch/command_bindings.hpp>
-#include <scratch/config_bindings.hpp>
-#include <scratch/descriptor_bindings.hpp>
-#include <scratch/editor_bindings.hpp>
 #include <scratch/game.hpp>
-#include <scratch/game_bindings.hpp>
-#include <scratch/gender_bindings.hpp>
-#include <scratch/instance_bindings.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
-#include <scratch/parser_bindings.hpp>
-#include <scratch/player_bindings.hpp>
-#include <scratch/preference_bindings.hpp>
 #include <scratch/scratch.hpp>
-#include <scratch/state_bindings.hpp>
 #include <scratch/string.hpp>
-#include <scratch/trust_bindings.hpp>
-#include <scratch/user_bindings.hpp>
-#include <scratch/world_bindings.hpp>
+#include <scratch/lua_bindings.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -105,21 +91,7 @@ Lua::Lua(Game& game) :
 
     this->InitSafe();
 
-    ColorBindings::Register(*this);
-    CommandBindings::Register(*this);
-    ConfigBindings::Register(*this);
-    DescriptorBindings::Register(*this);
-    EditorBindings::Register(*this);
-    GameBindings::Register(*this);
-    GenderBindings::Register(*this);
-    InstanceBindings::Register(*this);
-    ParserBindings::Register(*this);
-    PlayerBindings::Register(*this);
-    PreferenceBindings::Register(*this);
-    StateBindings::Register(*this);
-    TrustBindings::Register(*this);
-    UserBindings::Register(*this);
-    WorldBindings::Register(*this);
+    LuaBindings::Register(*this);
 
     // Strip loaders from real _G.
     static const char* const denied[] = {
@@ -444,16 +416,6 @@ void Lua::SetSafe(const String& name) {
     lua_insert(lua_, -2);
     lua_rawset(lua_, -3);
     lua_pop(lua_, 2);
-}
-
-//! Sets a safe C function.
-//! \param name the field name
-//! \param function the C function
-void Lua::SetSafe(
-	const String& name,
-	lua_CFunction function) {
-    this->PushFunction(function);
-    this->SetSafe(name);
 }
 
 //! Stores the value at the top of the stack in the safe table.

@@ -22,11 +22,14 @@
 #include <scratch/menu.hpp>
 #include <scratch/player.hpp>
 #include <scratch/protocol_telnet.hpp>
+#include <scratch/room.hpp>
+#include <scratch/room_exit.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
 #include <scratch/user.hpp>
+#include <scratch/zone.hpp>
 
 namespace Scratch {
 namespace Net {
@@ -43,11 +46,14 @@ Descriptor::Descriptor(
 	Socket&& socket) :
 	colorBit_(true),
 	editCommand_(),
+	editExit_(),
 	editName_(),
 	editPlayer_(),
+	editRoom_(),
 	editState_(),
 	editString_(),
 	editUser_(),
+	editZone_(),
 	game_(game),
 	input_(),
 	lineInput_(),
@@ -106,7 +112,177 @@ void Descriptor::ClearEditor() noexcept {
 //! \sa #EnsureMenu()
 //! \sa #GetMenu() const
 void Descriptor::ClearMenu() noexcept {
+    if (this->IsEditorActive())
+	return;
     menu_.reset();
+}
+
+//! Clears the command edit draft.
+void Descriptor::ClearEditCommand() {
+    if (this->IsEditorActive())
+	return;
+    editCommand_.reset();
+    editName_.clear();
+    editString_.clear();
+}
+
+//! Clears the room-exit edit draft.
+void Descriptor::ClearEditExit() {
+    if (this->IsEditorActive())
+	return;
+    editExit_.reset();
+    editString_.clear();
+}
+
+//! Clears the player edit draft.
+void Descriptor::ClearEditPlayer() {
+    if (this->IsEditorActive())
+	return;
+    editPlayer_.reset();
+    editName_.clear();
+    editString_.clear();
+}
+
+//! Clears the room edit draft.
+void Descriptor::ClearEditRoom() {
+    if (this->IsEditorActive())
+	return;
+    editRoom_.reset();
+    editExit_.reset();
+    editString_.clear();
+}
+
+//! Clears the state edit draft.
+void Descriptor::ClearEditState() {
+    if (this->IsEditorActive())
+	return;
+    editState_.reset();
+    editName_.clear();
+    editString_.clear();
+}
+
+//! Clears the user edit draft.
+void Descriptor::ClearEditUser() {
+    if (this->IsEditorActive())
+	return;
+    editUser_.reset();
+    editName_.clear();
+    editString_.clear();
+}
+
+//! Clears the zone edit draft.
+void Descriptor::ClearEditZone() {
+    if (this->IsEditorActive())
+	return;
+    editZone_.reset();
+    editRoom_.reset();
+    editExit_.reset();
+    editName_.clear();
+    editString_.clear();
+}
+
+//! Sets the command edit draft.
+//! \param editCommand the source command, or null for a blank draft
+CommandPtr Descriptor::SetEditCommand(const CommandPtr& editCommand) {
+    if (this->IsEditorActive())
+	return nullptr;
+    const auto originalName = editCommand ? editCommand->GetName() : String();
+    editCommand_ = editCommand ?
+	std::make_shared<Command>(*editCommand) :
+	std::make_shared<Command>();
+    editName_ = originalName;
+    editString_.clear();
+    return editCommand_;
+}
+
+//! Sets the room-exit edit draft.
+//! \param editExit the source exit, or null for a blank draft
+RoomExitPtr Descriptor::SetEditExit(const RoomExitPtr& editExit) {
+    if (this->IsEditorActive())
+	return nullptr;
+    editExit_ = editExit ?
+	std::make_shared<RoomExit>(*editExit) :
+	std::make_shared<RoomExit>();
+    return editExit_;
+}
+
+//! Sets the player edit draft.
+//! \param editPlayer the source player, or null for a blank draft
+PlayerPtr Descriptor::SetEditPlayer(const PlayerPtr& editPlayer) {
+    if (this->IsEditorActive())
+	return nullptr;
+    const auto originalName = editPlayer ? editPlayer->GetName() : String();
+    editPlayer_ = editPlayer ?
+	std::make_shared<Player>(*editPlayer) :
+	std::make_shared<Player>();
+    editName_ = originalName;
+    editString_.clear();
+    return editPlayer_;
+}
+
+//! Sets the room edit draft.
+//! \param editRoom the source room, or null for a blank draft
+RoomPtr Descriptor::SetEditRoom(const RoomPtr& editRoom) {
+    if (this->IsEditorActive())
+	return nullptr;
+    const auto originalName = editRoom ? editRoom->GetName() : String();
+    editRoom_ = editRoom ?
+	std::make_shared<Room>(*editRoom) :
+	std::make_shared<Room>();
+    editExit_.reset();
+    editName_ = originalName;
+    editString_.clear();
+    return editRoom_;
+}
+
+//! Sets the state edit draft.
+//! \param editState the source state, or null for a blank draft
+StatePtr Descriptor::SetEditState(const StatePtr& editState) {
+    if (this->IsEditorActive())
+	return nullptr;
+    const auto originalName = editState ? editState->GetName() : String();
+    editState_ = editState ?
+	std::make_shared<State>(*editState) :
+	std::make_shared<State>();
+    editName_ = originalName;
+    editString_.clear();
+    return editState_;
+}
+
+//! Sets the user edit draft.
+//! \param editUser the source user, or null for a blank draft
+UserPtr Descriptor::SetEditUser(const UserPtr& editUser) {
+    if (this->IsEditorActive())
+	return nullptr;
+    const auto originalName = editUser ? editUser->GetName() : String();
+    editUser_ = editUser ?
+	std::make_shared<User>(*editUser) :
+	std::make_shared<User>();
+    editName_ = originalName;
+    editString_.clear();
+    return editUser_;
+}
+
+//! Sets the zone edit draft.
+//! \param editZone the source zone, or null for a blank draft
+ZonePtr Descriptor::SetEditZone(const ZonePtr& editZone) {
+    if (this->IsEditorActive())
+	return nullptr;
+    const auto originalName = editZone ? editZone->GetName() : String();
+    editZone_ = editZone ?
+	std::make_shared<Zone>(*editZone) :
+	std::make_shared<Zone>();
+    if (editZone) {
+	for (const auto& roomName: editZone_->GetRoomNames()) {
+	    auto room = editZone_->GetRoom(roomName);
+	    editZone_->StoreRoom(roomName, room);
+	}
+    }
+    editRoom_.reset();
+    editExit_.reset();
+    editName_ = originalName;
+    editString_.clear();
+    return editZone_;
 }
 
 //! Closes the descriptor.
@@ -129,7 +305,10 @@ void Descriptor::Close() noexcept {
     user_.reset();
     editCommand_.reset();
     editName_.clear();
+    editExit_.reset();
     editPlayer_.reset();
+    editZone_.reset();
+    editRoom_.reset();
     editState_.reset();
     editString_.clear();
     editUser_.reset();
@@ -159,6 +338,22 @@ void Descriptor::Close() noexcept {
 //! \sa #Close()
 bool Descriptor::Closed() const noexcept {
     return !socket_.is_open();
+}
+
+//! Returns whether the descriptor is closed or expired.
+//! \param descriptor the descriptor
+bool Descriptor::ClosedProxy(
+	WeakDescriptorPtr descriptor) noexcept {
+    auto live = descriptor.lock();
+    return !live || live->Closed();
+}
+
+EditorPtr Descriptor::GetEditorProxy(
+	WeakDescriptorPtr descriptor) noexcept {
+    auto live = descriptor.lock();
+    if (!live || !live->editor_ || live->editor_->IsActive())
+	return EditorPtr();
+    return live->editor_;
 }
 
 //! Returns whether the editor is intercepting input.
@@ -288,7 +483,7 @@ void Descriptor::Login(const UserPtr& user) noexcept {
 //! \sa #GetCharacter() const
 //! \sa #SetCharacter(const InstancePtr&)
 void Descriptor::CreateCharacter(const PlayerPtr& player) noexcept {
-    if (!player)
+    if (this->IsEditorActive() || !player)
 	return;
     if (game_.GetInstanceFor(player))
 	return;
@@ -303,10 +498,12 @@ void Descriptor::CreateCharacter(const PlayerPtr& player) noexcept {
 //! \sa #CreateCharacter(const PlayerPtr&)
 //! \sa #GetCharacter() const
 void Descriptor::SetCharacter(const InstancePtr& instance) noexcept {
+    if (this->IsEditorActive())
+	return;
     if (instance_ == instance)
 	return;
 
-    // Control release. Instance left live.
+    // Control release, instance remains live.
     if (instance_) {
 	auto player = instance_->GetPlayer();
 	if (player) {

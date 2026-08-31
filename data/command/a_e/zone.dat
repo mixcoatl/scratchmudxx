@@ -1,5 +1,5 @@
-Name: User~
-Trust: Wizard~
+Name: Zone~
+Trust: Builder~
 Action:-
   local d = actor:get_descriptor()
   if not d then
@@ -7,7 +7,7 @@ Action:-
   end
   local phrases = parse(line, {"edit", "erase", "stat"})
   if not phrases or #phrases ~~= 1 then
-    action("Failed", A.TO_CHAR, "Usage: user edit|erase|stat <name>.", actor)
+    action("Failed", A.TO_CHAR, "Usage: zone edit|erase|stat <name>.", actor)
     return
   end
   local target_phrase = phrases[1]
@@ -16,30 +16,25 @@ Action:-
   if (mode ~~= "edit" and mode ~~= "erase" and mode ~~= "stat")
       or #words ~~= 1
       or not target_phrase:is_single() then
-    action("Failed", A.TO_CHAR, "Usage: user edit|erase|stat <name>.", actor)
+    action("Failed", A.TO_CHAR, "Usage: zone edit|erase|stat <name>.", actor)
     return
   end
   local name = words[1]
-  local target = get_users():get(name)
+  local target = get_zones():get(name)
   if mode == "edit" then
     if target then
-      d:set_edit_user(target)
+      d:set_edit_zone(target)
     else
-      local edit = d:set_edit_user(nil)
+      local edit = d:set_edit_zone(nil)
       edit:set_name(name)
     end
-    d:push_state("User")
+    d:push_state("Zone")
   elseif mode == "erase" then
     if not target then
       action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
       return
     end
-    local self = d:get_user()
-    if self and self:get_name():lower() == name:lower() then
-      action("Failed", A.TO_CHAR, "You can't erase ${D.Text} because it is presently logged in.", actor, name)
-      return
-    end
-    get_users():erase(name)
+    get_zones():erase(name)
     action("Okay", A.TO_CHAR | A.NOREPEAT, "Erased ${D.Text}!", actor, name)
   elseif mode == "stat" then
     if not target then
@@ -48,10 +43,6 @@ Action:-
     end
     d:print_format("%sName%s:%s %s%s%s\r\n",
       Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
-    d:print_format("%sGender%s:%s %s%s%s\r\n",
-      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_gender(), Q.NORMAL)
-    d:print_format("%sEmail%s:%s %s%s%s\r\n",
-      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_email(), Q.NORMAL)
   end
   ~
 ~

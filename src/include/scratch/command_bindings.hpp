@@ -34,14 +34,6 @@ public:
     //! Metatable name for Social userdata.
     static const char SocialMetaName[];
 
-    //! Resolves a Command userdata at \p index.
-    //! \param L the \c lua_State
-    //! \param index the stack index of the userdata
-    //! \return the command
-    static CommandPtr Check(
-	lua_State* L,
-	const int index = 1);
-
     //! Resolves a CommandRepository userdata at \p index.
     //! \param L the \c lua_State
     //! \param index the stack index of the userdata
@@ -50,31 +42,9 @@ public:
 	lua_State* L,
 	const int index = 1);
 
-    //! Resolves a Social userdata at \p index.
-    //! \param L the \c lua_State
-    //! \param index the stack index of the userdata
-    //! \return the social
-    static SocialPtr CheckSocial(
-	lua_State* L,
-	const int index = 1);
-
-    //! Pushes a Command userdata, or nil.
-    //! \param lua the Lua facade
-    //! \param command the command to push
-    static void Push(
-	Lua& lua,
-	CommandPtr command);
-
     //! Pushes the command repository userdata.
     //! \param lua the Lua facade
     static void PushRepository(Lua& lua);
-
-    //! Pushes a Social userdata, or nil.
-    //! \param lua the Lua facade
-    //! \param social the social to push
-    static void PushSocial(
-	Lua& lua,
-	SocialPtr social);
 
     //! Registers Command and Social bindings.
     //! \param lua the Lua facade

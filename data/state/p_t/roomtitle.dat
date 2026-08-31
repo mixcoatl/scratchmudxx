@@ -1,0 +1,14 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEnter the room title%s:%s ", Q.PROMPT, Q.PUNCTUATION, Q.NORMAL);
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    if edit then
+      edit:set_title(line);
+    end
+    d:set_state("Room");
+    ~
+~
+Name: RoomTitle~
+~

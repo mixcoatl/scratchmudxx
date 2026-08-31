@@ -19,21 +19,22 @@ Hooks:
       no_argument = social:get_no_argument();
     end
     d:clear_menu();
-    d:menu_title("Command", edit:get_name(), "name", "<New>");
-    d:menu_choices();
-    d:menu_field("1", "Name", edit:get_name(), "name");
-    d:menu_field("2", "Keywords", kwtext);
-    d:menu_block("3", "Action", edit:get_action());
-    d:menu_field("4", "Trust", trust, "enum", "<Empty>");
-    d:menu_named_choices("Social Information");
-    d:menu_field("5", "Found", found);
-    d:menu_field("6", "Found Auto", found_auto);
-    d:menu_field("7", "No Argument", no_argument);
-    d:menu_item("8", "Delete Social Data.");
-    d:menu_choices();
-    d:menu_item("q", "Save and quit.");
-    d:menu_item("x", "Abort without saving.");
-    d:menu_prompt("Enter choice");
+    local m = d:ensure_menu();
+    m:set_title("Command", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_field("1", "Name", edit:get_name(), "name");
+    m:add_field("2", "Keywords", kwtext);
+    m:add_block("3", "Action", edit:get_action());
+    m:add_field("4", "Trust", trust, "enum", "<Empty>");
+    m:add_named_choices("Social Information");
+    m:add_field("5", "Found", found);
+    m:add_field("6", "Found Auto", found_auto);
+    m:add_field("7", "No Argument", no_argument);
+    m:add_item("8", "Delete Social Data.");
+    m:add_choices();
+    m:add_item("q", "Save and quit.");
+    m:add_item("x", "Abort without saving.");
+    m:set_prompt("Enter choice");
     d:print_menu();
     ~
   Received:-
@@ -42,7 +43,8 @@ Hooks:
       d:pop_state();
       return;
     end
-    local key = d:menu_match(line);
+    local m = d:get_menu();
+    local key = m:match_key(line);
     if key == "1" then
       d:push_state("CommandName");
     elseif key == "2" then

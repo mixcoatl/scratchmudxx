@@ -12,12 +12,11 @@ Action:-
   for _, id in ipairs(get_commands():get_ids()) do
     local c = get_commands():get(id)
     if c then
-      local required = c:get_trust()
-      local allowed = required == "" or trust_allows(player:get_trust(), required)
+      local allowed = trust_allows(player:get_trust(), c:get_trust())
       if allowed then
         local name = string.lower(c:get_name())
         local color = Q.TEXT
-        if required ~~= "" then
+        if c:get_trust() ~~= "None" then
           color = Q.RESTRICTED
         elseif c:get_social() ~~= nil then
           color = Q.SOCIAL

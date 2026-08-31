@@ -1,0 +1,24 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEnter the exit direction%s:%s ", Q.PROMPT, Q.PUNCTUATION, Q.NORMAL);
+    ~
+  Received:-
+    local direction = line:match("^%s*(.-)%s*$");
+    local names = {
+      east = "East", southeast = "Southeast", south = "South",
+      southwest = "Southwest", west = "West", northwest = "Northwest",
+      north = "North", northeast = "Northeast", up = "Up", down = "Down"
+    };
+    local canonical = names[direction:lower()];
+    if not canonical then
+      d:print_format("%sUnknown direction.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("ExitDirection");
+      return;
+    end
+    d:set_edit_string(canonical);
+    d:set_edit_exit(nil);
+    d:set_state("Exit");
+    ~
+~
+Name: ExitDirection~
+~

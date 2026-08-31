@@ -33,21 +33,6 @@ public:
     //! \param lua the Lua facade
     static void Register(Lua& lua);
 
-    //! Resolves a State userdata at \p index.
-    //! \param L the \c lua_State
-    //! \param index the stack index of the userdata
-    //! \return the connection state
-    static StatePtr Check(
-	lua_State* L,
-	const int index = 1);
-
-    //! Pushes a State userdata, or nil.
-    //! \param lua the Lua facade
-    //! \param state the state to push
-    static void Push(
-	Lua& lua,
-	StatePtr state);
-
     //! Resolves a StateRepository userdata at \p index.
     //! \param L the \c lua_State
     //! \param index the stack index of the userdata

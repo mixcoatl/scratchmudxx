@@ -1,0 +1,45 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_zone();
+    if not edit then
+      d:print_format("%sNo Zone draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:pop_state();
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Zone", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_item("q", "Save and quit.");
+    m:add_item("x", "Abort without saving.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_zone();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        d:print_format("%sName is required before saving.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("Zone");
+      else
+        get_zones():store(name, edit);
+        d:clear_edit_zone();
+        d:pop_state();
+      end
+    elseif key == "x" then
+      d:clear_edit_zone();
+      d:pop_state();
+    else
+      d:set_state("Zone");
+    end
+    ~
+~
+Name: Zone~
+~

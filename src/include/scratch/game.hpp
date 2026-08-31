@@ -19,6 +19,7 @@
 #include <scratch/string.hpp>
 #include <scratch/user.hpp>
 #include <scratch/world.hpp>
+#include <scratch/zone.hpp>
 
 // Forward declarations.
 namespace Scratch {
@@ -69,6 +70,9 @@ using StateRepositoryPtr = std::shared_ptr<StateRepository>;
 using UserRepository = Scratch::Storage::Repository<
 	User, Scratch::Storage::MultiFileStorage<User>>;
 using UserRepositoryPtr = std::shared_ptr<UserRepository>;
+using ZoneRepository = Scratch::Storage::Repository<
+	Zone, Scratch::Storage::MultiFileStorage<Zone>>;
+using ZoneRepositoryPtr = std::shared_ptr<ZoneRepository>;
 
 //! The game class. \{
 class Game {
@@ -132,7 +136,7 @@ public:
 
     //! Gets the keyword command index.
     //! \sa #RebuildCommandIndex()
-    const StringMapCi<CommandPtr>& GetCommandsIndex() const noexcept {
+    StringMapCi<CommandPtr> GetCommandsIndex() const noexcept {
 	return commandsIndex_;
     }
 
@@ -143,6 +147,9 @@ public:
 
     //! Gets the descriptors.
     std::set<DescriptorPtr> GetDescriptors() const noexcept;
+
+    //! Gets the names of open descriptors.
+    StringSetCi GetDescriptorNames() const;
 
     //! Gets an instance.
     //! \param instanceName the instance name
@@ -174,6 +181,14 @@ public:
     //! Gets the player repository.
     PlayerRepositoryPtr GetPlayers() const noexcept;
 
+    //! Gets a room.
+    //! \param name the qualified or local room name
+    //! \param perspective the instance supplying local scope
+    //! \return the room, or \c nullptr
+    RoomPtr GetRoom(
+	const String& name,
+	const InstancePtr& perspective = InstancePtr()) const noexcept;
+
     //! Gets the shutdown flag.
     //! \sa #SetShutdown(const bool)
     bool GetShutdown() const noexcept;
@@ -183,6 +198,9 @@ public:
 
     //! Gets the user repository.
     UserRepositoryPtr GetUsers() const noexcept;
+
+    //! Gets the zone repository.
+    ZoneRepositoryPtr GetZones() const noexcept;
 
     //! Loads game repositories from disk.
     //! \throw std::runtime_error if a required repository cannot be loaded
@@ -215,16 +233,6 @@ public:
     void RunCommandHook(
 	const CommandPtr& command,
 	const InstancePtr& performer,
-	const String& line);
-
-    //! Runs social templates for \p actor.
-    //! \param actor the performing instance
-    //! \param social the social templates
-    //! \param line the remainder after the matched command word
-    //! \sa #RunCommandHook(const CommandPtr&, const InstancePtr&, const String&)
-    void RunSocial(
-	const InstancePtr& actor,
-	const SocialPtr& social,
 	const String& line);
 
     //! Sets the shutdown flag.
@@ -315,6 +323,10 @@ protected:
     //! The user repository.
     //! \sa #GetUsers() const
     UserRepositoryPtr users_;
+
+    //! The zone repository.
+    //! \sa #GetZones() const
+    ZoneRepositoryPtr zones_;
 };
 //! \}
 

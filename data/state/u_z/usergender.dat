@@ -1,12 +1,13 @@
 Hooks:
   Focus:-
     d:clear_menu();
-    d:menu_title("Gender");
-    d:menu_choices();
+    local m = d:ensure_menu();
+    m:set_title("Gender");
+    m:add_choices();
     for i, name in ipairs(get_gender_names()) do
-      d:menu_item(tostring(i), name);
+      m:add_item(tostring(i), name);
     end
-    d:menu_prompt("Enter choice");
+    m:set_prompt("Enter choice");
     d:print_menu();
     ~
   Received:-
@@ -15,7 +16,8 @@ Hooks:
       d:pop_state();
       return;
     end
-    local key = d:menu_match(line);
+    local m = d:get_menu();
+    local key = m:match_key(line);
     local names = get_gender_names();
     local name = key and names[tonumber(key)];
     if not name then

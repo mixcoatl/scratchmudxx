@@ -16,7 +16,6 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
 #include <scratch/gender.hpp>
-#include <scratch/instance_bindings.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/parser.hpp>
 #include <scratch/scratch.hpp>
@@ -486,7 +485,7 @@ void Game::RunCommandHook(
     const auto action = command->GetAction();
     const auto social = command->GetSocial();
     if (action.empty() && social) {
-	this->RunSocial(performer, social, line);
+	command->PerformSocial(*this, performer, line);
 	return;
     }
     if (action.empty())
@@ -497,10 +496,11 @@ void Game::RunCommandHook(
     if (!caller.IsActive())
 	return;
 
-    Scripting::InstanceBindings::Push(lua, performer);
+    lua.PushUserdata(
+	performer, "Scratch.Instance");
     lua.SetEnv("actor");
 
-    Scripting::CommandBindings::Push(lua, command);
+    lua.PushUserdata(command, "Scratch.Command");
     lua.SetEnv("command");
 
     lua.PushString(line);
@@ -510,68 +510,6 @@ void Game::RunCommandHook(
 	Scripting::ColorBindings::AssignQ(lua, *d);
 
     lua.Execute(action);
-}
-
-//! Runs social templates for \p actor.
-//! \param actor the performing instance
-//! \param social the social templates
-//! \param line the remainder after the matched command word
-//! \sa #RunCommandHook(const CommandPtr&, const InstancePtr&, const String&)
-void Game::RunSocial(
-	const InstancePtr& actor,
-	const SocialPtr& social,
-	const String& line) {
-    if (!actor || !social)
-	return;
-
-    const auto printMiss = [&actor]() {
-	auto d = actor->GetDescriptor();
-	if (!d || d->Closed())
-	    return;
-	String out;
-	out += d->GetColor(Color::C_FAILED);
-	out += "You don't see them here.";
-	out += d->GetColor(Color::C_NORMAL);
-	out += "\r\n";
-	d->Print(out);
-    };
-
-    Parser parser;
-    if (!parser.Parse(line)) {
-	printMiss();
-	return;
-    }
-
-    String message;
-    ActionParam direct;
-    if (!parser.GetSize()) {
-	message = social->GetNoArgument();
-    } else if (parser.GetSize() != 1) {
-	printMiss();
-	return;
-    } else {
-	auto target = actor->Find(*this, parser.GetPhrase(0));
-	if (!target) {
-	    printMiss();
-	    return;
-	} else if (target == actor) {
-	    message = social->GetFoundAuto();
-	    if (message.empty())
-		message = social->GetFound();
-	} else {
-	    message = social->GetFound();
-	}
-	direct = ActionParam(target);
-    }
-    if (message.empty())
-	return;
-
-    this->Action(
-	    Color::C_SOCIAL,
-	    ACT_TOALL | ACT_NOREPEAT,
-	    message,
-	    ActionParam(actor),
-	    direct);
 }
 
 //! Rebuilds the keyword command index.

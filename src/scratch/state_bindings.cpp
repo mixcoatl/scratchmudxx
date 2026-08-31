@@ -29,279 +29,19 @@ const char StateBindings::RepositoryMetaName[] = "Scratch.StateRepository";
 
 //! ScratchMUD types.
 using StateRepositoryPtr = Scratch::Core::StateRepositoryPtr;
-using Strings = Scratch::Algorithm::Strings;
 
-//! Handles State userdata garbage collection.
-static int StateGc(lua_State* L) {
-    return Lua::DestroyWeakUserdata<State>(L, StateBindings::MetaName);
-}
-
-//! Handles State:get_created().
-static int StateGetCreated(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    const auto created = state->GetCreated();
-    state.reset();
-    lua.PushInt(static_cast<lua_Integer>(created));
-    return 1;
-}
-
-//! Handles State:get_created_by().
-static int StateGetCreatedBy(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    auto createdBy = state->GetCreatedBy();
-    state.reset();
-    lua.PushString(std::move(createdBy));
-    return 1;
-}
-
-//! Handles State:get_focus_hook().
-static int StateGetFocusHook(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    auto focus = state->GetFocus();
-    state.reset();
-    lua.PushString(std::move(focus));
-    return 1;
-}
-
-//! Handles State:get_focus_lost_hook().
-static int StateGetFocusLostHook(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    auto focusLost = state->GetFocusLost();
-    state.reset();
-    lua.PushString(std::move(focusLost));
-    return 1;
-}
-
-//! Handles State:get_modified().
-static int StateGetModified(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    const auto modified = state->GetModified();
-    state.reset();
-    lua.PushInt(static_cast<lua_Integer>(modified));
-    return 1;
-}
-
-//! Handles State:get_modified_by().
-static int StateGetModifiedBy(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    auto modifiedBy = state->GetModifiedBy();
-    state.reset();
-    lua.PushString(std::move(modifiedBy));
-    return 1;
-}
-
-//! Handles State:get_name().
-static int StateGetName(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    auto name = state->GetName();
-    state.reset();
-    lua.PushString(std::move(name));
-    return 1;
-}
-
-//! Handles State:get_received_hook().
-static int StateGetReceivedHook(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    auto received = state->GetReceived();
-    state.reset();
-    lua.PushString(std::move(received));
-    return 1;
-}
-
-//! Handles State:is_prompt().
-static int StateIsPrompt(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    const bool prompt = state->GetPromptBit();
-    state.reset();
-    lua.PushBool(prompt);
-    return 1;
-}
-
-//! Handles State:is_quiet().
-static int StateIsQuiet(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto state = StateBindings::Check(L, 1);
-    const bool quiet = state->GetQuietBit();
-    state.reset();
-    lua.PushBool(quiet);
-    return 1;
-}
-
-//! Handles State:set_created(created).
-static int StateSetCreated(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_created expects 1 argument");
-    const auto created = static_cast<std::time_t>(luaL_checkinteger(L, 2));
-    auto state = StateBindings::Check(L, 1);
-    state->SetCreated(created);
-    return 0;
-}
-
-//! Handles State:set_created_by(created_by).
-static int StateSetCreatedBy(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_created_by expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto state = StateBindings::Check(L, 1);
-    state->SetCreatedBy(Lua::CheckString(L, 2));
-    return 0;
-}
-
-//! Handles State:set_focus_hook(focus).
-static int StateSetFocusHook(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_focus_hook expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto state = StateBindings::Check(L, 1);
-    state->SetFocus(Lua::CheckString(L, 2));
-    return 0;
-}
-
-//! Handles State:set_focus_lost_hook(focus_lost).
-static int StateSetFocusLostHook(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_focus_lost_hook expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto state = StateBindings::Check(L, 1);
-    state->SetFocusLost(Lua::CheckString(L, 2));
-    return 0;
-}
-
-//! Handles State:set_modified(modified).
-static int StateSetModified(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_modified expects 1 argument");
-    const auto modified = static_cast<std::time_t>(luaL_checkinteger(L, 2));
-    auto state = StateBindings::Check(L, 1);
-    state->SetModified(modified);
-    return 0;
-}
-
-//! Handles State:set_modified_by(modified_by).
-static int StateSetModifiedBy(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_modified_by expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto state = StateBindings::Check(L, 1);
-    state->SetModifiedBy(Lua::CheckString(L, 2));
-    return 0;
-}
-
-//! Handles State:set_name(name).
-static int StateSetName(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_name expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    const auto name = Lua::CheckString(L, 2);
-    auto repo = Lua::CheckGame(L).GetStates();
+//! Sets a State name.
+static void StateSetName(
+    StatePtr state,
+    Game& game,
+    String name) {
+    auto repo = game.GetStates();
     if (!repo->IsValidThingId(name))
-	return luaL_error(L, "invalid state id");
-    auto state = StateBindings::Check(L, 1);
+	throw std::invalid_argument("invalid state id");
     if (repo->Contains(state)) {
-	repo.reset();
-	state.reset();
-	return luaL_error(L, "cannot set_name on a live connection state");
+	throw std::runtime_error("cannot set_name on a live connection state");
     }
     state->SetName(name);
-    return 0;
-}
-
-//! Handles State:set_prompt(bool).
-static int StateSetPrompt(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_prompt expects 1 argument");
-    luaL_checktype(L, 2, LUA_TBOOLEAN);
-    const bool prompt = lua_toboolean(L, 2) != 0;
-    auto& game = Lua::CheckGame(L);
-    auto state = StateBindings::Check(L, 1);
-    state->SetPromptBit(prompt);
-    game.ApplyStateBits(state);
-    return 0;
-}
-
-//! Handles State:set_quiet(bool).
-static int StateSetQuiet(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_quiet expects 1 argument");
-    luaL_checktype(L, 2, LUA_TBOOLEAN);
-    const bool quiet = lua_toboolean(L, 2) != 0;
-    auto& game = Lua::CheckGame(L);
-    auto state = StateBindings::Check(L, 1);
-    state->SetQuietBit(quiet);
-    game.ApplyStateBits(state);
-    return 0;
-}
-
-//! Handles State:set_received_hook(received).
-static int StateSetReceivedHook(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_received_hook expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto state = StateBindings::Check(L, 1);
-    state->SetReceived(Lua::CheckString(L, 2));
-    return 0;
-}
-
-//! Resolves a State userdata at \p index.
-//! \param L the \c lua_State
-//! \param index the stack index of the userdata
-//! \return the connection state
-StatePtr StateBindings::Check(
-	lua_State* L,
-	const int index) {
-    return Lua::CheckWeakUserdata<State>(
-	L, MetaName, "invalid state", index);
-}
-
-//! Pushes a State userdata, or nil.
-//! \param lua the Lua facade
-//! \param state the state to push
-void StateBindings::Push(
-	Lua& lua,
-	StatePtr state) {
-    lua.PushUserdata(std::move(state), MetaName);
-}
-
-//! Registers State userdata bindings.
-//! \param L the \c lua_State
-static void RegisterStateMeta(lua_State* L) {
-    Lua::RegisterMetatable(L, StateBindings::MetaName);
-
-    static const luaL_Reg methods[] = {
-	{"__gc", StateGc},
-	{"get_created", StateGetCreated},
-	{"get_created_by", StateGetCreatedBy},
-	{"get_focus_hook", StateGetFocusHook},
-	{"get_focus_lost_hook", StateGetFocusLostHook},
-	{"get_modified", StateGetModified},
-	{"get_modified_by", StateGetModifiedBy},
-	{"get_name", StateGetName},
-	{"get_received_hook", StateGetReceivedHook},
-	{"is_prompt", StateIsPrompt},
-	{"is_quiet", StateIsQuiet},
-	{"set_created", StateSetCreated},
-	{"set_created_by", StateSetCreatedBy},
-	{"set_focus_hook", StateSetFocusHook},
-	{"set_focus_lost_hook", StateSetFocusLostHook},
-	{"set_modified", StateSetModified},
-	{"set_modified_by", StateSetModifiedBy},
-	{"set_name", StateSetName},
-	{"set_prompt", StateSetPrompt},
-	{"set_quiet", StateSetQuiet},
-	{"set_received_hook", StateSetReceivedHook},
-	{nullptr, nullptr}
-    };
-    luaL_setfuncs(L, methods, 0);
-    lua_pop(L, 1);
 }
 
 //! Resolves a StateRepository userdata at \p index.
@@ -315,112 +55,7 @@ StateRepository& StateBindings::CheckRepository(
 	L, RepositoryMetaName, "invalid state repository", index);
 }
 
-//! Handles StateRepository:erase(name).
-static int StateRepositoryErase(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "erase expects 1 argument");
-    auto& lua = Lua::CheckLua(L);
-    const auto name = Lua::CheckString(L, 2);
-    const auto& bootstrap =
-	    Lua::CheckGame(L).GetConfig()->GetBootstrapState();
-    if (!bootstrap.empty() && !Strings::CompareCi(name, bootstrap))
-	return luaL_error(L, "cannot erase bootstrap state");
-    const bool erased = StateBindings::CheckRepository(L).Erase(name);
-    lua.PushBool(erased);
-    return 1;
-}
-
-//! Handles StateRepository userdata garbage collection.
-static int StateRepositoryGc(lua_State* L) {
-    return Lua::DestroyWeakUserdata<StateRepository>(
-	L, StateBindings::RepositoryMetaName);
-}
-
-//! Handles StateRepository:get(name).
-static int StateRepositoryGet(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "get expects 1 argument");
-    auto& lua = Lua::CheckLua(L);
-    StateBindings::Push(lua, StateBindings::CheckRepository(L).Get(Lua::CheckString(L, 2)));
-    return 1;
-}
-
-//! Handles StateRepository:get_ids().
-static int StateRepositoryGetIds(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "get_ids expects no arguments");
-    auto& lua = Lua::CheckLua(L);
-    lua.PushStringSet(StateBindings::CheckRepository(L).GetIds());
-    return 1;
-}
-
-//! Handles StateRepository:load(name).
-static int StateRepositoryLoad(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "load expects 1 argument");
-    auto& lua = Lua::CheckLua(L);
-    auto& game = Lua::CheckGame(L);
-    auto& repo = StateBindings::CheckRepository(L);
-    const auto name = Lua::CheckString(L, 2);
-    const bool loaded = repo.Load(name);
-    if (loaded)
-	game.ApplyStateBits(repo.Get(name));
-    lua.PushBool(loaded);
-    return 1;
-}
-
-//! Handles StateRepository:load_index().
-static int StateRepositoryLoadIndex(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "load_index expects no arguments");
-    auto& lua = Lua::CheckLua(L);
-    auto& game = Lua::CheckGame(L);
-    auto& repo = StateBindings::CheckRepository(L);
-    const bool loaded = repo.LoadIndex();
-    if (loaded) {
-	for (const auto& id: repo.GetIds())
-	    game.ApplyStateBits(repo.Get(id));
-    }
-    lua.PushBool(loaded);
-    return 1;
-}
-
 //! Handles StateRepository:save(name).
-static int StateRepositorySave(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "save expects 1 argument");
-    auto& lua = Lua::CheckLua(L);
-    const bool saved = StateBindings::CheckRepository(L).Save(
-	Lua::CheckString(L, 2));
-    lua.PushBool(saved);
-    return 1;
-}
-
-//! Handles StateRepository:save_index().
-static int StateRepositorySaveIndex(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "save_index expects no arguments");
-    auto& lua = Lua::CheckLua(L);
-    lua.PushBool(StateBindings::CheckRepository(L).SaveIndex());
-    return 1;
-}
-
-//! Handles StateRepository:store(name, state).
-static int StateRepositoryStore(lua_State* L) {
-    if (lua_gettop(L) != 3)
-	return luaL_error(L, "store expects 2 arguments");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    const auto name = Lua::CheckString(L, 2);
-    auto& game = Lua::CheckGame(L);
-    auto& repo = StateBindings::CheckRepository(L);
-    if (!repo.IsValidThingId(name))
-	return luaL_error(L, "invalid state id");
-    auto state = StateBindings::Check(L, 3);
-    repo.Store(name, state);
-    game.ApplyStateBits(repo.Get(name));
-    return 0;
-}
-
 //! Pushes the connection-state repository userdata.
 //! \param lua the Lua facade
 void StateBindings::PushRepository(Lua& lua) {
@@ -429,31 +64,38 @@ void StateBindings::PushRepository(Lua& lua) {
 
 //! Registers connection-state repository userdata bindings.
 //! \param L the \c lua_State
-static void RegisterStateRepositoryMeta(lua_State* L) {
-    Lua::RegisterMetatable(L, StateBindings::RepositoryMetaName);
-
-    static const luaL_Reg methods[] = {
-	{"__gc", StateRepositoryGc},
-	{"erase", StateRepositoryErase},
-	{"get", StateRepositoryGet},
-	{"get_ids", StateRepositoryGetIds},
-	{"load", StateRepositoryLoad},
-	{"load_index", StateRepositoryLoadIndex},
-	{"save", StateRepositorySave},
-	{"save_index", StateRepositorySaveIndex},
-	{"store", StateRepositoryStore},
-	{nullptr, nullptr}
-    };
-    luaL_setfuncs(L, methods, 0);
-    lua_pop(L, 1);
-}
-
 //! Registers State and StateRepository metatables.
 //! \param lua the Lua facade
 void StateBindings::Register(Lua& lua) {
-    auto* L = lua.GetState();
-    RegisterStateMeta(L);
-    RegisterStateRepositoryMeta(L);
+    lua.Class<State>(MetaName).
+	Function("get_focus_hook", &State::GetFocus).
+	Function("get_focus_lost_hook", &State::GetFocusLost).
+	Function("get_received_hook", &State::GetReceived).
+	Function("is_prompt", &State::GetPromptBit).
+	Function("is_quiet", &State::GetQuietBit).
+	Function("set_focus_hook", &State::SetFocus).
+	Function("set_focus_lost_hook", &State::SetFocusLost).
+	Function("set_received_hook", &State::SetReceived).
+	Function("get_created", &State::GetCreated).
+	Function("get_created_by", &State::GetCreatedBy).
+	Function("get_modified", &State::GetModified).
+	Function("get_modified_by", &State::GetModifiedBy).
+	Function("get_name", &State::GetName).
+	Function("set_created", &State::SetCreated).
+	Function("set_created_by", &State::SetCreatedBy).
+	Function("set_modified", &State::SetModified).
+	Function("set_modified_by", &State::SetModifiedBy).
+	Function("set_name", &StateSetName, Injected<Game>()).
+	Function("set_prompt", &State::SetPromptBit).
+	Function("set_quiet", &State::SetQuietBit);
+    lua.Class<StateRepository>(RepositoryMetaName).
+	Function("get", &StateRepository::Get).
+	Function("get_ids", &StateRepository::GetIds).
+	Function("load", &StateRepository::Load).
+	Function("load_index", &StateRepository::LoadIndex).
+	Function("save", &StateRepository::Save).
+	Function("save_index", &StateRepository::SaveIndex).
+	Function("store", &StateRepository::Store);
 }
 
 }; // namespace Scripting

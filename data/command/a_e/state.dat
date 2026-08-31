@@ -25,7 +25,7 @@ Action:-
     if target then
       d:set_edit_state(target)
     else
-      local edit = d:set_edit_state()
+      local edit = d:set_edit_state(nil)
       edit:set_name(name)
     end
     d:push_state("State")
@@ -56,12 +56,35 @@ Action:-
       action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
       return
     end
-    d:print_format("%sName:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
-    d:print_format("%sQuiet:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, tostring(target:is_quiet()), Q.NORMAL)
-    d:print_format("%sPrompt:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, tostring(target:is_prompt()), Q.NORMAL)
+    d:print_format("%sName%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
+    d:print_format("%sQuiet%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT,
+      tostring(target:is_quiet()), Q.NORMAL)
+    d:print_format("%sPrompt%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT,
+      tostring(target:is_prompt()), Q.NORMAL)
+    local focus = target:get_focus_hook()
+    d:print_format("%sFocus%s:-%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL)
+    if focus ~~= "" then
+      focus = focus:gsub("[\r\n]+$", "")
+      d:print_format("%s%s%s\r\n", Q.TEXT, focus, Q.NORMAL)
+    end
+    local focus_lost = target:get_focus_lost_hook()
+    d:print_format("%sFocusLost%s:-%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL)
+    if focus_lost ~~= "" then
+      focus_lost = focus_lost:gsub("[\r\n]+$", "")
+      d:print_format("%s%s%s\r\n", Q.TEXT, focus_lost, Q.NORMAL)
+    end
+    local received = target:get_received_hook()
+    d:print_format("%sReceived%s:-%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL)
+    if received ~~= "" then
+      received = received:gsub("[\r\n]+$", "")
+      d:print_format("%s%s%s\r\n", Q.TEXT, received, Q.NORMAL)
+    end
   end
   ~
 ~

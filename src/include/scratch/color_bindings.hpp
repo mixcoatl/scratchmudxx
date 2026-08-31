@@ -43,9 +43,6 @@ public:
 	Lua& lua,
 	const Descriptor& desc);
 
-    //! Registers Color free functions on \p lua.
-    //! \param lua the Lua facade
-    static void Register(Lua& lua);
 };
 //! \}
 

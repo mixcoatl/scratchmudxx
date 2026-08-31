@@ -7,24 +7,25 @@ Hooks:
       return;
     end
     d:clear_menu();
-    d:menu_title("Player", edit:get_name(), "name", "<New>");
-    d:menu_choices();
-    d:menu_field("1", "Name", edit:get_name(), "name");
-    d:menu_field("2", "Gender", edit:get_gender(), "enum");
+    local m = d:ensure_menu();
+    m:set_title("Player", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_field("1", "Name", edit:get_name(), "name");
+    m:add_field("2", "Gender", edit:get_gender(), "enum");
     local autosay = "No";
     if edit:has_preference("AutoSay") then
       autosay = "Yes";
     end
-    d:menu_field("3", "AutoSay", autosay, "yesno");
+    m:add_field("3", "AutoSay", autosay, "yesno");
     local norepeat = "No";
     if edit:has_preference("NoRepeat") then
       norepeat = "Yes";
     end
-    d:menu_field("4", "NoRepeat", norepeat, "yesno");
-    d:menu_choices();
-    d:menu_item("q", "Save and quit.");
-    d:menu_item("x", "Abort without saving.");
-    d:menu_prompt("Enter choice");
+    m:add_field("4", "NoRepeat", norepeat, "yesno");
+    m:add_choices();
+    m:add_item("q", "Save and quit.");
+    m:add_item("x", "Abort without saving.");
+    m:set_prompt("Enter choice");
     d:print_menu();
     ~
   Received:-
@@ -33,7 +34,8 @@ Hooks:
       d:pop_state();
       return;
     end
-    local key = d:menu_match(line);
+    local m = d:get_menu();
+    local key = m:match_key(line);
     if key == "1" then
       if d:get_edit_name() == "" then
         d:push_state("PlayerName");

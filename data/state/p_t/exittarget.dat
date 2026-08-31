@@ -1,0 +1,14 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEnter the exit target%s:%s ", Q.PROMPT, Q.PUNCTUATION, Q.NORMAL);
+    ~
+  Received:-
+    local edit = d:get_edit_exit();
+    if edit then
+      edit:set_target(line:match("^%s*(.-)%s*$"));
+    end
+    d:set_state("Exit");
+    ~
+~
+Name: ExitTarget~
+~

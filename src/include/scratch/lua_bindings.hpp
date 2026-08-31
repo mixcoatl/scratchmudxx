@@ -7,13 +7,19 @@
 //! \author Geoffrey Davis (gdavis@scratchmud.org)
 
 #ifndef _SCRATCH_LUA_BINDINGS_HPP_
-#define _SCRATCH_LUA_BINDINGS_HPP_
+    #define _SCRATCH_LUA_BINDINGS_HPP_
 
 #include <boost/optional.hpp>
+#include <scratch/action.hpp>
 #include <scratch/color.hpp>
+#include <scratch/direction.hpp>
+#include <scratch/gender.hpp>
+#include <scratch/instance.hpp>
+#include <scratch/parser.hpp>
+#include <scratch/preference.hpp>
+#include <scratch/trust.hpp>
 #include <exception>
 #include <functional>
-#include <tuple>
 #include <typeindex>
 #include <vector>
 
@@ -26,19 +32,14 @@ namespace Detail {
 template<typename T, typename EnableT = void>
 struct LuaValue;
 
-//! Provides a default value for an optional argument.
+//! Marks a trailing function argument as optional.
 template<typename T, typename EnableT = void>
-struct LuaDefaultValue {
-    static T Get() {
-	return T();
-    }
-};
+struct LuaDefaultValue;
 
 //! Marks a parameter supplied by the Lua environment.
 template<typename T>
 struct InjectedArgument {};
 
-//! Marks a trailing function argument as optional.
 struct OptionalArgument {
     OptionalArgument() noexcept :
 	type(typeid(void)),
@@ -81,7 +82,7 @@ struct AllOptionalArguments<FirstT, RestT...>:
 	std::is_same<FirstT, OptionalArgument>::value &&
 	AllOptionalArguments<RestT...>::value> {};
 
-//! Converts enum values using an enum facade.
+//! Converts enum values using an EnumBase facade.
 template<typename EnumT>
 struct LuaEnumValue {
     using ValueT = typename EnumT::Enum;
@@ -108,6 +109,46 @@ template<>
 struct LuaValue<Scratch::Net::Color::ColorEnum, void>:
     LuaEnumValue<Scratch::Net::Color> {};
 
+//! Converts Direction values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Direction::DirectionEnum, void> {
+    static Scratch::Core::Direction::DirectionEnum Check(
+	    lua_State* L,
+	    const int index) {
+	const auto name = Lua::CheckString(L, index);
+	const auto value = Scratch::Core::Direction::ByName(name);
+	if (!Scratch::Core::Direction::IsDefined(value))
+	    luaL_argerror(L, index, "unknown enum value");
+	return value;
+    }
+
+    static void Push(
+	    lua_State* L,
+	    const Scratch::Core::Direction::DirectionEnum value) {
+	if (!Scratch::Core::Direction::IsDefined(value)) {
+	    lua_pushnil(L);
+	    return;
+	}
+	Lua::CheckLua(L).PushString(
+	    Scratch::Core::Direction::ToString(value));
+    }
+};
+
+//! Converts Gender values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Gender::GenderEnum, void>:
+    LuaEnumValue<Scratch::Core::Gender> {};
+
+//! Converts Preference values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Preference::PreferenceEnum, void>:
+    LuaEnumValue<Scratch::Core::Preference> {};
+
+//! Converts Trust values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Trust::TrustEnum, void>:
+    LuaEnumValue<Scratch::Core::Trust> {};
+
 //! Converts String values to and from Lua strings.
 template<>
 struct LuaValue<String, void> {
@@ -117,18 +158,6 @@ struct LuaValue<String, void> {
 
     static void Push(lua_State* L, String value) {
 	Lua::CheckLua(L).PushString(std::move(value));
-    }
-};
-
-//! Converts Boolean values to and from Lua booleans.
-template<>
-struct LuaValue<bool, void> {
-    static bool Check(lua_State* L, const int index) {
-	return lua_toboolean(L, index) != 0;
-    }
-
-    static void Push(lua_State* L, const bool value) {
-	lua_pushboolean(L, value);
     }
 };
 
@@ -159,6 +188,54 @@ struct LuaValue<std::vector<T>, void> {
     }
 };
 
+//! Returns the names defined by an enum facade.
+//! Returns the names defined by \p Derived.
+template<typename Derived>
+std::vector<String> GetEnumNames() {
+    std::vector<String> names;
+    Derived::ForEach([&](typename Derived::Enum, const String& name) {
+	names.push_back(name);
+    });
+    return names;
+}
+
+//! Converts Boolean values to and from Lua booleans.
+template<>
+struct LuaValue<bool, void> {
+    static bool Check(lua_State* L, const int index) {
+	return lua_toboolean(L, index) != 0;
+    }
+
+    static void Push(lua_State* L, const bool value) {
+	lua_pushboolean(L, value);
+    }
+};
+
+//! Converts action parameters from Lua.
+template<>
+struct LuaValue<Scratch::Core::ActionParam, void> {
+    static Scratch::Core::ActionParam Check(
+	    lua_State* L,
+	    const int index) {
+	if (lua_isnoneornil(L, index))
+	    return Scratch::Core::ActionParam();
+	if (lua_isuserdata(L, index)) {
+	    auto* instance = static_cast<
+		std::weak_ptr<Scratch::Core::Instance>*>(
+		luaL_checkudata(L, index, "Scratch.Instance"));
+	    return Scratch::Core::ActionParam(instance->lock());
+	}
+	if (lua_isnumber(L, index))
+	    return Scratch::Core::ActionParam(lua_tonumber(L, index));
+	if (lua_isstring(L, index))
+	    return Scratch::Core::ActionParam(
+		Lua::CheckString(L, index));
+	luaL_argerror(
+	    L, index, "expected instance, string, number, or nil");
+	return Scratch::Core::ActionParam();
+    }
+};
+
 //! Converts Boost optional values to Lua values or nil.
 template<typename T>
 struct LuaValue<boost::optional<T>, void> {
@@ -167,7 +244,8 @@ struct LuaValue<boost::optional<T>, void> {
 	    const int index) {
 	if (lua_isnil(L, index))
 	    return boost::none;
-	return boost::optional<T>(LuaValue<T>::Check(L, index));
+	return boost::optional<T>(
+	    LuaValue<T>::Check(L, index));
     }
 
     static void Push(
@@ -378,6 +456,14 @@ struct LuaValue<T, typename std::enable_if<
     }
 };
 
+//! Provides safe inferred defaults for optional arguments.
+template<typename T, typename EnableT>
+struct LuaDefaultValue {
+    static T Get() {
+	return T();
+    }
+};
+
 template<typename T>
 struct LuaDefaultValue<T, typename std::enable_if<
     std::is_integral<T>::value &&
@@ -472,7 +558,7 @@ struct LuaArgument {
     }
 
     static LuaArgument ReadDefault(
-	    lua_State*,
+	    lua_State* L,
 	    const int,
 	    ValueT value) {
 	return LuaArgument{std::move(value)};
@@ -519,6 +605,10 @@ struct LuaArgument<T&> {
     T& Get() {
 	return value;
     }
+
+    void Push(lua_State* L) {
+	LuaValue<ValueT>::Push(L, value);
+    }
 };
 
 template<typename T>
@@ -563,31 +653,18 @@ template<typename... ArgsT>
 struct LuaArguments {
     using Values = std::tuple<LuaArgument<ArgsT>...>;
 
-    template<std::size_t... Index>
-    static Values ReadImpl(
-	    lua_State* L,
-	    std::index_sequence<Index...>,
-	    const int offset) {
-	return Values{
-	    LuaArgument<ArgsT>::Read(
-		L, static_cast<int>(Index + offset))...};
+    static Values Read(lua_State* L) {
+	return ReadImpl(L, std::index_sequence_for<ArgsT...>(), 1);
     }
 
     static Values ReadRoot(lua_State* L) {
 	return ReadImpl(L, std::index_sequence_for<ArgsT...>(), 1);
     }
 
-    template<std::size_t OptionalCount, std::size_t... Index>
-    static Values ReadOptionalImpl(
-	    lua_State* L,
-	    std::index_sequence<Index...>,
-	    const int offset) {
-	return Values{
-	    LuaArgument<ArgsT>::ReadOptional(
-		L,
-		static_cast<int>(Index + offset),
-		std::integral_constant<bool,
-		    Index >= sizeof...(ArgsT) - OptionalCount>())...};
+    template<std::size_t OptionalCount>
+    static Values ReadOptional(lua_State* L) {
+	return ReadOptionalImpl<OptionalCount>(
+	    L, std::index_sequence_for<ArgsT...>(), 2);
     }
 
     template<std::size_t OptionalCount>
@@ -597,26 +674,52 @@ struct LuaArguments {
     }
 
     template<std::size_t OptionalCount>
-    static Values ReadOptional(lua_State* L) {
-	return ReadOptionalImpl<OptionalCount>(
-	    L, std::index_sequence_for<ArgsT...>(), 2);
+    static Values ReadOptional(
+	    lua_State* L,
+	    const std::vector<OptionalArgument>& defaults) {
+	return ReadOptionalWithDefaults<OptionalCount>(
+	    L, defaults, std::index_sequence_for<ArgsT...>(), 2);
+    }
+
+    template<std::size_t OptionalCount>
+    static Values ReadOptionalRoot(
+	    lua_State* L,
+	    const std::vector<OptionalArgument>& defaults) {
+	return ReadOptionalWithDefaults<OptionalCount>(
+	    L, defaults, std::index_sequence_for<ArgsT...>(), 1);
+    }
+
+    template<std::size_t OptionalCount, std::size_t... Index>
+    static Values ReadOptionalImpl(
+	    lua_State* L,
+	    std::index_sequence<Index...>,
+	    const int offset) {
+	(void)L;
+	return Values{
+	    LuaArgument<ArgsT>::ReadOptional(
+		L,
+		static_cast<int>(Index + offset),
+		std::integral_constant<bool,
+		    Index >= sizeof...(ArgsT) - OptionalCount>())...};
     }
 
     template<std::size_t Index, std::size_t OptionalCount>
-    static LuaArgument<typename std::tuple_element<
-	Index, std::tuple<ArgsT...>>::type> ReadOptionalArgumentValue(
+    static LuaArgument<
+	typename std::tuple_element<Index,
+	    std::tuple<ArgsT...>>::type> ReadOptionalArgument(
 	    lua_State* L,
 	    const int index,
-	    const std::vector<OptionalArgument>&,
+	    const std::vector<OptionalArgument>& defaults,
 	    std::false_type) {
-	using Argument = typename std::tuple_element<
-	    Index, std::tuple<ArgsT...>>::type;
-	return LuaArgument<Argument>::Read(L, index);
+	return LuaArgument<
+	    typename std::tuple_element<Index,
+		std::tuple<ArgsT...>>::type>::Read(L, index);
     }
 
     template<std::size_t Index, std::size_t OptionalCount>
-    static LuaArgument<typename std::tuple_element<
-	Index, std::tuple<ArgsT...>>::type> ReadOptionalArgumentValue(
+    static LuaArgument<
+	typename std::tuple_element<Index,
+	    std::tuple<ArgsT...>>::type> ReadOptionalArgument(
 	    lua_State* L,
 	    const int index,
 	    const std::vector<OptionalArgument>& defaults,
@@ -628,8 +731,8 @@ struct LuaArguments {
 	    return LuaArgument<Argument>::Read(L, index);
 	const auto optionalIndex =
 	    Index - sizeof...(ArgsT) + OptionalCount;
-	return LuaArgument<Argument>::ReadDefault(
-	    L, index, defaults[optionalIndex].template Get<ValueT>());
+	const auto value = defaults[optionalIndex].template Get<ValueT>();
+	return LuaArgument<Argument>::ReadDefault(L, index, value);
     }
 
     template<std::size_t OptionalCount, std::size_t... Index>
@@ -638,8 +741,9 @@ struct LuaArguments {
 	    const std::vector<OptionalArgument>& defaults,
 	    std::index_sequence<Index...>,
 	    const int offset) {
+	(void)L;
 	return Values{
-	    ReadOptionalArgumentValue<Index, OptionalCount>(
+	    ReadOptionalArgument<Index, OptionalCount>(
 		L,
 		static_cast<int>(Index + offset),
 		defaults,
@@ -647,24 +751,18 @@ struct LuaArguments {
 		    Index >= sizeof...(ArgsT) - OptionalCount>())...};
     }
 
-    template<std::size_t OptionalCount>
-    static Values ReadOptionalRoot(
+    template<std::size_t... Index>
+    static Values ReadImpl(
 	    lua_State* L,
-	    const std::vector<OptionalArgument>& defaults) {
-	return ReadOptionalWithDefaults<OptionalCount>(
-	    L, defaults, std::index_sequence_for<ArgsT...>(), 1);
-    }
-
-    template<std::size_t OptionalCount>
-    static Values ReadOptional(
-	    lua_State* L,
-	    const std::vector<OptionalArgument>& defaults) {
-	return ReadOptionalWithDefaults<OptionalCount>(
-	    L, defaults, std::index_sequence_for<ArgsT...>(), 2);
+	    std::index_sequence<Index...>,
+	    const int offset) {
+	(void)L;
+	return Values{
+	    LuaArgument<ArgsT>::Read(
+		L, static_cast<int>(Index + offset))...};
     }
 };
 
-//! Pushes a typed return value onto the Lua stack.
 template<typename ReturnT, typename TupleT>
 struct LuaReturn {
     static void Push(lua_State* L, ReturnT value, TupleT&) {
@@ -678,9 +776,14 @@ struct LuaReturn<void, TupleT> {
     }
 };
 
-//! Invokes a typed function and translates C++ exceptions to Lua errors.
-template<typename FunctionT>
-static int SafeInvoke(lua_State* L, FunctionT function) {
+//! Invokes a potentially throwing typed function.
+//! \param L the \c lua_State
+//! \param function the typed invocation
+template<bool IsNoexcept, typename FunctionT>
+static int SafeInvoke(
+	lua_State* L,
+	FunctionT function,
+	std::integral_constant<bool, false>) {
     try {
 	return function();
     } catch (const std::exception& exception) {
@@ -690,14 +793,29 @@ static int SafeInvoke(lua_State* L, FunctionT function) {
     }
 }
 
+//! Invokes a noexcept typed function.
+//! \param L the \c lua_State
+//! \param function the typed invocation
+template<bool IsNoexcept, typename FunctionT>
+static int SafeInvoke(
+	lua_State*,
+	FunctionT function,
+	std::integral_constant<bool, true>) {
+    return function();
+}
+
+//! Invokes a typed function with its exception policy.
+//! \param L the \c lua_State
+//! \param function the typed invocation
 template<typename ClassT, std::size_t OptionalCount, typename SignatureT>
 struct MemberInvoker;
 
 template<typename ClassT, std::size_t OptionalCount, typename ReturnT,
     typename... ArgsT>
 struct MemberInvoker<
-	ClassT, OptionalCount, ReturnT (ClassT::*)(ArgsT...)> {
-    using SignatureT = ReturnT (ClassT::*)(ArgsT...);
+	ClassT,
+	OptionalCount,
+	ReturnT (ClassT::*)(ArgsT...)> {
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
@@ -709,36 +827,32 @@ struct MemberInvoker<
 	auto object = Lua::CheckWeakUserdata<ClassT>(
 	    L, ClassBinding<ClassT>::MetaName(), "invalid userdata");
 	auto arguments = Arguments::template ReadOptional<OptionalCount>(L);
-	auto method = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, *object, arguments, method,
+	return Invoke(L, object, arguments,
 	    std::index_sequence_for<ArgsT...>());
     }
 
     template<std::size_t... Index>
     static int Invoke(
 	    lua_State* L,
-	    ClassT& object,
+	    const std::shared_ptr<ClassT>& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, object, arguments, method, std::index_sequence<Index...>(),
+	return InvokeResult(L, *object, arguments,
+	    std::index_sequence<Index...>(),
 	    typename std::is_void<ReturnT>::type());
     }
 
     template<std::size_t... Index>
-    static int InvokeResult(
+    static ReturnT CallMethod(
 	    lua_State* L,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
+	    std::index_sequence<Index...>) {
+	auto method = *static_cast<
+	    ReturnT (ClassT::**)(ArgsT...)>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	return (object.*method)(
+	    std::get<Index>(arguments).Get()...);
     }
 
     template<std::size_t... Index>
@@ -746,23 +860,56 @@ struct MemberInvoker<
 	    lua_State* L,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    std::index_sequence<Index...>,
+	    std::true_type) {
+	return SafeInvoke<false>(
+	    L,
+	    [&]() {
+		CallMethod(L, object, arguments,
+		    std::index_sequence<Index...>());
+		return 0;
+	    },
+	    std::false_type());
+    }
+
+    template<std::size_t... Index>
+    static int InvokeResult(
+	    lua_State* L,
+	    ClassT& object,
+	    typename Arguments::Values& arguments,
 	    std::index_sequence<Index...>,
 	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	return SafeInvoke<false>(
+	    L,
+	    [&]() {
+		auto value = CallMethod(
+		    L, object, arguments, std::index_sequence<Index...>());
+		LuaValue<ReturnT>::Push(L, std::move(value));
+		return 1;
+	    },
+	    std::false_type());
     }
+
+    template<std::size_t... Index>
+    static int InvokeResult(
+	    lua_State* L,
+	    ClassT& object,
+	    typename Arguments::Values& arguments,
+	    std::index_sequence<Index...>) {
+	auto value = CallMethod(
+	    L, object, arguments, std::index_sequence<Index...>());
+	LuaValue<ReturnT>::Push(L, std::move(value));
+	return 1;
+    }
+
 };
 
 template<typename ClassT, std::size_t OptionalCount, typename ReturnT,
     typename... ArgsT>
 struct MemberInvoker<
-	ClassT, OptionalCount, ReturnT (ClassT::*)(ArgsT...) const> {
-    using SignatureT = ReturnT (ClassT::*)(ArgsT...) const;
+	ClassT,
+	OptionalCount,
+	ReturnT (ClassT::*)(ArgsT...) const> {
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
@@ -774,9 +921,7 @@ struct MemberInvoker<
 	auto object = Lua::CheckWeakUserdata<ClassT>(
 	    L, ClassBinding<ClassT>::MetaName(), "invalid userdata");
 	auto arguments = Arguments::template ReadOptional<OptionalCount>(L);
-	auto method = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, *object, arguments, method,
+	return Invoke(L, *object, arguments,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -785,50 +930,30 @@ struct MemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, object, arguments, method, std::index_sequence<Index...>(),
-	    typename std::is_void<ReturnT>::type());
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const ClassT& object,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const ClassT& object,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	auto method = *static_cast<
+	    ReturnT (ClassT::**)(ArgsT...) const>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	return SafeInvoke<noexcept((object.*method)(
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		auto value = (object.*method)(
+		    std::get<Index>(arguments).Get()...);
+		LuaValue<ReturnT>::Push(L, std::move(value));
+		return 1;
+	    },
+	    std::integral_constant<bool, noexcept((object.*method)(
+		std::get<Index>(arguments).Get()...))>());
     }
 };
 
+//! Invokes a typed member function on value-owned userdata.
 template<typename SignatureT>
 struct ValueMemberInvoker;
 
 template<typename ClassT, typename ReturnT, typename... ArgsT>
 struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...)> {
-    using SignatureT = ReturnT (ClassT::*)(ArgsT...);
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
@@ -836,10 +961,8 @@ struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...)> {
 	    return luaL_error(L, "invalid argument count");
 	auto* object = static_cast<ClassT*>(
 	    luaL_checkudata(L, 1, ClassBinding<ClassT>::MetaName()));
-	auto arguments = Arguments::template ReadOptionalRoot<0>(L);
-	auto method = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, *object, arguments, method,
+	auto arguments = Arguments::template ReadOptional<0>(L);
+	return Invoke(L, *object, arguments,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -848,10 +971,12 @@ struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...)> {
 	    lua_State* L,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, object, arguments, method, std::index_sequence<Index...>(),
+	auto method = *static_cast<
+	    ReturnT (ClassT::**)(ArgsT...)>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	return InvokeResult(L, object, arguments, method,
+	    std::index_sequence<Index...>(),
 	    typename std::is_void<ReturnT>::type());
     }
 
@@ -860,13 +985,18 @@ struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...)> {
 	    lua_State* L,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    ReturnT (ClassT::*method)(ArgsT...),
 	    std::index_sequence<Index...>,
 	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
+	return SafeInvoke<noexcept((object.*method)(
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		(object.*method)(std::get<Index>(arguments).Get()...);
+		return 0;
+	    },
+	    std::integral_constant<bool, noexcept((object.*method)(
+		std::get<Index>(arguments).Get()...))>());
     }
 
     template<std::size_t... Index>
@@ -874,21 +1004,25 @@ struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...)> {
 	    lua_State* L,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    ReturnT (ClassT::*method)(ArgsT...),
 	    std::index_sequence<Index...>,
 	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	return SafeInvoke<noexcept((object.*method)(
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		auto value = (object.*method)(
+		    std::get<Index>(arguments).Get()...);
+		LuaValue<ReturnT>::Push(L, std::move(value));
+		return 1;
+	    },
+	    std::integral_constant<bool, noexcept((object.*method)(
+		std::get<Index>(arguments).Get()...))>());
     }
 };
 
 template<typename ClassT, typename ReturnT, typename... ArgsT>
 struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...) const> {
-    using SignatureT = ReturnT (ClassT::*)(ArgsT...) const;
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
@@ -896,10 +1030,8 @@ struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...) const> {
 	    return luaL_error(L, "invalid argument count");
 	auto* object = static_cast<const ClassT*>(
 	    luaL_checkudata(L, 1, ClassBinding<ClassT>::MetaName()));
-	auto arguments = Arguments::template ReadOptionalRoot<0>(L);
-	auto method = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, *object, arguments, method,
+	auto arguments = Arguments::template ReadOptional<0>(L);
+	return Invoke(L, *object, arguments,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -908,41 +1040,21 @@ struct ValueMemberInvoker<ReturnT (ClassT::*)(ArgsT...) const> {
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, object, arguments, method, std::index_sequence<Index...>(),
-	    typename std::is_void<ReturnT>::type());
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const ClassT& object,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const ClassT& object,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	auto method = *static_cast<
+	    ReturnT (ClassT::**)(ArgsT...) const>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	return SafeInvoke<noexcept((object.*method)(
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		auto value = (object.*method)(
+		    std::get<Index>(arguments).Get()...);
+		LuaValue<ReturnT>::Push(L, std::move(value));
+		return 1;
+	    },
+	    std::integral_constant<bool, noexcept((object.*method)(
+		std::get<Index>(arguments).Get()...))>());
     }
 };
 
@@ -952,18 +1064,17 @@ struct GameMemberInvoker;
 template<typename SignatureT>
 struct OptionalMethod;
 
+template<std::size_t OptionalCount, typename SignatureT>
+struct OptionalGameMemberInvoker;
+
 template<typename ReturnT, typename... ArgsT>
 struct GameMemberInvoker<ReturnT (Game::*)(ArgsT...)> {
-    using SignatureT = ReturnT (Game::*)(ArgsT...);
-    using Arguments = LuaArguments<ArgsT...>;
-
     static int Call(lua_State* L) {
-	if (lua_gettop(L) != static_cast<int>(sizeof...(ArgsT)))
+	const int expected = static_cast<int>(sizeof...(ArgsT));
+	if (lua_gettop(L) != expected)
 	    return luaL_error(L, "invalid argument count");
-	auto arguments = Arguments::template ReadOptionalRoot<0>(L);
-	auto method = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, Lua::CheckGame(L), arguments, method,
+	auto arguments = LuaArguments<ArgsT...>::ReadRoot(L);
+	return Invoke(L, Lua::CheckGame(L), arguments,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -971,11 +1082,10 @@ struct GameMemberInvoker<ReturnT (Game::*)(ArgsT...)> {
     static int Invoke(
 	    lua_State* L,
 	    Game& game,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    typename LuaArguments<ArgsT...>::Values& arguments,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, game, arguments, method, std::index_sequence<Index...>(),
+	return InvokeResult(L, game, arguments,
+	    std::index_sequence<Index...>(),
 	    typename std::is_void<ReturnT>::type());
     }
 
@@ -983,45 +1093,41 @@ struct GameMemberInvoker<ReturnT (Game::*)(ArgsT...)> {
     static int InvokeResult(
 	    lua_State* L,
 	    Game& game,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    typename LuaArguments<ArgsT...>::Values& arguments,
 	    std::index_sequence<Index...>,
 	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (game.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
+	auto method = *static_cast<
+	    ReturnT (Game::**)(ArgsT...)>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	(game.*method)(std::get<Index>(arguments).Get()...);
+	return 0;
     }
 
     template<std::size_t... Index>
     static int InvokeResult(
 	    lua_State* L,
 	    Game& game,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    typename LuaArguments<ArgsT...>::Values& arguments,
 	    std::index_sequence<Index...>,
 	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (game.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	auto method = *static_cast<
+	    ReturnT (Game::**)(ArgsT...)>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	auto value = (game.*method)(
+	    std::get<Index>(arguments).Get()...);
+	LuaValue<ReturnT>::Push(L, std::move(value));
+	return 1;
     }
 };
 
 template<typename ReturnT, typename... ArgsT>
 struct GameMemberInvoker<ReturnT (Game::*)(ArgsT...) const> {
-    using SignatureT = ReturnT (Game::*)(ArgsT...) const;
-    using Arguments = LuaArguments<ArgsT...>;
-
     static int Call(lua_State* L) {
-	if (lua_gettop(L) != static_cast<int>(sizeof...(ArgsT)))
+	const int expected = static_cast<int>(sizeof...(ArgsT));
+	if (lua_gettop(L) != expected)
 	    return luaL_error(L, "invalid argument count");
-	auto arguments = Arguments::template ReadOptionalRoot<0>(L);
-	auto method = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, Lua::CheckGame(L), arguments, method,
+	auto arguments = LuaArguments<ArgsT...>::ReadRoot(L);
+	return Invoke(L, Lua::CheckGame(L), arguments,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -1029,47 +1135,17 @@ struct GameMemberInvoker<ReturnT (Game::*)(ArgsT...) const> {
     static int Invoke(
 	    lua_State* L,
 	    const Game& game,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    typename LuaArguments<ArgsT...>::Values& arguments,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, game, arguments, method, std::index_sequence<Index...>(),
-	    typename std::is_void<ReturnT>::type());
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const Game& game,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (game.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const Game& game,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (game.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	auto method = *static_cast<
+	    ReturnT (Game::**)(ArgsT...) const>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	auto value = (game.*method)(
+	    std::get<Index>(arguments).Get()...);
+	LuaValue<ReturnT>::Push(L, std::move(value));
+	return 1;
     }
 };
-
-template<std::size_t OptionalCount, typename SignatureT>
-struct OptionalGameMemberInvoker;
 
 template<std::size_t OptionalCount, typename ReturnT, typename... ArgsT>
 struct OptionalGameMemberInvoker<
@@ -1087,9 +1163,47 @@ struct OptionalGameMemberInvoker<
 	    return luaL_error(L, "invalid argument count");
 	auto arguments = Arguments::template ReadOptionalRoot<OptionalCount>(
 	    L, method->defaults);
-	return GameMemberInvoker<SignatureT>::Invoke(
+	return Invoke(
 	    L, Lua::CheckGame(L), arguments, method->function,
 	    std::index_sequence_for<ArgsT...>());
+    }
+
+    template<std::size_t... Index>
+    static int Invoke(
+	    lua_State* L,
+	    Game& game,
+	    typename Arguments::Values& arguments,
+	    const SignatureT method,
+	    std::index_sequence<Index...>) {
+	return InvokeResult(
+	    L, game, arguments, method, std::index_sequence<Index...>(),
+	    typename std::is_void<ReturnT>::type());
+    }
+
+    template<std::size_t... Index>
+    static int InvokeResult(
+	    lua_State*,
+	    Game& game,
+	    typename Arguments::Values& arguments,
+	    const SignatureT method,
+	    std::index_sequence<Index...>,
+	    std::true_type) {
+	(game.*method)(std::get<Index>(arguments).Get()...);
+	return 0;
+    }
+
+    template<std::size_t... Index>
+    static int InvokeResult(
+	    lua_State* L,
+	    Game& game,
+	    typename Arguments::Values& arguments,
+	    const SignatureT method,
+	    std::index_sequence<Index...>,
+	    std::false_type) {
+	auto value = (game.*method)(
+	    std::get<Index>(arguments).Get()...);
+	LuaValue<ReturnT>::Push(L, std::move(value));
+	return 1;
     }
 };
 
@@ -1127,9 +1241,9 @@ struct OptionalMemberInvoker<
 	    L, ClassBinding<ClassT>::MetaName(), "invalid userdata");
 	auto arguments = Arguments::template ReadOptional<OptionalCount>(
 	    L, method->defaults);
-	auto value = Invoke(L, *object, arguments, method->function,
+	return Invoke(
+	    L, *object, arguments, method->function,
 	    std::index_sequence_for<ArgsT...>());
-	return value;
     }
 
     template<std::size_t... Index>
@@ -1137,25 +1251,24 @@ struct OptionalMemberInvoker<
 	    lua_State* L,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>) {
 	return InvokeResult(
-	    L, object, arguments, method, std::index_sequence<Index...>(),
+	    L, object, arguments, method,
+	    std::index_sequence<Index...>(),
 	    typename std::is_void<ReturnT>::type());
     }
 
     template<std::size_t... Index>
     static int InvokeResult(
-	    lua_State* L,
+	    lua_State*,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>,
 	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
+	(object.*method)(std::get<Index>(arguments).Get()...);
+	return 0;
     }
 
     template<std::size_t... Index>
@@ -1163,15 +1276,13 @@ struct OptionalMemberInvoker<
 	    lua_State* L,
 	    ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>,
 	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	auto value = (object.*method)(
+	    std::get<Index>(arguments).Get()...);
+	LuaValue<ReturnT>::Push(L, std::move(value));
+	return 1;
     }
 };
 
@@ -1194,7 +1305,8 @@ struct OptionalMemberInvoker<
 	    L, ClassBinding<ClassT>::MetaName(), "invalid userdata");
 	auto arguments = Arguments::template ReadOptional<OptionalCount>(
 	    L, method->defaults);
-	return Invoke(L, *object, arguments, method->function,
+	return Invoke(
+	    L, *object, arguments, method->function,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -1203,43 +1315,18 @@ struct OptionalMemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, object, arguments, method, std::index_sequence<Index...>(),
-	    typename std::is_void<ReturnT>::type());
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const ClassT& object,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
-    }
-
-    template<std::size_t... Index>
-    static int InvokeResult(
-	    lua_State* L,
-	    const ClassT& object,
-	    typename Arguments::Values& arguments,
-	    SignatureT method,
-	    std::index_sequence<Index...>,
-	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	auto value = (object.*method)(
+	    std::get<Index>(arguments).Get()...);
+	LuaValue<ReturnT>::Push(L, std::move(value));
+	return 1;
     }
 };
+
+//! Invokes a class-bound function with injected Game context.
+template<typename ClassT, typename SignatureT>
+struct ClassGameFunctionInvoker;
 
 //! Invokes a typed member function with an injected Game context.
 template<typename ClassT, typename SignatureT>
@@ -1248,18 +1335,21 @@ struct InjectedMemberInvoker;
 template<typename ClassT, typename ReturnT, typename... ArgsT>
 struct InjectedMemberInvoker<
 	ClassT, ReturnT (ClassT::*)(const Game&, ArgsT...) const> {
-    using SignatureT = ReturnT (ClassT::*)(const Game&, ArgsT...) const;
+    using SignatureT =
+	ReturnT (ClassT::*)(const Game&, ArgsT...) const;
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
-	if (lua_gettop(L) != static_cast<int>(sizeof...(ArgsT) + 1))
+	const int expected = static_cast<int>(sizeof...(ArgsT) + 1);
+	if (lua_gettop(L) != expected)
 	    return luaL_error(L, "invalid argument count");
 	auto object = Lua::CheckWeakUserdata<ClassT>(
 	    L, ClassBinding<ClassT>::MetaName(), "invalid userdata");
 	auto arguments = Arguments::template ReadOptional<0>(L);
 	auto method = *static_cast<SignatureT*>(
 	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, *object, arguments, method,
+	return Invoke(
+	    L, *object, arguments, method,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -1268,7 +1358,7 @@ struct InjectedMemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>) {
 	return InvokeResult(
 	    L, object, arguments, method, std::index_sequence<Index...>(),
@@ -1280,15 +1370,22 @@ struct InjectedMemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>,
 	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(
+	return SafeInvoke<noexcept((object.*method)(
+	    Lua::CheckGame(L),
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		(object.*method)(
+		    Lua::CheckGame(L),
+		    std::get<Index>(arguments).Get()...);
+		return 0;
+	    },
+	    std::integral_constant<bool, noexcept((object.*method)(
 		Lua::CheckGame(L),
-		std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
+		std::get<Index>(arguments).Get()...))>());
     }
 
     template<std::size_t... Index>
@@ -1296,16 +1393,23 @@ struct InjectedMemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>,
 	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
+	return SafeInvoke<noexcept((object.*method)(
+	    Lua::CheckGame(L),
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		auto value = (object.*method)(
+		    Lua::CheckGame(L),
+		    std::get<Index>(arguments).Get()...);
+		LuaValue<ReturnT>::Push(L, std::move(value));
+		return 1;
+	    },
+	    std::integral_constant<bool, noexcept((object.*method)(
 		Lua::CheckGame(L),
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+		std::get<Index>(arguments).Get()...))>());
     }
 };
 
@@ -1316,14 +1420,16 @@ struct InjectedMemberInvoker<
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
-	if (lua_gettop(L) != static_cast<int>(sizeof...(ArgsT) + 1))
+	const int expected = static_cast<int>(sizeof...(ArgsT) + 1);
+	if (lua_gettop(L) != expected)
 	    return luaL_error(L, "invalid argument count");
 	auto object = Lua::CheckWeakUserdata<ClassT>(
 	    L, ClassBinding<ClassT>::MetaName(), "invalid userdata");
 	auto arguments = Arguments::template ReadOptional<0>(L);
 	auto method = *static_cast<SignatureT*>(
 	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, *object, arguments, method,
+	return Invoke(
+	    L, *object, arguments, method,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -1332,7 +1438,7 @@ struct InjectedMemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>) {
 	return InvokeResult(
 	    L, object, arguments, method, std::index_sequence<Index...>(),
@@ -1344,15 +1450,13 @@ struct InjectedMemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>,
 	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (object.*method)(
-		Lua::CheckGame(L),
-		std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
+	(object.*method)(
+	    Lua::CheckGame(L),
+	    std::get<Index>(arguments).Get()...);
+	return 0;
     }
 
     template<std::size_t... Index>
@@ -1360,40 +1464,33 @@ struct InjectedMemberInvoker<
 	    lua_State* L,
 	    const ClassT& object,
 	    typename Arguments::Values& arguments,
-	    SignatureT method,
+	    const SignatureT method,
 	    std::index_sequence<Index...>,
 	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (object.*method)(
-		Lua::CheckGame(L),
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	auto value = (object.*method)(
+	    Lua::CheckGame(L),
+	    std::get<Index>(arguments).Get()...);
+	LuaValue<ReturnT>::Push(L, std::move(value));
+	return 1;
     }
 };
 
-//! Invokes a typed class function with an injected Game context.
-template<typename ClassT, typename SignatureT>
-struct ClassGameFunctionInvoker;
-
-template<typename ClassT, typename ReturnT, typename ContextT,
-    typename... ArgsT>
+template<typename ClassT, typename ReturnT, typename ContextT, typename... ArgsT>
 struct ClassGameFunctionInvoker<
-	ClassT, ReturnT (*)(std::shared_ptr<ClassT>, ContextT&, ArgsT...)> {
+	ClassT,
+	ReturnT (*)(std::shared_ptr<ClassT>, ContextT&, ArgsT...)> {
     using SignatureT =
 	ReturnT (*)(std::shared_ptr<ClassT>, ContextT&, ArgsT...);
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
-	if (lua_gettop(L) != static_cast<int>(sizeof...(ArgsT) + 1))
+	const int expected = static_cast<int>(sizeof...(ArgsT) + 1);
+	if (lua_gettop(L) != expected)
 	    return luaL_error(L, "invalid argument count");
 	auto object = Lua::CheckWeakUserdata<ClassT>(
 	    L, ClassBinding<ClassT>::MetaName(), "invalid userdata");
 	auto arguments = Arguments::template ReadOptional<0>(L);
-	auto function = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, object, Lua::CheckGame(L), arguments, function,
+	return Invoke(L, object, Lua::CheckGame(L), arguments,
 	    std::index_sequence_for<ArgsT...>());
     }
 
@@ -1401,12 +1498,12 @@ struct ClassGameFunctionInvoker<
     static int Invoke(
 	    lua_State* L,
 	    const std::shared_ptr<ClassT>& object,
-	    ContextT& context,
+	    ContextT& game,
 	    typename Arguments::Values& arguments,
-	    SignatureT function,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(
-	    L, object, context, arguments, function,
+	auto function = *static_cast<SignatureT*>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
+	return InvokeResult(L, *function, object, game, arguments,
 	    std::index_sequence<Index...>(),
 	    typename std::is_void<ReturnT>::type());
     }
@@ -1414,96 +1511,107 @@ struct ClassGameFunctionInvoker<
     template<std::size_t... Index>
     static int InvokeResult(
 	    lua_State* L,
+	    const SignatureT& function,
 	    const std::shared_ptr<ClassT>& object,
-	    ContextT& context,
+	    ContextT& game,
 	    typename Arguments::Values& arguments,
-	    SignatureT function,
 	    std::index_sequence<Index...>,
 	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (*function)(
-		object, context, std::get<Index>(arguments).Get()...);
+	return SafeInvoke<noexcept((*function)(
+	    object, game, std::get<Index>(arguments).Get()...))>(L, [&]() {
+	    (*function)(object, game, std::get<Index>(arguments).Get()...);
 	    return 0;
-	});
+	}, std::integral_constant<bool, noexcept((*function)(
+	    object, game, std::get<Index>(arguments).Get()...))>());
     }
 
     template<std::size_t... Index>
     static int InvokeResult(
 	    lua_State* L,
+	    const SignatureT& function,
 	    const std::shared_ptr<ClassT>& object,
-	    ContextT& context,
+	    ContextT& game,
 	    typename Arguments::Values& arguments,
-	    SignatureT function,
 	    std::index_sequence<Index...>,
 	    std::false_type) {
-	return SafeInvoke(L, [&]() {
+	return SafeInvoke<noexcept((*function)(
+	    object, game, std::get<Index>(arguments).Get()...))>(L, [&]() {
 	    auto value = (*function)(
-		object, context, std::get<Index>(arguments).Get()...);
+		object, game, std::get<Index>(arguments).Get()...);
 	    LuaValue<ReturnT>::Push(L, std::move(value));
 	    return 1;
-	});
+	}, std::integral_constant<bool, noexcept((*function)(
+	    object, game, std::get<Index>(arguments).Get()...))>());
     }
 };
 
+//! Invokes a typed free function.
 template<typename SignatureT, std::size_t OptionalCount = 0>
 struct FreeFunctionInvoker;
 
 template<std::size_t OptionalCount, typename ReturnT, typename... ArgsT>
 struct FreeFunctionInvoker<
-	ReturnT (*)(ArgsT...), OptionalCount> {
-    using SignatureT = ReturnT (*)(ArgsT...);
+	ReturnT (*)(ArgsT...),
+	OptionalCount> {
     using Arguments = LuaArguments<ArgsT...>;
 
     static int Call(lua_State* L) {
-	const int minimum = static_cast<int>(
-	    sizeof...(ArgsT) - OptionalCount);
+	const int minimum = static_cast<int>(sizeof...(ArgsT) - OptionalCount);
 	const int maximum = static_cast<int>(sizeof...(ArgsT));
 	if (lua_gettop(L) < minimum || lua_gettop(L) > maximum)
 	    return luaL_error(L, "invalid argument count");
 	auto arguments = Arguments::template ReadOptionalRoot<OptionalCount>(L);
-	auto function = *static_cast<SignatureT*>(
-	    lua_touserdata(L, lua_upvalueindex(1)));
-	return Invoke(L, arguments, function,
-	    std::index_sequence_for<ArgsT...>());
+	return Invoke(L, arguments, std::index_sequence_for<ArgsT...>());
     }
 
     template<std::size_t... Index>
     static int Invoke(
 	    lua_State* L,
 	    typename Arguments::Values& arguments,
-	    SignatureT function,
 	    std::index_sequence<Index...>) {
+	auto function = *static_cast<
+	    ReturnT (**)(ArgsT...)>(
+	    lua_touserdata(L, lua_upvalueindex(1)));
 	return InvokeResult(
-	    L, arguments, function, std::index_sequence<Index...>(),
-	    typename std::is_void<ReturnT>::type());
+	    L, arguments, std::index_sequence<Index...>(),
+	    typename std::is_void<ReturnT>::type(), function);
     }
 
     template<std::size_t... Index>
     static int InvokeResult(
 	    lua_State* L,
 	    typename Arguments::Values& arguments,
-	    SignatureT function,
 	    std::index_sequence<Index...>,
-	    std::true_type) {
-	return SafeInvoke(L, [&]() {
-	    (*function)(std::get<Index>(arguments).Get()...);
-	    return 0;
-	});
+	    std::true_type,
+	    ReturnT (*function)(ArgsT...)) {
+	return SafeInvoke<noexcept((*function)(
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		(*function)(std::get<Index>(arguments).Get()...);
+		return 0;
+	    },
+	    std::integral_constant<bool, noexcept((*function)(
+		std::get<Index>(arguments).Get()...))>());
     }
 
     template<std::size_t... Index>
     static int InvokeResult(
 	    lua_State* L,
 	    typename Arguments::Values& arguments,
-	    SignatureT function,
 	    std::index_sequence<Index...>,
-	    std::false_type) {
-	return SafeInvoke(L, [&]() {
-	    auto value = (*function)(
-		std::get<Index>(arguments).Get()...);
-	    LuaValue<ReturnT>::Push(L, std::move(value));
-	    return 1;
-	});
+	    std::false_type,
+	    ReturnT (*function)(ArgsT...)) {
+	return SafeInvoke<noexcept((*function)(
+	    std::get<Index>(arguments).Get()...))>(
+	    L,
+	    [&]() {
+		auto value = (*function)(std::get<Index>(arguments).Get()...);
+		LuaValue<ReturnT>::Push(L, std::move(value));
+		return 1;
+	    },
+	    std::integral_constant<bool, noexcept((*function)(
+		std::get<Index>(arguments).Get()...))>());
     }
 };
 
@@ -1534,6 +1642,7 @@ inline Detail::OptionalArgument Optional() {
 }
 
 //! Returns an explicit optional-argument default.
+//! \param value the optional argument default
 template<typename T>
 Detail::OptionalArgument Optional(T value) {
     return Detail::OptionalArgument(std::move(value));
@@ -1543,21 +1652,22 @@ Detail::OptionalArgument Optional(T value) {
 template<typename ClassT>
 class ClassBinding {
 public:
+    //! Constructs a non-owning type binding.
+    //! \param lua the Lua facade
+    //! \param name the Lua type name
     ClassBinding(Lua& lua, const char* name) :
 	lua_(lua),
 	name_(name),
 	valueOwned_(false) {
-	auto* L = lua_.GetState();
-	luaL_newmetatable(L, name_);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-	lua_pop(L, 1);
+	luaL_newmetatable(lua_.GetState(), name_);
+	lua_pushvalue(lua_.GetState(), -1);
+	lua_setfield(lua_.GetState(), -2, "__index");
+	lua_pop(lua_.GetState(), 1);
 	Set("__gc", &Detail::NonOwningGc<ClassT>);
     }
 
     //! Selects non-owning userdata.
     ClassBinding& NonOwning() {
-	valueOwned_ = false;
 	Set("__gc", &Detail::NonOwningGc<ClassT>);
 	return *this;
     }
@@ -1569,6 +1679,9 @@ public:
 	return *this;
     }
 
+    //! Registers a typed member function.
+    //! \param name the Lua function name
+    //! \param method the member function
     template<typename ReturnT, typename... ArgsT>
     ClassBinding& Function(
 	    const char* name,
@@ -1584,6 +1697,9 @@ public:
 	return *this;
     }
 
+    //! Registers a const typed member function.
+    //! \param name the Lua function name
+    //! \param method the member function
     template<typename ReturnT, typename... ArgsT>
     ClassBinding& Function(
 	    const char* name,
@@ -1599,6 +1715,10 @@ public:
 	return *this;
     }
 
+    //! Registers a typed member function with optional trailing arguments.
+    //! \param name the Lua function name
+    //! \param method the member function
+    //! \param optional the optional argument markers
     template<typename ReturnT, typename... ArgsT, typename... OptionalArgsT>
     ClassBinding& Function(
 	    const char* name,
@@ -1613,12 +1733,19 @@ public:
 	SetOptionalMethod(
 	    name,
 	    &Detail::OptionalMemberInvoker<
-		ClassT, sizeof...(OptionalArgsT) + 1,
+		ClassT,
+		sizeof...(OptionalArgsT) + 1,
 		ReturnT (ClassT::*)(ArgsT...)>::Call,
-	    method, optional, optionals...);
+	    method,
+	    optional,
+	    optionals...);
 	return *this;
     }
 
+    //! Registers a const typed member function with optional trailing arguments.
+    //! \param name the Lua function name
+    //! \param method the member function
+    //! \param optional the optional argument markers
     template<typename ReturnT, typename... ArgsT, typename... OptionalArgsT>
     ClassBinding& Function(
 	    const char* name,
@@ -1633,12 +1760,19 @@ public:
 	SetOptionalMethod(
 	    name,
 	    &Detail::OptionalMemberInvoker<
-		ClassT, sizeof...(OptionalArgsT) + 1,
+		ClassT,
+		sizeof...(OptionalArgsT) + 1,
 		ReturnT (ClassT::*)(ArgsT...) const>::Call,
-	    method, optional, optionals...);
+	    method,
+	    optional,
+	    optionals...);
 	return *this;
     }
 
+    //! Registers a typed member function with injected Game context.
+    //! \param name the Lua function name
+    //! \param method the member function
+    //! \param injected the injected Game marker
     template<typename ReturnT, typename... ArgsT>
     ClassBinding& Function(
 	    const char* name,
@@ -1646,13 +1780,18 @@ public:
 	    Detail::InjectedArgument<Game> injected) {
 	(void)injected;
 	SetMethod(
-	    name, method,
+	    name,
+	    method,
 	    &Detail::InjectedMemberInvoker<
 		ClassT,
 		ReturnT (ClassT::*)(const Game&, ArgsT...) const>::Call);
 	return *this;
     }
 
+    //! Registers a const typed member function with injected Game context.
+    //! \param name the Lua function name
+    //! \param method the member function
+    //! \param injected the injected Game marker
     template<typename ReturnT, typename... ArgsT>
     ClassBinding& Function(
 	    const char* name,
@@ -1660,23 +1799,33 @@ public:
 	    Detail::InjectedArgument<Game> injected) {
 	(void)injected;
 	SetMethod(
-	    name, method,
+	    name,
+	    method,
 	    &Detail::InjectedMemberInvoker<
 		ClassT,
 		ReturnT (ClassT::*)(Game&, ArgsT...) const>::Call);
 	return *this;
     }
 
+    //! Registers a typed free function as a class method.
+    //! \param name the Lua function name
+    //! \param function the free function
     template<typename ReturnT, typename... ArgsT>
     ClassBinding& Function(
 	    const char* name,
 	    ReturnT (*function)(ArgsT...)) {
 	SetMethod(
-	    name, function,
-	    &Detail::FreeFunctionInvoker<ReturnT (*)(ArgsT...)>::Call);
+	    name,
+	    function,
+	    &Detail::FreeFunctionInvoker<
+		ReturnT (*)(ArgsT...)>::Call);
 	return *this;
     }
 
+    //! Registers a typed class function with injected Game context.
+    //! \param name the Lua function name
+    //! \param function the class function
+    //! \param injected the injected Game marker
     template<typename ReturnT, typename ContextT, typename... ArgsT>
     typename std::enable_if<
 	std::is_same<
@@ -1689,14 +1838,17 @@ public:
 	    Detail::InjectedArgument<Game> injected) {
 	(void)injected;
 	SetMethod(
-	    name, function,
+	    name,
+	    function,
 	    &Detail::ClassGameFunctionInvoker<
 		ClassT,
-		ReturnT (*)(
-		    std::shared_ptr<ClassT>, ContextT&, ArgsT...)>::Call);
+		ReturnT (*)(std::shared_ptr<ClassT>, ContextT&, ArgsT...)>::Call);
 	return *this;
     }
 
+    //! Registers a typed ancestral member function.
+    //! \param name the Lua function name
+    //! \param method the ancestral member function
     template<typename BaseT, typename ReturnT, typename... ArgsT>
     typename std::enable_if<
 	std::is_base_of<BaseT, ClassT>::value &&
@@ -1709,6 +1861,9 @@ public:
 	    static_cast<ReturnT (ClassT::*)(ArgsT...)>(method));
     }
 
+    //! Registers a const typed ancestral member function.
+    //! \param name the Lua function name
+    //! \param method the ancestral member function
     template<typename BaseT, typename ReturnT, typename... ArgsT>
     typename std::enable_if<
 	std::is_base_of<BaseT, ClassT>::value &&
@@ -1721,6 +1876,9 @@ public:
 	    static_cast<ReturnT (ClassT::*)(ArgsT...) const>(method));
     }
 
+    //! Registers a raw Lua callback.
+    //! \param name the Lua function name
+    //! \param function the Lua callback
     ClassBinding& RawFunction(
 	    const char* name,
 	    lua_CFunction function) {
@@ -1728,6 +1886,7 @@ public:
 	return *this;
     }
 
+    //! Returns the metatable name.
     static const char* MetaName() {
 	return metaName_;
     }
@@ -1766,23 +1925,41 @@ private:
     }
 
     void Set(const char* name, lua_CFunction function) {
-	auto* L = lua_.GetState();
-	luaL_getmetatable(L, name_);
-	lua_pushcfunction(L, function);
-	lua_setfield(L, -2, name);
-	lua_pop(L, 1);
+	luaL_getmetatable(lua_.GetState(), name_);
+	lua_pushcfunction(lua_.GetState(), function);
+	lua_setfield(lua_.GetState(), -2, name);
+	lua_pop(lua_.GetState(), 1);
     }
 
     Lua& lua_;
     const char* name_;
     bool valueOwned_;
-
 public:
     static const char* metaName_;
 };
 
 template<typename ClassT>
 const char* ClassBinding<ClassT>::metaName_ = nullptr;
+
+//! Converts Parser::Phrase values to value-owned Lua userdata.
+template<>
+struct Detail::LuaValue<Scratch::Core::Parser::Phrase, void> {
+    static Scratch::Core::Parser::Phrase Check(
+	    lua_State* L,
+	    const int index) {
+	return *static_cast<Scratch::Core::Parser::Phrase*>(
+	    luaL_checkudata(L, index, "Scratch.ParserPhrase"));
+    }
+
+    static void Push(
+	    lua_State* L,
+	    Scratch::Core::Parser::Phrase value) {
+	void* memory = lua_newuserdata(
+	    L, sizeof(Scratch::Core::Parser::Phrase));
+	new (memory) Scratch::Core::Parser::Phrase(std::move(value));
+	luaL_setmetatable(L, "Scratch.ParserPhrase");
+    }
+};
 
 template<typename ClassT>
 ClassBinding<ClassT> Lua::Class(const char* name) {
@@ -1852,6 +2029,14 @@ void Lua::Function(
 	L, &Detail::FreeFunctionInvoker<SignatureT>::Call, 1);
     SetSafeValue(name);
 }
+
+//! Registers all Lua bindings.
+class LuaBindings {
+public:
+    //! Registers all domain and repository bindings.
+    //! \param lua the Lua facade
+    static void Register(Lua& lua);
+};
 
 }; // namespace Scripting
 }; // namespace Scratch

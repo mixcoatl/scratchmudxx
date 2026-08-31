@@ -15,8 +15,6 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor.hpp>
-#include <scratch/editor_bindings.hpp>
-#include <scratch/instance_bindings.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/menu.hpp>
 #include <scratch/player_bindings.hpp>
@@ -32,6 +30,7 @@ namespace Scripting {
 
 // ScratchMUD types.
 using Color = Scratch::Net::Color;
+using EditorPtr = Scratch::Net::EditorPtr;
 using Menu = Scratch::Net::Menu;
 
 //! Metatable name for Descriptor userdata.
@@ -95,226 +94,6 @@ static WeakDescriptorPtr CheckWeakDescriptorPtr(
 	luaL_checkudata(L, index, DescriptorBindings::MetaName));
 }
 
-//! Handles Descriptor:clear_edit_command().
-static int DescriptorClearEditCommand(lua_State* L) {
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->SetEditCommand(nullptr);
-    d->SetEditName(String());
-    d->SetEditString(String());
-    return 0;
-}
-
-//! Handles Descriptor:clear_edit_state().
-static int DescriptorClearEditState(lua_State* L) {
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->SetEditState(nullptr);
-    d->SetEditName(String());
-    d->SetEditString(String());
-    return 0;
-}
-
-//! Handles Descriptor:clear_edit_user().
-static int DescriptorClearEditUser(lua_State* L) {
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->SetEditUser(nullptr);
-    d->SetEditName(String());
-    d->SetEditString(String());
-    return 0;
-}
-
-//! Handles Descriptor:clear_edit_player().
-static int DescriptorClearEditPlayer(lua_State* L) {
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->SetEditPlayer(nullptr);
-    d->SetEditName(String());
-    d->SetEditString(String());
-    return 0;
-}
-
-//! Handles Descriptor:clear_editor().
-static int DescriptorClearEditor(lua_State* L) {
-    DescriptorBindings::Check(L)->ClearEditor();
-    return 0;
-}
-//! Handles Descriptor:clear_menu().
-static int DescriptorClearMenu(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "clear_menu expects no arguments");
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->ClearMenu();
-    return 0;
-}
-
-//! Handles Descriptor:close().
-static int DescriptorClose(lua_State* L) {
-    DescriptorBindings::Check(L)->Close();
-    return 0;
-}
-
-//! Handles Descriptor userdata garbage collection.
-static int DescriptorGc(lua_State* L) {
-    return Lua::DestroyWeakUserdata<Descriptor>(
-	L, DescriptorBindings::MetaName);
-}
-
-//! Handles Descriptor:get_edit_command().
-static int DescriptorGetEditCommand(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    CommandBindings::Push(lua, DescriptorBindings::Check(L)->GetEditCommand());
-    return 1;
-}
-
-//! Handles Descriptor:get_edit_name().
-static int DescriptorGetEditName(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto name = DescriptorBindings::Check(L)->GetEditName();
-    lua.PushString(std::move(name));
-    return 1;
-}
-
-//! Handles Descriptor:get_edit_state().
-static int DescriptorGetEditState(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    StateBindings::Push(lua, DescriptorBindings::Check(L)->GetEditState());
-    return 1;
-}
-
-//! Handles Descriptor:get_edit_string().
-static int DescriptorGetEditString(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto value = DescriptorBindings::Check(L)->GetEditString();
-    lua.PushString(std::move(value));
-    return 1;
-}
-
-//! Handles Descriptor:get_edit_user().
-static int DescriptorGetEditUser(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    UserBindings::Push(lua, DescriptorBindings::Check(L)->GetEditUser());
-    return 1;
-}
-
-//! Handles Descriptor:get_edit_player().
-static int DescriptorGetEditPlayer(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    PlayerBindings::Push(lua, DescriptorBindings::Check(L)->GetEditPlayer());
-    return 1;
-}
-
-//! Handles Descriptor:get_editor().
-//! \remark Returns a finished editor only (\c nil while active or absent).
-static int DescriptorGetEditor(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto d = DescriptorBindings::Check(L);
-    auto editor = d->GetEditor();
-    d.reset();
-    if (!editor || editor->IsActive()) {
-	editor.reset();
-	lua_pushnil(L);
-	return 1;
-    }
-    EditorBindings::Push(lua, std::move(editor));
-    return 1;
-}
-
-//! Handles Descriptor:create_character(player).
-static int DescriptorCreateCharacter(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "create_character expects 1 argument");
-    auto d = DescriptorBindings::Check(L);
-    auto player = PlayerBindings::Check(L, 2);
-    d->CreateCharacter(player);
-    return 0;
-}
-
-//! Handles Descriptor:get_character().
-static int DescriptorGetCharacter(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    InstanceBindings::Push(lua, DescriptorBindings::Check(L)->GetCharacter());
-    return 1;
-}
-
-//! Handles Descriptor:get_name().
-static int DescriptorGetName(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto name = DescriptorBindings::Check(L)->GetName();
-    lua.PushString(std::move(name));
-    return 1;
-}
-
-//! Handles Descriptor:get_state().
-static int DescriptorGetState(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    StateBindings::Push(lua, DescriptorBindings::Check(L)->GetState());
-    return 1;
-}
-
-//! Handles Descriptor:get_terminal_type().
-static int DescriptorGetTerminalType(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto terminalType = DescriptorBindings::Check(L)->GetTerminalType();
-    lua.PushString(std::move(terminalType));
-    return 1;
-}
-
-//! Handles Descriptor:get_user().
-static int DescriptorGetUser(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    UserBindings::Push(lua, DescriptorBindings::Check(L)->GetUser());
-    return 1;
-}
-
-//! Handles Descriptor:get_window_height().
-static int DescriptorGetWindowHeight(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    const auto height = DescriptorBindings::Check(L)->GetWindowHeight();
-    lua.PushInt(height);
-    return 1;
-}
-
-//! Handles Descriptor:get_window_width().
-static int DescriptorGetWindowWidth(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    const auto width = DescriptorBindings::Check(L)->GetWindowWidth();
-    lua.PushInt(width);
-    return 1;
-}
-
-//! Handles Descriptor:is_closed().
-static int DescriptorIsClosed(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto d = CheckWeakDescriptorPtr(L).lock();
-    const bool closed = !d || d->Closed();
-    d.reset();
-    lua.PushBool(closed);
-    return 1;
-}
-
-//! Handles Descriptor:is_color().
-static int DescriptorIsColor(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "is_color expects no arguments");
-    auto& lua = Lua::CheckLua(L);
-    const bool color = DescriptorBindings::Check(L)->GetColorBit();
-    lua.PushBool(color);
-    return 1;
-}
-
-//! Handles Descriptor:is_prompt().
-static int DescriptorIsPrompt(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "is_prompt expects no arguments");
-    auto& lua = Lua::CheckLua(L);
-    const bool prompt = DescriptorBindings::Check(L)->GetPromptBit();
-    lua.PushBool(prompt);
-    return 1;
-}
-
 //! Handles Descriptor:login(user).
 static int DescriptorLogin(lua_State* L) {
     if (lua_gettop(L) != 2)
@@ -344,113 +123,6 @@ static Color::ColorEnum CheckMetaColorName(
     return color;
 }
 
-//! Opens a menu section; \p named requires a title argument.
-//! \param L the \c lua_State
-//! \param kind the section kind
-//! \param named whether a title is required
-//! \param verb the Lua method name (for errors)
-static int DescriptorMenuOpenSection(
-	lua_State* L,
-	const Menu::SectionKind kind,
-	const bool named,
-	const char *const verb) {
-    const int argc = lua_gettop(L);
-    bool fold = false;
-    String title;
-    if (named) {
-	if (argc != 2 && argc != 3)
-	    return luaL_error(L, "%s expects 1 or 2 arguments", verb);
-	luaL_checktype(L, 2, LUA_TSTRING);
-	title = Lua::CheckString(L, 2);
-	if (argc == 3) {
-	    luaL_checktype(L, 3, LUA_TBOOLEAN);
-	    fold = lua_toboolean(L, 3) != 0;
-	}
-    } else {
-	if (argc != 1 && argc != 2)
-	    return luaL_error(L, "%s expects 0 or 1 arguments", verb);
-	if (argc == 2) {
-	    luaL_checktype(L, 2, LUA_TBOOLEAN);
-	    fold = lua_toboolean(L, 2) != 0;
-	}
-    }
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->EnsureMenu()->AddSection(fold, kind, title);
-    return 0;
-}
-
-//! Shared field/block arg parse; \p block selects layout.
-//! \param L the \c lua_State
-//! \param block whether to add a block field
-static int DescriptorMenuFieldOrBlock(
-	lua_State* L,
-	const bool block) {
-    const char *const verb = block ? "menu_block" : "menu_field";
-    const int argc = lua_gettop(L);
-    if (argc < 4 || argc > 7)
-	return luaL_error(L, "%s expects 3 to 6 arguments", verb);
-    luaL_checktype(L, 2, LUA_TSTRING);
-    luaL_checktype(L, 3, LUA_TSTRING);
-    luaL_checktype(L, 4, LUA_TSTRING);
-    String key;
-    if (!Menu::CanonicalizeKey(Lua::CheckString(L, 2), key))
-	return luaL_argerror(L, 2, "invalid menu key");
-    const auto field = Lua::CheckString(L, 3);
-    const auto value = Lua::CheckString(L, 4);
-    auto valueColor = Color::C_TEXT;
-    String empty = "<Blank>";
-    String shown;
-    if (argc >= 5) {
-	luaL_checktype(L, 5, LUA_TSTRING);
-	valueColor = CheckMetaColorName(L, 5);
-    }
-    if (argc >= 6) {
-	luaL_checktype(L, 6, LUA_TSTRING);
-	empty = Lua::CheckString(L, 6);
-    }
-    if (argc >= 7) {
-	luaL_checktype(L, 7, LUA_TSTRING);
-	shown = Lua::CheckString(L, 7);
-    }
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    auto menu = d->EnsureMenu();
-    if (!menu->HasSection()) {
-	d.reset();
-	menu.reset();
-	return luaL_error(L, "%s requires a menu section first", verb);
-    }
-    const bool ok = block ?
-	menu->AddBlock(key, field, value, valueColor, empty, shown) :
-	menu->AddField(key, field, value, valueColor, empty, shown);
-    if (!ok) {
-	d.reset();
-	menu.reset();
-	if (block)
-	    return luaL_error(L,
-		"menu_block is not allowed in folded sections");
-	return luaL_argerror(L, 2, "duplicate choice key");
-    }
-    return 0;
-}
-
-//! Handles Descriptor:menu_block(key, field, value [, color [, empty [, shown]]]).
-static int DescriptorMenuBlock(lua_State* L) {
-    return DescriptorMenuFieldOrBlock(L, true);
-}
-
-//! Handles Descriptor:menu_choices([fold]).
-static int DescriptorMenuChoices(lua_State* L) {
-    return DescriptorMenuOpenSection(
-	L, Menu::SectionKind::Choices, false, "menu_choices");
-}
-
-//! Handles Descriptor:menu_field(key, field, value [, color [, empty [, shown]]]).
-static int DescriptorMenuField(lua_State* L) {
-    return DescriptorMenuFieldOrBlock(L, false);
-}
-
 //! Handles Descriptor:menu_item(key, label).
 static int DescriptorMenuItem(lua_State* L) {
     if (lua_gettop(L) != 3)
@@ -461,60 +133,17 @@ static int DescriptorMenuItem(lua_State* L) {
     if (!Menu::CanonicalizeKey(Lua::CheckString(L, 2), key))
 	return luaL_argerror(L, 2, "invalid menu key");
     const auto label = Lua::CheckString(L, 3);
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    auto menu = d->EnsureMenu();
+    auto menu = Lua::CheckWeakUserdata<Menu>(
+	L, "Scratch.Menu", "invalid menu");
     if (!menu->HasSection()) {
-	d.reset();
 	menu.reset();
 	return luaL_error(L, "menu_item requires a menu section first");
     }
     if (!menu->AddItem(key, label)) {
-	d.reset();
 	menu.reset();
 	return luaL_argerror(L, 2, "duplicate choice key");
     }
     return 0;
-}
-
-//! Handles Descriptor:menu_listing([fold]).
-static int DescriptorMenuListing(lua_State* L) {
-    return DescriptorMenuOpenSection(
-	L, Menu::SectionKind::Listing, false, "menu_listing");
-}
-
-//! Handles Descriptor:menu_match(line).
-static int DescriptorMenuMatch(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "menu_match expects 1 argument");
-    luaL_checktype(L, 2, LUA_TSTRING);
-    auto& lua = Lua::CheckLua(L);
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    auto menu = d->GetMenu();
-    if (!menu) {
-	lua_pushnil(L);
-	return 1;
-    }
-    String key;
-    if (!menu->Match(Lua::CheckString(L, 2), key)) {
-	lua_pushnil(L);
-	return 1;
-    }
-    lua.PushString(std::move(key));
-    return 1;
-}
-
-//! Handles Descriptor:menu_named_choices(title [, fold]).
-static int DescriptorMenuNamedChoices(lua_State* L) {
-    return DescriptorMenuOpenSection(
-	L, Menu::SectionKind::Choices, true, "menu_named_choices");
-}
-
-//! Handles Descriptor:menu_named_listing(title [, fold]).
-static int DescriptorMenuNamedListing(lua_State* L) {
-    return DescriptorMenuOpenSection(
-	L, Menu::SectionKind::Listing, true, "menu_named_listing");
 }
 
 //! Handles Descriptor:menu_prompt(text).
@@ -525,9 +154,9 @@ static int DescriptorMenuPrompt(lua_State* L) {
     const auto prompt = Lua::CheckString(L, 2);
     if (prompt.empty())
 	return luaL_argerror(L, 2, "prompt must not be empty");
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    d->EnsureMenu()->SetPrompt(prompt);
+    auto menu = Lua::CheckWeakUserdata<Menu>(
+	L, "Scratch.Menu", "invalid menu");
+    menu->SetPrompt(prompt);
     return 0;
 }
 
@@ -538,9 +167,9 @@ static int DescriptorMenuTitle(lua_State* L) {
     const int argc = lua_gettop(L);
     if (argc == 2) {
 	luaL_checktype(L, 2, LUA_TSTRING);
-	auto d = DescriptorBindings::Check(L);
-	RequireNoEditorActive(L, d);
-	d->EnsureMenu()->SetTitle(
+	auto menu = Lua::CheckWeakUserdata<Menu>(
+	    L, "Scratch.Menu", "invalid menu");
+	menu->SetTitle(
 	    Lua::CheckString(L, 2));
 	return 0;
     }
@@ -556,15 +185,15 @@ static int DescriptorMenuTitle(lua_State* L) {
     }
     if (argc >= 5)
 	luaL_checktype(L, 5, LUA_TSTRING);
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
+    auto menu = Lua::CheckWeakUserdata<Menu>(
+	L, "Scratch.Menu", "invalid menu");
     const auto field = Lua::CheckString(L, 2);
     const auto value = Lua::CheckString(L, 3);
     String empty = "<Blank>";
     if (argc >= 5) {
 	empty = Lua::CheckString(L, 5);
     }
-    d->EnsureMenu()->SetTitle(
+    menu->SetTitle(
 	field, value, valueColor, empty);
     return 0;
 }
@@ -630,17 +259,6 @@ static int DescriptorPrintFormat(lua_State* L) {
     return 0;
 }
 
-//! Handles Descriptor:print_columns(cells).
-static int DescriptorPrintColumns(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "print_columns expects 1 argument");
-    std::vector<String> cells;
-    Lua::CheckStringArray(L, cells, 2, "string array expected");
-    auto d = DescriptorBindings::Check(L);
-    d->PrintColumns(cells);
-    return 0;
-}
-
 //! Handles Descriptor:print_menu().
 static int DescriptorPrintMenu(lua_State* L) {
     if (lua_gettop(L) != 1)
@@ -680,80 +298,6 @@ static int DescriptorSetColor(lua_State* L) {
     return 0;
 }
 
-//! Handles Descriptor:set_edit_command([command]).
-//! \remark Draft copy of \p command, or blank when omitted.
-static int DescriptorSetEditCommand(lua_State* L) {
-    const int argc = lua_gettop(L);
-    if (argc != 1 && argc != 2)
-	return luaL_error(L, "set_edit_command expects 0 or 1 arguments");
-    const auto weakD = CheckWeakDescriptorPtr(L);
-    if (weakD.expired())
-	return luaL_error(L, "invalid descriptor");
-    {
-	auto d = weakD.lock();
-	RequireNoEditorActive(L, d);
-    }
-    auto& lua = Lua::CheckLua(L);
-    CommandPtr editCommand;
-    String originalName;
-    if (argc == 2) {
-	auto source = CommandBindings::Check(L, 2);
-	originalName = source->GetName();
-	editCommand = std::make_shared<Command>(*source);
-	source.reset();
-    } else {
-	editCommand = std::make_shared<Command>();
-    }
-    auto d = weakD.lock();
-    if (!d) {
-	editCommand.reset();
-	return luaL_error(L, "invalid descriptor");
-    }
-    d->SetEditCommand(editCommand);
-    d->SetEditName(originalName);
-    d->SetEditString(String());
-    d.reset();
-    CommandBindings::Push(lua, std::move(editCommand));
-    return 1;
-}
-
-//! Handles Descriptor:set_edit_state([state]).
-//! \remark Draft copy of \p state, or blank when omitted.
-static int DescriptorSetEditState(lua_State* L) {
-    const int argc = lua_gettop(L);
-    if (argc != 1 && argc != 2)
-	return luaL_error(L, "set_edit_state expects 0 or 1 arguments");
-    const auto weakD = CheckWeakDescriptorPtr(L);
-    if (weakD.expired())
-	return luaL_error(L, "invalid descriptor");
-    {
-	auto d = weakD.lock();
-	RequireNoEditorActive(L, d);
-    }
-    auto& lua = Lua::CheckLua(L);
-    StatePtr editState;
-    String originalName;
-    if (argc == 2) {
-	auto source = StateBindings::Check(L, 2);
-	originalName = source->GetName();
-	editState = std::make_shared<State>(*source);
-	source.reset();
-    } else {
-	editState = std::make_shared<State>();
-    }
-    auto d = weakD.lock();
-    if (!d) {
-	editState.reset();
-	return luaL_error(L, "invalid descriptor");
-    }
-    d->SetEditState(editState);
-    d->SetEditName(originalName);
-    d->SetEditString(String());
-    d.reset();
-    StateBindings::Push(lua, std::move(editState));
-    return 1;
-}
-
 //! Handles Descriptor:set_edit_string(value).
 static int DescriptorSetEditString(lua_State* L) {
     if (lua_gettop(L) != 2)
@@ -762,93 +306,6 @@ static int DescriptorSetEditString(lua_State* L) {
     auto d = DescriptorBindings::Check(L);
     RequireNoEditorActive(L, d);
     d->SetEditString(Lua::CheckString(L, 2));
-    return 0;
-}
-
-//! Handles Descriptor:set_edit_user([user]).
-//! \remark Draft copy of \p user, or blank when omitted.
-static int DescriptorSetEditUser(lua_State* L) {
-    const int argc = lua_gettop(L);
-    if (argc != 1 && argc != 2)
-	return luaL_error(L, "set_edit_user expects 0 or 1 arguments");
-    const auto weakD = CheckWeakDescriptorPtr(L);
-    if (weakD.expired())
-	return luaL_error(L, "invalid descriptor");
-    {
-	auto d = weakD.lock();
-	RequireNoEditorActive(L, d);
-    }
-    auto& lua = Lua::CheckLua(L);
-    UserPtr editUser;
-    String originalName;
-    if (argc == 2) {
-	auto source = UserBindings::Check(L, 2);
-	originalName = source->GetName();
-	editUser = std::make_shared<User>(*source);
-	source.reset();
-    } else {
-	editUser = std::make_shared<User>();
-    }
-    auto d = weakD.lock();
-    if (!d) {
-	editUser.reset();
-	return luaL_error(L, "invalid descriptor");
-    }
-    d->SetEditUser(editUser);
-    d->SetEditName(originalName);
-    d->SetEditString(String());
-    d.reset();
-    UserBindings::Push(lua, std::move(editUser));
-    return 1;
-}
-
-//! Handles Descriptor:set_edit_player([player]).
-//! \remark Draft copy of \p player, or blank when omitted.
-static int DescriptorSetEditPlayer(lua_State* L) {
-    const int argc = lua_gettop(L);
-    if (argc != 1 && argc != 2)
-	return luaL_error(L, "set_edit_player expects 0 or 1 arguments");
-    const auto weakD = CheckWeakDescriptorPtr(L);
-    if (weakD.expired())
-	return luaL_error(L, "invalid descriptor");
-    {
-	auto d = weakD.lock();
-	RequireNoEditorActive(L, d);
-    }
-    auto& lua = Lua::CheckLua(L);
-    PlayerPtr editPlayer;
-    String originalName;
-    if (argc == 2) {
-	auto source = PlayerBindings::Check(L, 2);
-	originalName = source->GetName();
-	editPlayer = std::make_shared<Player>(*source);
-	source.reset();
-    } else {
-	editPlayer = std::make_shared<Player>();
-    }
-    auto d = weakD.lock();
-    if (!d) {
-	editPlayer.reset();
-	return luaL_error(L, "invalid descriptor");
-    }
-    d->SetEditPlayer(editPlayer);
-    d->SetEditName(originalName);
-    d->SetEditString(String());
-    d.reset();
-    PlayerBindings::Push(lua, std::move(editPlayer));
-    return 1;
-}
-
-//! Handles Descriptor:set_character(instance).
-static int DescriptorSetCharacter(lua_State* L) {
-    if (lua_gettop(L) != 2)
-	return luaL_error(L, "set_character expects 1 argument");
-    auto d = DescriptorBindings::Check(L);
-    RequireNoEditorActive(L, d);
-    InstancePtr instance;
-    if (!lua_isnil(L, 2))
-	instance = InstanceBindings::Check(L, 2);
-    d->SetCharacter(instance);
     return 0;
 }
 
@@ -887,7 +344,7 @@ static int DescriptorPopStateUntil(lua_State* L) {
 	RequireNoEditorActive(L, d);
     }
     if (luaL_testudata(L, 2, StateBindings::MetaName)) {
-	auto state = StateBindings::Check(L, 2);
+	auto state = Lua::CheckWeakUserdata<State>(L, "Scratch.State", "invalid state", 2);
 	auto d = weakD.lock();
 	if (!d) {
 	    state.reset();
@@ -917,7 +374,7 @@ static int DescriptorPushState(lua_State* L) {
 	RequireNoEditorActive(L, d);
     }
     if (luaL_testudata(L, 2, StateBindings::MetaName)) {
-	auto state = StateBindings::Check(L, 2);
+	auto state = Lua::CheckWeakUserdata<State>(L, "Scratch.State", "invalid state", 2);
 	auto d = weakD.lock();
 	if (!d) {
 	    state.reset();
@@ -947,7 +404,7 @@ static int DescriptorSetState(lua_State* L) {
 	RequireNoEditorActive(L, d);
     }
     if (luaL_testudata(L, 2, StateBindings::MetaName)) {
-	auto state = StateBindings::Check(L, 2);
+	auto state = Lua::CheckWeakUserdata<State>(L, "Scratch.State", "invalid state", 2);
 	auto d = weakD.lock();
 	if (!d) {
 	    state.reset();
@@ -1006,76 +463,65 @@ void DescriptorBindings::Push(
     lua.PushUserdata(std::move(d), MetaName);
 }
 
-//! Registers the Descriptor metatable.
-//! \param L the \c lua_State
-static void RegisterDescriptorMeta(lua_State* L) {
-    Lua::RegisterMetatable(L, DescriptorBindings::MetaName);
-
-    static const luaL_Reg methods[] = {
-	{"__gc", DescriptorGc},
-	{"clear_edit_command", DescriptorClearEditCommand},
-	{"clear_edit_state", DescriptorClearEditState},
-	{"clear_edit_user", DescriptorClearEditUser},
-	{"clear_edit_player", DescriptorClearEditPlayer},
-	{"clear_editor", DescriptorClearEditor},
-	{"clear_menu", DescriptorClearMenu},
-	{"close", DescriptorClose},
-	{"create_character", DescriptorCreateCharacter},
-	{"get_character", DescriptorGetCharacter},
-	{"get_edit_command", DescriptorGetEditCommand},
-	{"get_edit_name", DescriptorGetEditName},
-	{"get_edit_state", DescriptorGetEditState},
-	{"get_edit_string", DescriptorGetEditString},
-	{"get_edit_user", DescriptorGetEditUser},
-	{"get_edit_player", DescriptorGetEditPlayer},
-	{"get_editor", DescriptorGetEditor},
-	{"get_name", DescriptorGetName},
-	{"get_state", DescriptorGetState},
-	{"get_terminal_type", DescriptorGetTerminalType},
-	{"get_user", DescriptorGetUser},
-	{"get_window_height", DescriptorGetWindowHeight},
-	{"get_window_width", DescriptorGetWindowWidth},
-	{"is_closed", DescriptorIsClosed},
-	{"is_color", DescriptorIsColor},
-	{"is_prompt", DescriptorIsPrompt},
-	{"login", DescriptorLogin},
-	{"menu_block", DescriptorMenuBlock},
-	{"menu_choices", DescriptorMenuChoices},
-	{"menu_field", DescriptorMenuField},
-	{"menu_item", DescriptorMenuItem},
-	{"menu_listing", DescriptorMenuListing},
-	{"menu_match", DescriptorMenuMatch},
-	{"menu_named_choices", DescriptorMenuNamedChoices},
-	{"menu_named_listing", DescriptorMenuNamedListing},
-	{"menu_prompt", DescriptorMenuPrompt},
-	{"menu_title", DescriptorMenuTitle},
-	{"pop_state", DescriptorPopState},
-	{"pop_state_until", DescriptorPopStateUntil},
-	{"print", DescriptorPrint},
-	{"print_columns", DescriptorPrintColumns},
-	{"print_format", DescriptorPrintFormat},
-	{"print_menu", DescriptorPrintMenu},
-	{"push_state", DescriptorPushState},
-	{"set_character", DescriptorSetCharacter},
-	{"set_color", DescriptorSetColor},
-	{"set_edit_command", DescriptorSetEditCommand},
-	{"set_edit_state", DescriptorSetEditState},
-	{"set_edit_string", DescriptorSetEditString},
-	{"set_edit_user", DescriptorSetEditUser},
-	{"set_edit_player", DescriptorSetEditPlayer},
-	{"set_prompt", DescriptorSetPrompt},
-	{"set_state", DescriptorSetState},
-	{"start_editor", DescriptorStartEditor},
-	{nullptr, nullptr}
-    };
-    luaL_setfuncs(L, methods, 0);
-    lua_pop(L, 1);
-}
-
-//! Registers the Descriptor metatable.
-//! \param lua the Lua facade
 void DescriptorBindings::Register(Lua& lua) {
-    RegisterDescriptorMeta(lua.GetState());
+    lua.Class<Menu>("Scratch.Menu").
+	RawFunction("add_item", DescriptorMenuItem).
+	RawFunction("set_prompt", DescriptorMenuPrompt).
+	RawFunction("set_title", DescriptorMenuTitle);
+    lua.Class<Descriptor>(MetaName).
+	Function("clear_edit_command", &Descriptor::ClearEditCommand).
+	Function("clear_edit_exit", &Descriptor::ClearEditExit).
+	Function("clear_edit_player", &Descriptor::ClearEditPlayer).
+	Function("clear_edit_room", &Descriptor::ClearEditRoom).
+	Function("clear_edit_state", &Descriptor::ClearEditState).
+	Function("clear_edit_user", &Descriptor::ClearEditUser).
+	Function("clear_edit_zone", &Descriptor::ClearEditZone).
+	Function("clear_editor", &Descriptor::ClearEditor).
+	Function("clear_menu", &Descriptor::ClearMenu).
+	Function("close", &Descriptor::Close).
+	Function("create_character", &Descriptor::CreateCharacter).
+	Function("ensure_menu", &Descriptor::EnsureMenu).
+	Function("get_character", &Descriptor::GetCharacter).
+	Function("get_edit_command", &Descriptor::GetEditCommand).
+	Function("get_edit_exit", &Descriptor::GetEditExit).
+	Function("get_edit_name", &Descriptor::GetEditName).
+	Function("get_edit_player", &Descriptor::GetEditPlayer).
+	Function("get_edit_room", &Descriptor::GetEditRoom).
+	Function("get_edit_state", &Descriptor::GetEditState).
+	Function("get_edit_string", &Descriptor::GetEditString).
+	Function("get_edit_user", &Descriptor::GetEditUser).
+	Function("get_editor", &Descriptor::GetEditorProxy).
+	Function("get_menu", &Descriptor::GetMenu).
+	Function("get_name", &Descriptor::GetName).
+	Function("get_state", &Descriptor::GetState).
+	Function("get_terminal_type", &Descriptor::GetTerminalType).
+	Function("get_user", &Descriptor::GetUser).
+	Function("get_window_height", &Descriptor::GetWindowHeight).
+	Function("get_window_width", &Descriptor::GetWindowWidth).
+	Function("is_closed", &Descriptor::ClosedProxy).
+	Function("is_color", &Descriptor::GetColorBit).
+	Function("is_prompt", &Descriptor::GetPromptBit).
+	RawFunction("login", DescriptorLogin).
+	RawFunction("pop_state", DescriptorPopState).
+	RawFunction("pop_state_until", DescriptorPopStateUntil).
+	RawFunction("print", DescriptorPrint).
+	Function("print_columns", &Descriptor::PrintColumns).
+	RawFunction("print_format", DescriptorPrintFormat).
+	RawFunction("print_menu", DescriptorPrintMenu).
+	RawFunction("push_state", DescriptorPushState).
+	Function("set_character", &Descriptor::SetCharacter).
+	RawFunction("set_color", DescriptorSetColor).
+	Function("set_edit_command", &Descriptor::SetEditCommand).
+	Function("set_edit_exit", &Descriptor::SetEditExit).
+	Function("set_edit_player", &Descriptor::SetEditPlayer).
+	Function("set_edit_room", &Descriptor::SetEditRoom).
+	Function("set_edit_state", &Descriptor::SetEditState).
+	RawFunction("set_edit_string", DescriptorSetEditString).
+	Function("set_edit_user", &Descriptor::SetEditUser).
+	Function("set_edit_zone", &Descriptor::SetEditZone).
+	RawFunction("set_prompt", DescriptorSetPrompt).
+	RawFunction("set_state", DescriptorSetState).
+	RawFunction("start_editor", DescriptorStartEditor);
 }
 
 }; // namespace Scripting

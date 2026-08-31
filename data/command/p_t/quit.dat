@@ -5,7 +5,7 @@ Action:-
     local inst = d:get_character()
     d:set_character(nil)
     if inst then
-      erase_instance(inst)
+      inst:remove()
     end
     d:set_state("Lobby")
   end

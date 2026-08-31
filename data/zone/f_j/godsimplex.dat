@@ -1,0 +1,80 @@
+Name: GodSimplex~
+Rooms:
+  Board:
+    Description:-
+      The main gathering place of the gods. Messages are exchanged here
+      every day. The mortal board is east, the meeting room south, the Inn
+      north, and the post office west.
+      ~
+    Exits:
+      North: Inn~
+      East: Mortalboard~
+      South: Meeting~
+      West: PostOffice~
+      Up: Social~
+      Down: midgaard:temple~
+      ~
+    Title: The Immortal Board Room~
+    ~
+  Inn:
+    Description:-
+      The Inn of the Gods is a small room holding a shelf of precious
+      stones. When a god comes to rent belongings, their essence is stored
+      in the stones.
+      ~
+    Exits:
+      South: Board~
+      ~
+    Title: The Inn of the Gods~
+    ~
+  IceBox:
+    Description:-
+      The Ice Box is for little boys and girls that cannot play nice. Be
+      good and maybe someone will come and get you.
+      ~
+    Title: The Ice Box of the Gods~
+    ~
+  Meeting:
+    Description:-
+      The meeting room is plain and very simple. A circular table sits in
+      the middle of the room, lit by an unseen light source. Many chairs
+      surround the table, all empty.
+      ~
+    Exits:
+      North: Board~
+      ~
+    Title: The Meeting Room of the Gods~
+    ~
+  Mortalboard:
+    Description:-
+      The gods have magically created an exact copy of the mortal board
+      room. Any god can easily post and read messages here without being
+      seen by mortals.
+      ~
+    Exits:
+      West: Board~
+      ~
+    Title: The Gods' Mortal Board Room~
+    ~
+  PostOffice:
+    Description:-
+      The Post Office of the Gods is not as slow as mortal post offices.
+      Piles of junk mail line the walls. Even gods get on mailing lists.
+      ~
+    Exits:
+      East: Board~
+      ~
+    Title: The Post Office of the Gods~
+    ~
+  Social:
+    Description:-
+      This elegantly decorated room has one simple purpose: to socialize
+      with everyone else around in one central location.
+      ~
+    Exits:
+      Down: Board~
+      ~
+    Title: The Social Gathering Room~
+    ~
+  ~
+~

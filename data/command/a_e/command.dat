@@ -25,7 +25,7 @@ Action:-
     if target then
       d:set_edit_command(target)
     else
-      local edit = d:set_edit_command()
+      local edit = d:set_edit_command(nil)
       edit:set_name(name)
     end
     d:push_state("Command")
@@ -46,13 +46,20 @@ Action:-
       action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
       return
     end
-    d:print_format("%sName:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
-    d:print_format("%sKeywords:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT,
+    d:print_format("%sName%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
+    d:print_format("%sKeywords%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT,
       table.concat(target:get_keywords(), ", "), Q.NORMAL)
-    d:print_format("%sTrust:%s %s%s%s\r\n",
-      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_trust(), Q.NORMAL)
+    d:print_format("%sTrust%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_trust(), Q.NORMAL)
+    local action_text = target:get_action()
+    d:print_format("%sAction%s:-%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL)
+    if action_text ~~= "" then
+      action_text = action_text:gsub("[\r\n]+$", "")
+      d:print_format("%s%s%s\r\n", Q.TEXT, action_text, Q.NORMAL)
+    end
   end
   ~
 ~

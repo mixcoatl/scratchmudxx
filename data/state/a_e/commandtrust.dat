@@ -7,16 +7,17 @@ Hooks:
     end
     local current = edit:get_trust();
     d:clear_menu();
-    d:menu_title("Trust", edit:get_name(), "name", "<New>");
-    d:menu_named_choices("Required Trust");
+    local m = d:ensure_menu();
+    m:set_title("Trust", edit:get_name(), "name", "<New>");
+    m:add_named_choices("Required Trust");
     local names = get_trust_names();
     for i, name in ipairs(names) do
-      d:menu_item(tostring(i), name);
+      m:add_item(tostring(i), name);
     end
-    d:menu_choices();
-    d:menu_item("0", "Open (no requirement).");
-    d:menu_item("x", "Return.");
-    d:menu_prompt("Enter choice");
+    m:add_choices();
+    m:add_item("0", "Open (no requirement).");
+    m:add_item("x", "Return.");
+    m:set_prompt("Enter choice");
     d:print_menu();
     ~
   Received:-
@@ -25,7 +26,8 @@ Hooks:
       d:pop_state();
       return;
     end
-    local key = d:menu_match(line);
+    local m = d:get_menu();
+    local key = m:match_key(line);
     if key == "x" then
       d:pop_state();
       return;

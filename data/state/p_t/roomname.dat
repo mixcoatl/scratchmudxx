@@ -1,0 +1,21 @@
+Hooks:
+  Focus:-
+    d:print_format("%sEnter the room name%s:%s ", Q.PROMPT, Q.PUNCTUATION, Q.NORMAL);
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local name = line:match("^%s*(.-)%s*$");
+    if name == "" then
+      d:set_state("Room");
+    else
+      edit:set_name(name);
+      d:set_state("Room");
+    end
+    ~
+~
+Name: RoomName~
+~

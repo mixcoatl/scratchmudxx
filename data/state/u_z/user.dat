@@ -7,16 +7,17 @@ Hooks:
       return;
     end
     d:clear_menu();
-    d:menu_title("User", edit:get_name(), "name", "<New>");
-    d:menu_choices();
-    d:menu_field("1", "Name", edit:get_name(), "name");
-    d:menu_field("2", "Password", edit:get_password(), "text", "<Blank>", "<Set>");
-    d:menu_field("3", "Gender", edit:get_gender(), "enum");
-    d:menu_field("4", "Email", edit:get_email());
-    d:menu_choices();
-    d:menu_item("q", "Save and quit.");
-    d:menu_item("x", "Abort without saving.");
-    d:menu_prompt("Enter choice");
+    local m = d:ensure_menu();
+    m:set_title("User", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_field("1", "Name", edit:get_name(), "name");
+    m:add_field("2", "Password", edit:get_password(), "text", "<Blank>", "<Set>");
+    m:add_field("3", "Gender", edit:get_gender(), "enum");
+    m:add_field("4", "Email", edit:get_email());
+    m:add_choices();
+    m:add_item("q", "Save and quit.");
+    m:add_item("x", "Abort without saving.");
+    m:set_prompt("Enter choice");
     d:print_menu();
     ~
   Received:-
@@ -25,7 +26,8 @@ Hooks:
       d:pop_state();
       return;
     end
-    local key = d:menu_match(line);
+    local m = d:get_menu();
+    local key = m:match_key(line);
     if key == "1" then
       d:push_state("UserName");
     elseif key == "2" then

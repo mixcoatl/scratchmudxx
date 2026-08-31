@@ -49,8 +49,25 @@ Game::Game() :
 			"data", "state", ".dat"))),
 	users_(std::make_shared<UserRepository>(
 		Scratch::Storage::MultiFileStorage<User>(
-			"data", "user", ".dat"))) {
+			"data", "user", ".dat"))),
+	zones_(std::make_shared<ZoneRepository>(
+		Scratch::Storage::MultiFileStorage<Zone>(
+			"data", "zone", ".dat"))) {
     worlds_[String()] = std::make_shared<World>();
+
+    commands_->SetChangeHook([this](const String&) {
+	this->RebuildCommandIndex();
+    });
+    commands_->SetReloadHook([this]() {
+	this->RebuildCommandIndex();
+    });
+    states_->SetChangeHook([this](const String& name) {
+	this->ApplyStateBits(states_->Get(name));
+    });
+    states_->SetReloadHook([this]() {
+	for (const auto& name: states_->GetIds())
+	    this->ApplyStateBits(states_->Get(name));
+    });
 }
 
 
@@ -91,6 +108,16 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
     return descriptorSet;
 }
 
+//! Gets the names of open descriptors.
+StringSetCi Game::GetDescriptorNames() const {
+    StringSetCi names;
+    for (auto& descriptor: this->GetDescriptors()) {
+	if (descriptor && !descriptor->Closed())
+	    names.insert(descriptor->GetName());
+    }
+    return names;
+}
+
 //! Gets the connection-state repository.
 StateRepositoryPtr Game::GetStates() const noexcept {
     return states_;
@@ -99,6 +126,35 @@ StateRepositoryPtr Game::GetStates() const noexcept {
 //! Gets the user repository.
 UserRepositoryPtr Game::GetUsers() const noexcept {
     return users_;
+}
+
+//! Gets the zone repository.
+ZoneRepositoryPtr Game::GetZones() const noexcept {
+    return zones_;
+}
+
+//! Gets a room.
+//! \param name the qualified or local room name
+//! \param perspective the instance supplying local scope
+//! \return the room, or \c nullptr
+RoomPtr Game::GetRoom(
+	const String& name,
+	const InstancePtr& perspective) const noexcept {
+    String roomName = name;
+    String zoneName;
+    const auto colon = name.find(':');
+    if (colon != String::npos) {
+	zoneName = name.substr(0, colon);
+	roomName = name.substr(colon + 1);
+    } else if (perspective) {
+	// Perspective zone resolution deferred to room runtime.
+    }
+    if (zoneName.empty() || roomName.empty())
+	return nullptr;
+    auto zone = zones_->Get(zoneName);
+    if (zone)
+	return zone->GetRoom(roomName);
+    return nullptr;
 }
 
 //! Gets the player repository.
@@ -254,12 +310,14 @@ void Game::LoadRepositories() {
     if (!commands_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load command index.");
     }
-    this->RebuildCommandIndex();
     if (!users_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load user index.");
     }
     if (!players_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load player index.");
+    }
+    if (!zones_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load zone index.");
     }
 }
 

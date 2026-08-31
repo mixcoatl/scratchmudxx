@@ -119,6 +119,12 @@ public:
 	Color::ColorEnum meta,
 	Color::ColorEnum color) noexcept;
 
+    //! Sets the network listen port.
+    //! \sa #GetPort() const
+    void SetPort(const std::uint16_t port) {
+	port_ = port;
+    }
+
     //! Writes default colors to a data node.
     //! \param data the Colors data node to write
     //! \sa #ReadColorsData(const DataPtr&)
@@ -141,12 +147,6 @@ public:
     //! \sa #ReadNetworkData(const DataPtr&)
     //! \sa #WriteData(const DataPtr&) const
     void WriteNetworkData(const DataPtr& data) const noexcept;
-
-    //! Sets the network listen port.
-    //! \sa #GetPort() const
-    void SetPort(const std::uint16_t port) {
-	port_ = port;
-    }
 
 protected:
     friend class Scratch::Scripting::LuaBindings;

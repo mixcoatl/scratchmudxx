@@ -1,0 +1,54 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_exit();
+    if not edit then
+      d:print_format("%sNo exit draft; returning.%s\r\n", Q.FAILED, Q.NORMAL);
+      d:set_state("Room");
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Exit");
+    m:add_choices();
+    m:add_field("1", "Direction", d:get_edit_string(), "text", "<Empty>");
+    m:add_field("2", "Target", edit:get_target(), "text", "<Empty>");
+    m:add_choices();
+    m:add_item("q", "Save exit.");
+    m:add_item("x", "Abort exit.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_exit();
+    local room = d:get_edit_room();
+    if not edit or not room then
+      d:set_state("Room");
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "1" then
+      d:push_state("ExitDirection");
+    elseif key == "2" then
+      d:push_state("ExitTarget");
+    elseif key == "q" then
+      if d:get_edit_string() == "" or edit:get_target() == "" then
+        d:print_format("%sDirection and target are required.%s\r\n", Q.FAILED, Q.NORMAL);
+        d:set_state("Exit");
+      else
+        room:set_exit(d:get_edit_string(), edit);
+        d:clear_edit_exit();
+        d:set_edit_string("");
+        d:set_state("Room");
+      end
+    elseif key == "x" then
+      d:clear_edit_exit();
+      d:set_edit_string("");
+      d:set_state("Room");
+    else
+      d:set_state("Exit");
+    end
+    ~
+~
+Name: Exit~
+~

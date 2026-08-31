@@ -82,28 +82,5 @@ void ColorBindings::RefillGlobalQ(
     AssignQ(lua, desc);
 }
 
-//! Handles lua get_color_names.
-static int GetColorNamesProxy(lua_State* L) {
-    if (lua_gettop(L) != 0)
-	return luaL_error(L, "get_color_names expects no arguments");
-    return PushEnumNames<Color>(L, [](Color::ColorEnum value) noexcept {
-	return !Color::IsMetaColor(value);
-    });
-}
-
-//! Handles lua get_metacolor_names.
-static int GetMetaColorNamesProxy(lua_State* L) {
-    if (lua_gettop(L) != 0)
-	return luaL_error(L, "get_metacolor_names expects no arguments");
-    return PushEnumNames<Color>(L, Color::IsMetaColor);
-}
-
-//! Registers Color free functions on \p lua.
-//! \param lua the Lua facade
-void ColorBindings::Register(Lua& lua) {
-    lua.SetSafe("get_color_names", GetColorNamesProxy);
-    lua.SetSafe("get_metacolor_names", GetMetaColorNamesProxy);
-}
-
 }; // namespace Scripting
 }; // namespace Scratch
