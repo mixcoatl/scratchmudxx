@@ -1,0 +1,14 @@
+Name: East~
+Keywords: e~
+Action:-
+  local direction = command:get_name()
+  local from = actor:get_parent_room()
+  if from and actor:can_move(direction) then
+    action("Movement", A.TO_ROOM, "${S.Name} leave${:s} ${D.Text}.", actor, direction:lower())
+  end
+  if actor:move(direction) then
+    action("Movement", A.TO_ROOM, "${S.Name} arrive${:s} from ${D.Text}.", actor, get_opposite_direction(direction):lower())
+    dispatch_command(actor, "look")
+  end
+  ~
+~

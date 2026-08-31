@@ -45,20 +45,26 @@ public:
 	C_ENUM		= 18,	//!< Color is enum.
 	C_FAILED	= 19,	//!< Color is failed.
 	C_KEY		= 20,	//!< Color is key.
-	C_NUMBER	= 21,	//!< Color is number.
-	C_OKAY		= 22,	//!< Color is okay.
-	C_NAME		= 23,	//!< Color is name.
-	C_PERCENT	= 24,	//!< Color is percent.
-	C_PROMPT	= 25,	//!< Color is prompt.
-	C_PUNCTUATION	= 26,	//!< Color is punctuation.
-	C_RESTRICTED	= 27,	//!< Color is restricted.
-	C_SAY		= 28,	//!< Color is say.
-	C_SOCIAL	= 29,	//!< Color is social.
-	C_TEXT		= 30,	//!< Color is text.
-	C_YESNO		= 31,	//!< Color is yesno.
+	C_MOVEMENT	= 21,	//!< Color is movement.
+	C_NUMBER	= 22,	//!< Color is number.
+	C_OKAY		= 23,	//!< Color is okay.
+	C_NAME		= 24,	//!< Color is name.
+	C_PERCENT	= 25,	//!< Color is percent.
+	C_PEEK		= 26,	//!< Color is peek.
+	C_PROMPT	= 27,	//!< Color is prompt.
+	C_PUNCTUATION	= 28,	//!< Color is punctuation.
+	C_RESTRICTED	= 29,	//!< Color is restricted.
+	C_SAY		= 30,	//!< Color is say.
+	C_SOCIAL	= 31,	//!< Color is social.
+	C_TEXT		= 32,	//!< Color is text.
+	C_YESNO		= 33,	//!< Color is yesno.
+	C_DESCRIPTION	= 34,	//!< Color is description.
+	C_EXIT		= 35,	//!< Color is exit.
+	C_NOTICE	= 36,	//!< Color is notice.
+	C_TITLE		= 37,	//!< Color is title.
 	C_FIRST_REAL	= C_CHARCOAL, //!< First real color.
 	C_FIRST_META	= C_EMPHASIS, //!< First metacolor.
-	MAX_C_TYPES	= 32	//!< How many color types.
+	MAX_C_TYPES	= 38	//!< How many color types.
     };
     //! \}
 

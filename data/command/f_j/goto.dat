@@ -1,0 +1,21 @@
+Name: Goto~
+Trust: Builder~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local io = require("io")
+  local movement = require("movement")
+  if line == "" then
+    io.usage(d, Q, "goto <room>")
+    return
+  end
+  local dest = get_room_instance(line, actor)
+  if not dest then
+    io.fail(d, Q, "You can't seem to find " .. line .. "!")
+    return
+  end
+  movement.poof_to(actor, dest)
+  ~
+~

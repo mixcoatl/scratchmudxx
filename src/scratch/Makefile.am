@@ -20,6 +20,11 @@ __top_builddir__bin_scratch_SOURCES = \
 	data.cpp \
 	descriptor.cpp \
 	descriptor_bindings.cpp \
+	direction.cpp \
+	room.cpp \
+	room_exit.cpp \
+	room_exit_specials.cpp \
+	room_specials.cpp \
 	editor.cpp \
 	editor_verbs.cpp \
 	game.cpp \
@@ -48,7 +53,8 @@ __top_builddir__bin_scratch_SOURCES = \
 	trust.cpp \
 	user.cpp \
 	user_bindings.cpp \
-	world.cpp
+	world.cpp \
+	zone.cpp
 
 noinst_HEADERS = \
 	../include/scratch/action.hpp \
@@ -60,6 +66,7 @@ noinst_HEADERS = \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
 	../include/scratch/descriptor_bindings.hpp \
+	../include/scratch/direction.hpp \
 	../include/scratch/editor.hpp \
 	../include/scratch/editor_verbs.hpp \
 	../include/scratch/game.hpp \
@@ -78,6 +85,10 @@ noinst_HEADERS = \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
 	../include/scratch/repository.hpp \
+	../include/scratch/room.hpp \
+	../include/scratch/room_exit.hpp \
+	../include/scratch/room_exit_specials.hpp \
+	../include/scratch/room_specials.hpp \
 	../include/scratch/scheduler.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
@@ -93,4 +104,5 @@ noinst_HEADERS = \
 	../include/scratch/trust.hpp \
 	../include/scratch/user.hpp \
 	../include/scratch/user_bindings.hpp \
-	../include/scratch/world.hpp
+	../include/scratch/world.hpp \
+	../include/scratch/zone.hpp

@@ -1,0 +1,43 @@
+Name: Teleport~
+Trust: Builder~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local io = require("io")
+  local movement = require("movement")
+  local who, dest_line = line:match("^(%S+)%s*(.*)$")
+  if not who then
+    io.usage(d, Q, "teleport <player> [room]")
+    return
+  end
+  local victim = actor:find({who})
+  if not victim then
+    io.fail(d, Q, "No such player.")
+    return
+  end
+  if victim == actor then
+    io.fail(d, Q, "Use 'goto' to move yourself.")
+    return
+  end
+  local actor_player = actor:get_player()
+  local victim_player = victim:get_player()
+  if victim_player and actor_player
+      and trust_allows(victim_player:get_trust(), actor_player:get_trust()) then
+    io.fail(d, Q, "You can't teleport " .. who .. "!")
+    return
+  end
+  local dest
+  if dest_line == "" then
+    dest = actor:get_parent_room()
+  else
+    dest = get_room_instance(dest_line, actor)
+  end
+  if not dest then
+    io.fail(d, Q, "You can't seem to find " .. dest_line .. "!")
+    return
+  end
+  movement.poof_to(victim, dest)
+  ~
+~

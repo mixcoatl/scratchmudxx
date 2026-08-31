@@ -20,6 +20,7 @@
 #include <scratch/string.hpp>
 #include <scratch/user.hpp>
 #include <scratch/world.hpp>
+#include <scratch/zone.hpp>
 
 // Forward declarations.
 namespace Scratch {
@@ -70,6 +71,9 @@ using StateRepositoryPtr = std::shared_ptr<StateRepository>;
 using UserRepository = Scratch::Storage::Repository<
 	User, Scratch::Storage::MultiFileStorage<User>>;
 using UserRepositoryPtr = std::shared_ptr<UserRepository>;
+using ZoneRepository = Scratch::Storage::Repository<
+	Zone, Scratch::Storage::MultiFileStorage<Zone>>;
+using ZoneRepositoryPtr = std::shared_ptr<ZoneRepository>;
 
 //! The game class. \{
 class Game {
@@ -103,6 +107,13 @@ public:
     //! \sa #GetDescriptors() const
     //! \sa Descriptor::SetState(const StatePtr&)
     void ApplyStateBits(const StatePtr& state) noexcept;
+
+    //! Creates an instanced world.
+    //! \param zoneName the zone name, or empty for a blank world
+    //! \return the world object, or \c nullptr
+    //! \sa #GetWorld(const String&) const
+    //! \sa #PruneWorld(const WorldPtr&, const bool)
+    WorldPtr CreateWorld(const String& zoneName = String()) noexcept;
 
     //! Dispatches a command line.
     //! \param performer the performing instance
@@ -145,6 +156,9 @@ public:
     //! Gets the descriptors.
     std::set<DescriptorPtr> GetDescriptors() const noexcept;
 
+    //! Gets the names of open descriptors.
+    StringSetCi GetDescriptorNames() const;
+
     //! Gets an instance.
     //! \param instanceName the instance name
     //! \return the instance, or \c nullptr
@@ -175,6 +189,35 @@ public:
     //! Gets the player repository.
     PlayerRepositoryPtr GetPlayers() const noexcept;
 
+    //! Gets a room prototype.
+    //! \param name the qualified or local room name
+    //! \param perspective the instance supplying local scope
+    //! \return the room prototype, or \c nullptr
+    RoomPtr GetRoom(
+	const String& name,
+	const InstancePtr& perspective = InstancePtr()) const noexcept;
+
+    //! Gets a room prototype.
+    //! \param name the qualified or local room name
+    //! \param defaultZone the default zone supplying local scope
+    //! \return the room prototype, or \c nullptr
+    RoomPtr GetRoomInZone(
+	const String& name,
+	const ZonePtr& defaultZone) const noexcept;
+
+    //! Gets a live room instance.
+    //! \param name the room reference (\c zone:room, local name, optional \c @world)
+    //! \param perspective the instance supplying local scope
+    //! \return the room instance, or \c nullptr
+    InstancePtr GetRoomInstance(
+	const String& name,
+	const InstancePtr& perspective = InstancePtr()) const noexcept;
+
+    //! Gets a player start room instance.
+    //! \param player the player
+    //! \return the room instance, or \c nullptr
+    InstancePtr GetStartRoom(const PlayerPtr& player) const noexcept;
+
     //! Gets the scheduler.
     Scheduler& GetScheduler() noexcept;
 
@@ -188,10 +231,24 @@ public:
     //! Gets the user repository.
     UserRepositoryPtr GetUsers() const noexcept;
 
+    //! Gets the zone repository.
+    ZoneRepositoryPtr GetZones() const noexcept;
+
+    //! Links room exits across the loaded worlds.
+    //! \sa #LinkCrossWorldExits()
+    void LinkWorlds() noexcept;
+
     //! Loads game repositories from disk.
     //! \throw std::runtime_error if a required repository cannot be loaded
     //! \sa #Run()
     void LoadRepositories();
+
+    //! Prunes a world object.
+    //! \param world the world object
+    //! \param force the force-prune bit
+    //! \return \c true if pruned
+    //! \sa #CreateWorld(const String&)
+    bool PruneWorld(const WorldPtr& world, const bool force) noexcept;
 
     //! Constructs a descriptor.
     //! \param socket the Boost socket
@@ -219,16 +276,6 @@ public:
     void RunCommandHook(
 	const CommandPtr& command,
 	const InstancePtr& performer,
-	const String& line);
-
-    //! Runs social templates for \p actor.
-    //! \param actor the performing instance
-    //! \param social the social templates
-    //! \param line the remainder after the matched command word
-    //! \sa #RunCommandHook(const CommandPtr&, const InstancePtr&, const String&)
-    void RunSocial(
-	const InstancePtr& actor,
-	const SocialPtr& social,
 	const String& line);
 
     //! Sets the shutdown flag.
@@ -260,6 +307,9 @@ protected:
 
     //! Begins waiting for process termination signals.
     void InitSignals();
+
+    //! Links unresolved room exits between worlds.
+    void LinkCrossWorldExits() noexcept;
 
     //! Stops the acceptor, descriptors, and I/O context.
     //! \sa #SetShutdown(const bool)
@@ -324,6 +374,10 @@ protected:
     //! The user repository.
     //! \sa #GetUsers() const
     UserRepositoryPtr users_;
+
+    //! The zone repository.
+    //! \sa #GetZones() const
+    ZoneRepositoryPtr zones_;
 };
 //! \}
 

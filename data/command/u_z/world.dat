@@ -1,0 +1,135 @@
+Name: World~
+Trust: Builder~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local io = require("io")
+  local sub, rest = line:match("^(%S+)%s*(.*)$")
+  if not sub then
+    io.usage(d, Q,
+      "world list",
+      "world spawn [zone]",
+      "world prune <world> [force]")
+    return
+  end
+  sub = sub:lower()
+  if sub == "spawn" then
+    local world
+    if rest == "" then
+      world = create_world()
+    else
+      world = create_world(rest)
+    end
+    if not world then
+      if rest == "" then
+        action("Failed", A.TO_CHAR, "Couldn't spawn world.", actor)
+      else
+        action("Failed", A.TO_CHAR, "Couldn't spawn world for ${D.Text}.", actor, rest)
+      end
+      return
+    end
+    local count = 0
+    for _ in pairs(world:get_instances()) do
+      count = count + 1
+    end
+    local detail = rest
+    if detail == "" then
+      detail = "<Blank>"
+    end
+    action("Okay", A.TO_CHAR, "Spawned world ${D.Text} from ${I.Text} (${X.Text} instances).", actor, world:get_id(), detail, tostring(count))
+    return
+  end
+  if sub == "list" then
+    local worlds = get_worlds()
+    if not worlds or #worlds == 0 then
+      action("Notice", A.TO_CHAR, "No worlds.", actor)
+      return
+    end
+    local rows = {}
+    local id_width = #"World"
+    local players_width = #"Players"
+    local rooms_width = #"Rooms"
+    local grace_width = #"Grace"
+    for _, world in ipairs(worlds) do
+      local info = world:get_prune()
+      local label = world:get_id()
+      if label == "" then
+        label = "Default"
+      end
+      local grace = "None"
+      if info.grace_armed and info.grace_remaining then
+        grace = info.grace_remaining
+      end
+      local room_count = 0
+      for _, instance in pairs(world:get_instances()) do
+        if instance:get_room() ~~= nil then
+          room_count = room_count + 1
+        end
+      end
+      local players = tostring(info.occupants)
+      local rooms = tostring(room_count)
+      id_width = math.max(id_width, #label)
+      players_width = math.max(players_width, #players)
+      rooms_width = math.max(rooms_width, #rooms)
+      grace_width = math.max(grace_width, #grace)
+      rows[#rows + 1] = { label, players, rooms, grace }
+    end
+    local id_fmt = "%-" .. id_width .. "s"
+    local players_fmt = "%" .. players_width .. "s"
+    local rooms_fmt = "%" .. rooms_width .. "s"
+    local grace_fmt = "%-" .. grace_width .. "s"
+    d:print_format("%s%s%s  %s%s%s  %s%s%s  %s%s%s\r\n",
+      Q.PROMPT, string.format(id_fmt, "World"), Q.NORMAL,
+      Q.PROMPT, string.format(players_fmt, "Players"), Q.NORMAL,
+      Q.PROMPT, string.format(rooms_fmt, "Rooms"), Q.NORMAL,
+      Q.PROMPT, string.format(grace_fmt, "Grace"), Q.NORMAL)
+    for _, row in ipairs(rows) do
+      d:print_format("%s%s%s  %s%s%s  %s%s%s  %s%s%s\r\n",
+        Q.EMPHASIS, string.format(id_fmt, row[1]), Q.NORMAL,
+        Q.TEXT, string.format(players_fmt, row[2]), Q.NORMAL,
+        Q.TEXT, string.format(rooms_fmt, row[3]), Q.NORMAL,
+        Q.TEXT, string.format(grace_fmt, row[4]), Q.NORMAL)
+    end
+    return
+  end
+  if sub == "prune" then
+    local world_id, tail = rest:match("^(%S+)%s*(.*)$")
+    if not world_id or world_id == "" then
+      io.usage(d, Q, "world prune <world> [force]")
+      return
+    end
+    local force = false
+    if tail:lower() == "force" then
+      force = true
+    elseif tail ~~= "" then
+      io.usage(d, Q, "world prune <world> [force]")
+      return
+    end
+    local world = get_world(world_id)
+    if not world then
+      action("Failed", A.TO_CHAR, "Couldn't find world ${D.Text}.", actor, world_id)
+      return
+    end
+    if world:get_prune().protected then
+      action("Failed", A.TO_CHAR, "That world is protected.", actor)
+      return
+    end
+    if not force and not world:get_prune().ready then
+      action("Failed", A.TO_CHAR, "That world isn't ready to prune.", actor)
+      return
+    end
+    if not prune_world(world, force) then
+      action("Failed", A.TO_CHAR, "Couldn't prune world ${D.Text}.", actor, world_id)
+      return
+    end
+    action("Okay", A.TO_CHAR, "Pruned world ${D.Text}.", actor, world_id)
+    return
+  end
+  io.usage(d, Q,
+    "world list",
+    "world spawn [zone]",
+    "world prune <world> [force]")
+  ~
+~

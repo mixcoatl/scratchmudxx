@@ -1,0 +1,14 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Enter the exit target");
+    ~
+  Received:-
+    local edit = d:get_edit_exit();
+    if edit then
+      edit:set_target(line:match("^%s*(.-)%s*$"));
+    end
+    d:set_state("Exit");
+    ~
+~
+Name: ExitTarget~
+~

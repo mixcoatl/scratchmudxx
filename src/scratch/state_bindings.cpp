@@ -30,15 +30,6 @@ const char StateBindings::RepositoryMetaName[] = "Scratch.StateRepository";
 //! ScratchMUD types.
 using StateRepositoryPtr = Scratch::Core::StateRepositoryPtr;
 
-StatePtr StateBindings::Check(lua_State* L, const int index) {
-    return Lua::CheckWeakUserdata<State>(
-	L, MetaName, "invalid state", index);
-}
-
-void StateBindings::Push(Lua& lua, StatePtr state) {
-    lua.PushUserdata(std::move(state), MetaName);
-}
-
 //! Sets a State name.
 static void StateSetName(
     StatePtr state,

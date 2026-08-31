@@ -11,10 +11,8 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
 #include <scratch/game_bindings.hpp>
-#include <scratch/instance.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
-#include <scratch/player_bindings.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
@@ -23,9 +21,13 @@
 namespace Scratch {
 namespace Scripting {
 
-using Instance = Scratch::Core::Instance;
+using Game = Scratch::Core::Game;
 using InstancePtr = Scratch::Core::InstancePtr;
+using PruneInfo = Scratch::Core::PruneInfo;
+using Scheduler = Scratch::Core::Scheduler;
+using Strings = Scratch::Algorithm::Strings;
 using World = Scratch::Core::World;
+using WorldPtr = Scratch::Core::WorldPtr;
 
 //! Handles lua broadcast.
 //! \param L the \c lua_State
@@ -51,34 +53,6 @@ static int BroadcastProxy(lua_State* L) {
     return 0;
 }
 
-//! Handles lua print — writes to LOGGER_LUA.
-//! \param L the \c lua_State
-static int PrintProxy(lua_State* L) {
-    const int howMany = lua_gettop(L);
-    luaL_Buffer buffer;
-    luaL_buffinit(L, &buffer);
-    for (auto n = 1; n <= howMany; ++n) {
-	if (n > 1)
-	    luaL_addchar(&buffer, '\t');
-	luaL_tolstring(L, n, nullptr);
-	luaL_addvalue(&buffer);
-    }
-    luaL_pushresult(&buffer);
-    LOGGER_LUA() << Lua::CheckString(L, -1);
-    lua_pop(L, 1);
-    return 0;
-}
-
-//! Handles lua shutdown.
-//! \param L the \c lua_State
-static int ShutdownProxy(lua_State* L) {
-    if (lua_gettop(L) != 0)
-	return luaL_error(L, "shutdown expects no arguments");
-
-    Lua::CheckGame(L).SetShutdown(true);
-    return 0;
-}
-
 //! Handles lua crypt(plaintext [, salt]).
 //! \param L the \c lua_State
 static int CryptProxy(lua_State* L) {
@@ -97,55 +71,112 @@ static int CryptProxy(lua_State* L) {
     return 1;
 }
 
-//! Handles lua get_descriptor_names.
+//! Handles lua print — writes to LOGGER_LUA.
 //! \param L the \c lua_State
-static int DescriptorNamesProxy(lua_State* L) {
-    auto& lua = Lua::CheckLua(L);
-    auto& game = Lua::CheckGame(L);
-    StringSetCi names;
-    for (auto& d: game.GetDescriptors()) {
-	if (d && !d->Closed())
-	    names.insert(d->GetName());
+static int PrintProxy(lua_State* L) {
+    const int howMany = lua_gettop(L);
+    luaL_Buffer buffer;
+    luaL_buffinit(L, &buffer);
+    for (auto n = 1; n <= howMany; ++n) {
+	if (n > 1)
+	    luaL_addchar(&buffer, '\t');
+	luaL_tolstring(L, n, nullptr);
+	luaL_addvalue(&buffer);
     }
-    lua.PushStringSet(std::move(names));
+    luaL_pushresult(&buffer);
+    LOGGER_LUA() << Lua::CheckString(L, -1);
+    lua_pop(L, 1);
+    return 0;
+}
+
+//! Handles lua prune_world(world [, force]).
+//! \param L the \c lua_State
+static int PruneWorldProxy(lua_State* L) {
+    const int argc = lua_gettop(L);
+    if (argc != 1 && argc != 2)
+	return luaL_error(L, "prune_world expects 1 or 2 arguments");
+    auto& game = Lua::CheckGame(L);
+    auto world = Detail::LuaValue<WorldPtr>::Check(L, 1);
+    bool force = false;
+    if (argc == 2)
+	force = lua_toboolean(L, 2) != 0;
+    Lua::CheckLua(L).PushBool(game.PruneWorld(world, force));
     return 1;
 }
 
-//! Handles lua erase_instance(instance).
+//! Handles lua shutdown.
 //! \param L the \c lua_State
-static int EraseInstanceProxy(lua_State* L) {
-    if (lua_gettop(L) != 1)
-	return luaL_error(L, "erase_instance expects 1 argument");
-    InstancePtr instance;
-    if (!lua_isnil(L, 1))
-	instance = Lua::CheckWeakUserdata<Instance>(
-	    L, "Scratch.Instance", "invalid instance", 1);
-    if (instance)
-	instance->Remove();
+static int ShutdownProxy(lua_State* L) {
+    if (lua_gettop(L) != 0)
+	return luaL_error(L, "shutdown expects no arguments");
+
+    Lua::CheckGame(L).SetShutdown(true);
     return 0;
+}
+
+//! Handles World:get_prune().
+//! \param L the \c lua_State
+static int WorldGetPruneProxy(lua_State* L) {
+    if (lua_gettop(L) != 1)
+	return luaL_error(L, "get_prune expects no arguments");
+    auto world = Detail::LuaValue<WorldPtr>::Check(L, 1);
+    if (!world) {
+	lua_pushnil(L);
+	return 1;
+    }
+    const auto info = world->GetPrune(
+	Scheduler::Task::Clock::now());
+    lua_createtable(L, 0, 5);
+    lua_pushboolean(L, info.graceArmed);
+    lua_setfield(L, -2, "grace_armed");
+    if (info.graceArmed) {
+	auto& lua = Lua::CheckLua(L);
+	lua.PushString(Strings::FormatDuration(info.graceRemaining));
+	lua_setfield(L, -2, "grace_remaining");
+    } else {
+	lua_pushnil(L);
+	lua_setfield(L, -2, "grace_remaining");
+    }
+    lua_pushinteger(L, static_cast<lua_Integer>(info.occupants));
+    lua_setfield(L, -2, "occupants");
+    lua_pushboolean(L, info.protected_);
+    lua_setfield(L, -2, "protected");
+    lua_pushboolean(L, info.IsReady());
+    lua_setfield(L, -2, "ready");
+    return 1;
 }
 
 //! Registers Game free functions on \p lua.
 //! \param lua the Lua facade
 void GameBindings::Register(Lua& lua) {
     lua.Class<World>("Scratch.World").
+	Function("add_instance", &World::AddInstance).
 	Function("get_id", &World::GetId).
 	Function("get_instance", &World::GetInstance).
-	Function("get_instances", &World::GetInstances);
+	Function("get_instances", &World::GetInstances).
+	Function("get_room_instance", &World::GetRoomInstance).
+	Function("get_source_zone", &World::GetSourceZone).
+	RawFunction("get_prune", WorldGetPruneProxy).
+	Function("remove_instance", &World::RemoveInstance);
 
-    lua.Function("get_config", &Game::GetConfig);
     lua.RawFunction("broadcast", BroadcastProxy);
+    lua.Function("create_world", &Game::CreateWorld, Optional(String()));
     lua.RawFunction("crypt", CryptProxy);
+    lua.Function("get_config", &Game::GetConfig);
     lua.Function("get_descriptor", &Game::GetDescriptor);
-    lua.RawFunction("get_descriptor_names", DescriptorNamesProxy);
+    lua.Function("get_descriptor_names", &Game::GetDescriptorNames);
     lua.Function("get_instance_for", &Game::GetInstanceFor);
-    lua.RawFunction("erase_instance", EraseInstanceProxy);
     lua.Function("get_players", &Game::GetPlayers);
+    lua.Function("get_room", &Game::GetRoom, Optional(InstancePtr()));
+    lua.Function("get_room_instance", &Game::GetRoomInstance, Optional(InstancePtr()));
+    lua.Function("get_start_room", &Game::GetStartRoom);
     lua.Function("get_states", &Game::GetStates);
     lua.Function("get_users", &Game::GetUsers);
     lua.Function("get_world", &Game::GetWorld);
     lua.Function("get_worlds", &Game::GetWorlds);
+    lua.Function("get_zones", &Game::GetZones);
     lua.RawFunction("print", PrintProxy);
+    lua.RawFunction("prune_world", PruneWorldProxy);
     lua.RawFunction("shutdown", ShutdownProxy);
 }
 

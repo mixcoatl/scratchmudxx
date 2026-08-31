@@ -14,13 +14,19 @@
 
 // Forward declarations.
 namespace Scratch {
+namespace Scripting {
+class DescriptorBindings;
+}; // namespace Scripting
 namespace Core {
 class Command;
 class Game;
 class Instance;
 class Player;
+class Room;
+class RoomExit;
 class State;
 class User;
+class Zone;
 }; // namespace Core
 }; // namespace Scratch
 
@@ -31,12 +37,14 @@ namespace Net {
 class Editor;
 class Menu;
 class Protocol;
+class Descriptor;
 
 // Boost types.
 using ErrorCode = boost::system::error_code;
 using MutableBuffersType = boost::asio::streambuf::mutable_buffers_type;
 using Socket = boost::asio::ip::tcp::socket;
 using StreamBuf = boost::asio::streambuf;
+using WeakDescriptorPtr = std::weak_ptr<Descriptor>;
 
 // ScratchMUD types.
 using Command = Scratch::Core::Command;
@@ -48,10 +56,16 @@ using InstancePtr = std::shared_ptr<Instance>;
 using MenuPtr = std::shared_ptr<Menu>;
 using Player = Scratch::Core::Player;
 using PlayerPtr = std::shared_ptr<Player>;
+using Room = Scratch::Core::Room;
+using RoomPtr = std::shared_ptr<Room>;
+using RoomExit = Scratch::Core::RoomExit;
+using RoomExitPtr = std::shared_ptr<RoomExit>;
 using State = Scratch::Core::State;
 using StatePtr = std::shared_ptr<State>;
 using User = Scratch::Core::User;
 using UserPtr = std::shared_ptr<User>;
+using Zone = Scratch::Core::Zone;
+using ZonePtr = std::shared_ptr<Zone>;
 
 //! The descriptor class. \{
 class Descriptor: public std::enable_shared_from_this<Descriptor> {
@@ -92,6 +106,27 @@ public:
     //! \sa #EnsureMenu()
     //! \sa #GetMenu() const
     void ClearMenu() noexcept;
+
+    //! Clears the command edit draft.
+    void ClearEditCommand();
+
+    //! Clears the room-exit edit draft.
+    void ClearEditExit();
+
+    //! Clears the player edit draft.
+    void ClearEditPlayer();
+
+    //! Clears the room edit draft.
+    void ClearEditRoom();
+
+    //! Clears the state edit draft.
+    void ClearEditState();
+
+    //! Clears the user edit draft.
+    void ClearEditUser();
+
+    //! Clears the zone edit draft.
+    void ClearEditZone();
 
     //! Closes the descriptor.
     //! \sa #Closed() const
@@ -153,6 +188,24 @@ public:
     //! \sa #SetEditPlayer(const PlayerPtr&)
     PlayerPtr GetEditPlayer() const noexcept {
 	return editPlayer_;
+    }
+
+    //! Gets the zone being edited.
+    //! \sa #SetEditZone(const ZonePtr&)
+    ZonePtr GetEditZone() const noexcept {
+	return editZone_;
+    }
+
+    //! Gets the room being edited.
+    //! \sa #SetEditRoom(const RoomPtr&)
+    RoomPtr GetEditRoom() const noexcept {
+	return editRoom_;
+    }
+
+    //! Gets the room exit being edited.
+    //! \sa #SetEditExit(const RoomExitPtr&)
+    RoomExitPtr GetEditExit() const noexcept {
+	return editExit_;
     }
 
     //! Gets the connection state being edited.
@@ -276,9 +329,8 @@ public:
     //! Sets the command being edited.
     //! \param editCommand the command draft being edited
     //! \sa #GetEditCommand() const
-    void SetEditCommand(const CommandPtr& editCommand) {
-	editCommand_ = editCommand;
-    }
+    CommandPtr SetEditCommand(
+	const CommandPtr& editCommand = nullptr);
 
     //! Sets the original canonical key of the Thing draft.
     //! \sa #GetEditName() const
@@ -289,16 +341,26 @@ public:
     //! Sets the player being edited.
     //! \param editPlayer the player draft being edited
     //! \sa #GetEditPlayer() const
-    void SetEditPlayer(const PlayerPtr& editPlayer) {
-	editPlayer_ = editPlayer;
-    }
+    PlayerPtr SetEditPlayer(
+	const PlayerPtr& editPlayer = nullptr);
+
+    //! Sets the room exit being edited.
+    //! \param editExit the room exit draft being edited
+    //! \sa #GetEditExit() const
+    RoomExitPtr SetEditExit(
+	const RoomExitPtr& editExit = nullptr);
+
+    //! Sets the room being edited.
+    //! \param editRoom the room draft being edited
+    //! \sa #GetEditRoom() const
+    RoomPtr SetEditRoom(
+	const RoomPtr& editRoom = nullptr);
 
     //! Sets the connection state being edited.
     //! \param editState the connection state being edited
     //! \sa #GetEditState() const
-    void SetEditState(const StatePtr& editState) {
-	editState_ = editState;
-    }
+    StatePtr SetEditState(
+	const StatePtr& editState = nullptr);
 
     //! Sets the multi-step edit string.
     //! \param editString the value to store
@@ -310,9 +372,14 @@ public:
     //! Sets the user being edited.
     //! \param editUser the user draft being edited
     //! \sa #GetEditUser() const
-    void SetEditUser(const UserPtr& editUser) {
-	editUser_ = editUser;
-    }
+    UserPtr SetEditUser(
+	const UserPtr& editUser = nullptr);
+
+    //! Sets the zone being edited.
+    //! \param editZone the zone draft being edited
+    //! \sa #GetEditZone() const
+    ZonePtr SetEditZone(
+	const ZonePtr& editZone = nullptr);
 
     //! Sets the attached character.
     //! \param instance the instance, or null to clear
@@ -414,6 +481,17 @@ public:
     void WriteRaw(const String& message);
 
 protected:
+    friend class Scratch::Scripting::DescriptorBindings;
+
+    //! Returns whether the descriptor is closed or expired.
+    //! \param descriptor the descriptor
+    static bool ClosedProxy(WeakDescriptorPtr descriptor) noexcept;
+
+    //! Gets a finished editor from the descriptor.
+    //! \param descriptor the descriptor
+    //! \return the finished editor, or \c nullptr
+    static EditorPtr GetEditorProxy(WeakDescriptorPtr descriptor) noexcept;
+
     //! The color bit.
     //! \sa #GetColorBit() const
     //! \sa #SetColorBit(const bool)
@@ -423,6 +501,11 @@ protected:
     //! \sa #GetEditCommand() const
     //! \sa #SetEditCommand(const CommandPtr&)
     CommandPtr editCommand_;
+
+    //! The room exit being edited.
+    //! \sa #GetEditExit() const
+    //! \sa #SetEditExit(const RoomExitPtr&)
+    RoomExitPtr editExit_;
 
     //! The original canonical key of the Thing draft.
     //! \remark Empty when the draft is new. Kind is implied by the editor state.
@@ -434,6 +517,11 @@ protected:
     //! \sa #GetEditPlayer() const
     //! \sa #SetEditPlayer(const PlayerPtr&)
     PlayerPtr editPlayer_;
+
+    //! The room being edited.
+    //! \sa #GetEditRoom() const
+    //! \sa #SetEditRoom(const RoomPtr&)
+    RoomPtr editRoom_;
 
     //! The connection state being edited.
     //! \sa #GetEditState() const
@@ -450,6 +538,11 @@ protected:
     //! \sa #GetEditUser() const
     //! \sa #SetEditUser(const UserPtr&)
     UserPtr editUser_;
+
+    //! The zone being edited.
+    //! \sa #GetEditZone() const
+    //! \sa #SetEditZone(const ZonePtr&)
+    ZonePtr editZone_;
 
     //! The game state.
     Game& game_;

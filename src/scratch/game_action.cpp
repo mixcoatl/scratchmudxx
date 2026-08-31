@@ -289,6 +289,34 @@ String ExpandMessage(
     return out;
 }
 
+//! Returns action audience from slot instance rooms.
+//! \param subject the subject slot
+//! \param direct the direct slot
+//! \param indirect the indirect slot
+//! \param extra the extra slot
+std::set<InstancePtr> GetActionAudience(
+	const ActionParam& subject,
+	const ActionParam& direct,
+	const ActionParam& indirect,
+	const ActionParam& extra) {
+    std::set<InstancePtr> audience;
+    const ActionParam actionParams[] = {
+	subject, direct, indirect, extra
+    };
+    for (const auto& actionParam: actionParams) {
+	const auto actionInstance = actionParam.GetInstance();
+	const auto actionRoom = actionInstance ?
+		actionInstance->GetParentRoom() : InstancePtr();
+	if (!actionRoom)
+	    continue;
+	for (const auto& occupant: actionRoom->GetContents()) {
+	    if (occupant)
+		audience.insert(occupant);
+	}
+    }
+    return audience;
+}
+
 } // namespace
 
 //! Sends an action message.
@@ -310,36 +338,25 @@ void Game::Action(
     if (message.empty() || targets == 0)
 	return;
 
-    std::set<InstancePtr> audience;
-    auto addInstance = [&audience](const ActionParam& param) {
-	if (param.GetInstance())
-	    audience.insert(param.GetInstance());
-    };
-    addInstance(subject);
-    addInstance(direct);
-    addInstance(indirect);
-    addInstance(extra);
-
-    for (auto& d: this->GetDescriptors()) {
-	if (!d || d->Closed())
-	    continue;
-	auto instance = d->GetCharacter();
-	if (instance)
-	    audience.insert(instance);
-    }
-
     const auto subjectInstance = subject.GetInstance();
-    const auto victInstance = direct.GetInstance() ?
-	    direct.GetInstance() :
-	    (indirect.GetInstance() ? indirect.GetInstance() : InstancePtr());
+    const auto directInstance = direct.GetInstance();
+    const auto indirectInstance = indirect.GetInstance();
+    const auto extraInstance = extra.GetInstance();
+    const auto audience = GetActionAudience(
+	    subject, direct, indirect, extra);
 
     for (const auto& recipient: audience) {
 	if (!recipient)
 	    continue;
 	const bool isChar =
 		subjectInstance && recipient == subjectInstance;
-	const bool isVict =
-		victInstance && recipient == victInstance;
+	bool isVict = false;
+	if (directInstance && recipient == directInstance)
+	    isVict = true;
+	if (indirectInstance && recipient == indirectInstance)
+	    isVict = true;
+	if (extraInstance && recipient == extraInstance)
+	    isVict = true;
 	const bool isOther = !isChar && !isVict;
 
 	if (isChar && !(targets & ACT_TOCHAR))
@@ -485,7 +502,7 @@ void Game::RunCommandHook(
     const auto action = command->GetAction();
     const auto social = command->GetSocial();
     if (action.empty() && social) {
-	this->RunSocial(performer, social, line);
+	command->PerformSocial(*this, performer, line);
 	return;
     }
     if (action.empty())
@@ -496,10 +513,11 @@ void Game::RunCommandHook(
     if (!caller.IsActive())
 	return;
 
-    lua.PushUserdata(performer, "Scratch.Instance");
+    lua.PushUserdata(
+	performer, "Scratch.Instance");
     lua.SetEnv("actor");
 
-    lua.PushUserdata(command, Scripting::CommandBindings::MetaName);
+    lua.PushUserdata(command, "Scratch.Command");
     lua.SetEnv("command");
 
     lua.PushString(line);
@@ -509,68 +527,6 @@ void Game::RunCommandHook(
 	Scripting::ColorBindings::AssignQ(lua, *d);
 
     lua.Execute(action);
-}
-
-//! Runs social templates for \p actor.
-//! \param actor the performing instance
-//! \param social the social templates
-//! \param line the remainder after the matched command word
-//! \sa #RunCommandHook(const CommandPtr&, const InstancePtr&, const String&)
-void Game::RunSocial(
-	const InstancePtr& actor,
-	const SocialPtr& social,
-	const String& line) {
-    if (!actor || !social)
-	return;
-
-    const auto printMiss = [&actor]() {
-	auto d = actor->GetDescriptor();
-	if (!d || d->Closed())
-	    return;
-	String out;
-	out += d->GetColor(Color::C_FAILED);
-	out += "You don't see them here.";
-	out += d->GetColor(Color::C_NORMAL);
-	out += "\r\n";
-	d->Print(out);
-    };
-
-    Parser parser;
-    if (!parser.Parse(line)) {
-	printMiss();
-	return;
-    }
-
-    String message;
-    ActionParam direct;
-    if (!parser.GetSize()) {
-	message = social->GetNoArgument();
-    } else if (parser.GetSize() != 1) {
-	printMiss();
-	return;
-    } else {
-	auto target = actor->Find(*this, parser.GetPhrase(0));
-	if (!target) {
-	    printMiss();
-	    return;
-	} else if (target == actor) {
-	    message = social->GetFoundAuto();
-	    if (message.empty())
-		message = social->GetFound();
-	} else {
-	    message = social->GetFound();
-	}
-	direct = ActionParam(target);
-    }
-    if (message.empty())
-	return;
-
-    this->Action(
-	    Color::C_SOCIAL,
-	    ACT_TOALL | ACT_NOREPEAT,
-	    message,
-	    ActionParam(actor),
-	    direct);
 }
 
 //! Rebuilds the keyword command index.

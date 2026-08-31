@@ -10,6 +10,7 @@
 
 #include <scratch/game.hpp>
 #include <scratch/gender.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/player.hpp>
 #include <scratch/player_bindings.hpp>
@@ -77,22 +78,29 @@ static void RegisterPlayerMeta(Lua& lua) {
 	Function("get_created", &Player::GetCreated).
 	Function("get_created_by", &Player::GetCreatedBy).
 	Function("get_gender", &Player::GetGender).
+	Function("get_load_room", &Player::GetLoadRoom).
 	Function("get_modified", &Player::GetModified).
 	Function("get_modified_by", &Player::GetModifiedBy).
 	Function("get_name", &Player::GetName).
 	Function("get_owner", &Player::GetOwner).
+	Function("get_poof_in", &Player::GetPoofIn).
+	Function("get_poof_out", &Player::GetPoofOut).
 	Function("get_preferences", &Player::GetPreferences).
 	Function("get_trust", &Player::GetTrust).
 	Function("has_preference", &Player::HasPreference).
 	Function("set_created", &Player::SetCreated).
 	Function("set_created_by", &Player::SetCreatedBy).
 	Function("set_gender", &Player::SetGender).
+	Function("set_load_room", &Player::SetLoadRoom).
 	Function("set_modified", &Player::SetModified).
 	Function("set_modified_by", &Player::SetModifiedBy).
 	Function("set_name", &PlayerSetName, Injected<Game>()).
 	Function("set_owner", &Player::SetOwner).
+	Function("set_poof_in", &Player::SetPoofIn).
+	Function("set_poof_out", &Player::SetPoofOut).
 	Function("set_preferences", &Player::SetPreferences).
-	Function("set_trust", &Player::SetTrust);
+	Function("set_trust", &Player::SetTrust).
+	Function("synchronize", &Player::Synchronize);
 }
 
 //! Resolves a PlayerRepository userdata at \p index.

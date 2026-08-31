@@ -42,7 +42,8 @@ public:
 	    storage_(std::move(storage)),
 	    things_(),
 	    changeHook_(),
-	    reloadHook_() {
+	    reloadHook_(),
+	    saveHook_() {
 	// Nothing.
     }
 
@@ -56,6 +57,12 @@ public:
     //! \param hook the hook to invoke after a successful index reload
     void SetReloadHook(std::function<void()> hook) {
 	reloadHook_ = std::move(hook);
+    }
+
+    //! Sets the save hook.
+    //! \param hook the hook to invoke before a successful save
+    void SetSaveHook(std::function<void(const String&, const ThingPtr&)> hook) {
+	saveHook_ = std::move(hook);
     }
 
     //! Clears the repository.
@@ -180,6 +187,8 @@ public:
 	    LOGGER_STORAGE() << thingId << " not in " << storage_.GetLabel() << " repository.";
 	    return false;
 	}
+	if (saveHook_)
+	    saveHook_(thingId, thing);
 	return storage_.Write(thingId, thing, things_);
     }
 
@@ -250,6 +259,9 @@ protected:
 
     //! The index reload hook.
     std::function<void()> reloadHook_;
+
+    //! The save hook.
+    std::function<void(const String&, const ThingPtr&)> saveHook_;
 };
 //! \}
 

@@ -1,0 +1,1362 @@
+Name: Midgaard~
+Rooms:
+  ReadingRoom:
+    Description:-
+         You are in a small, simple room which is mostly empty, save a few
+      wooden desks and benches.  To the east you hear the bustle of the Temple
+      of Midgaard, a sharp contrast to the relative quiet of this peaceful
+      room.
+      ~
+    Exits:
+      East: TempleOfMidgaard~
+      ~
+    Title: The Reading Room~
+    ~
+  TempleOfMidgaard:
+    Description:-
+         You are in the southern end of the temple hall in the Temple of Midgaard.
+      The temple has been constructed from giant marble blocks, eternal in
+      appearance, and most of the walls are covered by ancient wall paintings
+      picturing Gods, Giants and peasants.
+         Large steps lead down through the grand temple gate, descending the huge
+      mound upon which the temple is built and ends on the temple square below.
+      To the west, you see the Reading Room.  The donation room is in a small
+      alcove to your east.
+      ~
+    Exits:
+      Down: TempleSquare~
+      East: MidgaardDonationRoom~
+      North: ByTempleAltar~
+      South: TempleSquare~
+      West: ReadingRoom~
+      ~
+    Title: The Temple Of Midgaard~
+    ~
+  ClericsInnerSanctum:
+    Description:-
+         This is the inner sanctum.  A picture of the mighty Thor, is hanging on
+      the wall, just above the altar which is set against the western wall.  A well
+      in the middle of the floor leads down into darkness.  Vile smells waft from
+      the depths.
+      ~
+    Exits:
+      East: BarDivination~
+      ~
+    Title: The Clerics' Inner Sanctum~
+    ~
+  BarDivination:
+    Description:-
+         The bar is one of the finest in the land, lucky it is members only.  Fine
+      furniture is set all around the room.  A small sign is hanging on the wall.
+      ~
+    Exits:
+      South: EntranceClericsGuild~
+      West: ClericsInnerSanctum~
+      ~
+    Title: The Bar Of Divination~
+    ~
+  EntranceClericsGuild:
+    Description:-
+         The entrance hall is a small modest room, reflecting the true nature of
+      the Clerics.  The exit leads east to the temple square.  A small entrance to
+      the bar is in the northern wall.
+      ~
+    Exits:
+      East: TempleSquare~
+      North: BarDivination~
+      ~
+    Title: The Entrance To The Clerics' Guild~
+    ~
+  TempleSquare:
+    Description:-
+         You are standing on the temple square.  Huge marble steps lead up to the
+      temple gate.  The entrance to the Clerics' Guild is to the west, and the old
+      Grunting Boar Inn, is to the east.  Just south of here you see the market
+      square, the center of Midgaard.
+      ~
+    Exits:
+      East: EntranceHallGruntingBoarInn~
+      North: TempleOfMidgaard~
+      South: MarketSquare~
+      West: EntranceClericsGuild~
+      ~
+    Title: The Temple Square~
+    ~
+  EntranceHallGruntingBoarInn:
+    Description:-
+         You are standing in the entrance hall of the Grunting Boar Inn.  The hall
+      has been wisely decorated with simple, functional furniture.  The heavy smell
+      of dust and aging paper drifts in from the Post Office to the north.  A small
+      staircase leads up to the reception and the bar is to the east.
+      ~
+    Exits:
+      East: GruntingBoar~
+      North: PostOffice~
+      Up: Reception~
+      West: TempleSquare~
+      ~
+    Title: The Entrance Hall Of The Grunting Boar Inn~
+    ~
+  GruntingBoar:
+    Description:-
+         You are standing in the bar.  The bar is set against the northern wall, old
+      archaic writing, carvings and symbols cover its top.  A fireplace is built into
+      the western wall, and through the southeastern windows you can see the temple
+      square.  This place makes you feel like home.
+      A small sign with big letters is fastened to the bar.
+      ~
+    Exits:
+      West: EntranceHallGruntingBoarInn~
+      ~
+    Title: The Grunting Boar~
+    ~
+  Reception:
+    Description:-
+         You are standing in the reception.  The staircase leads down to the
+      entrance hall.  An exit to the north leads to the Cryogenic Center.
+      There is a small sign on the counter.
+      ~
+    Exits:
+      Down: EntranceHallGruntingBoarInn~
+      North: CryogenicCenter~
+      ~
+    Title: The Reception~
+    ~
+  Bakery:
+    Description:-
+         You are standing inside the small bakery.  A sweet scent of Danish and
+      fine bread fills the room.  The bread and Danish are arranged in fine order
+      on the shelves, and seem to be of the finest quality.
+      A small sign is on the counter.
+      ~
+    Exits:
+      South: MainStreet2~
+      ~
+    Title: The Bakery~
+    ~
+  GeneralStore:
+    Description:-
+         You are inside the general store.  All sorts of items are stacked on shelves
+      behind the counter, safely out of your reach.
+      A small note hangs on the wall.
+      ~
+    Exits:
+      South: MainStreet3~
+      ~
+    Title: The General Store~
+    ~
+  WeaponShop:
+    Description:-
+         You are inside the weapon shop.  There is a small note on the counter.
+      ~
+    Exits:
+      South: MainStreet4~
+      ~
+    Title: The Weapon Shop~
+    ~
+  MainStreet:
+    Description:-
+         You are at the end of the main street of Midgaard.  South of here is the
+      entrance to the Guild of Magic Users.  The street continues east towards the
+      market square.  The magic shop is to the north and to the west is the city
+      gate.
+      ~
+    Exits:
+      East: MainStreet2~
+      North: MagicShop~
+      South: EntranceMagesGuild~
+      West: InsideWestGateMidgaard~
+      ~
+    Title: Main Street~
+    ~
+  MainStreet2:
+    Description:-
+         You are on the main street passing through the City of Midgaard.  South of
+      here is the entrance to the Armory, and the bakery is to the north.  East of
+      here is the market square.
+      ~
+    Exits:
+      East: MarketSquare~
+      North: Bakery~
+      South: Armory~
+      West: MainStreet~
+      ~
+    Title: Main Street~
+    ~
+  MarketSquare:
+    Description:-
+         You are standing on the market square, the famous Square of Midgaard.
+      A large, peculiar looking statue is standing in the middle of the square.
+      Roads lead in every direction, north to the temple square, south to the
+      common square, east and westbound is the main street.
+      ~
+    Exits:
+      East: MainStreet3~
+      North: TempleSquare~
+      South: CommonSquare~
+      West: MainStreet2~
+      ~
+    Title: Market Square~
+    ~
+  MainStreet3:
+    Description:-
+         You are on the main street crossing through town.  To the north is the
+      general store, and the main street continues east.  To the west you see and
+      hear the market place, to the south a small door leads into the Pet Shop.
+      ~
+    Exits:
+      East: MainStreet4~
+      North: GeneralStore~
+      South: PetShop~
+      West: MarketSquare~
+      ~
+    Title: Main Street~
+    ~
+  MainStreet4:
+    Description:-
+         The main street, to the north is the weapon shop and to the south is the
+      Guild of Swordsmen.  To the east you leave town and to the west the street
+      leads to the market square.
+      ~
+    Exits:
+      East: InsideEastGateMidgaard~
+      North: WeaponShop~
+      South: EntranceHallGuildSwordsmen~
+      West: MainStreet3~
+      ~
+    Title: Main Street~
+    ~
+  EntranceMagesGuild:
+    Description:-
+         The entrance hall to this guild is a small, poor lighted room.
+      ~
+    Exits:
+      North: MainStreet~
+      South: MagesBar~
+      ~
+    Title: The Entrance To The Mages' Guild~
+    ~
+  MagesBar:
+    Description:-
+         The bar is one of the weirdest in the land.  Mystical images float around
+      the air.  Illusions of fine furniture appear all around the room.
+      ~
+    Exits:
+      East: MagesLaboratory~
+      North: EntranceMagesGuild~
+      ~
+    Title: The Mages' Bar~
+    ~
+  MagesLaboratory:
+    Description:-
+         This is the Magical Experiments Laboratory.  Dark smoke-stained stones
+      arch over numerous huge oaken tables, most of these cluttered with strange-
+      looking pipes and flasks.  The floor is covered with half-erased pentagrams
+      and even weirder symbols, and a blackboard in a dark corner has only been
+      partially cleaned, some painful-looking letters faintly visible.  A well in
+      the middle of the floor leads down into darkness.  Vile smells waft from the
+      depths.
+      ~
+    Exits:
+      West: MagesBar~
+      ~
+    Title: The Mages' Laboratory~
+    ~
+  Armory:
+    Description:-
+         The armory with all kinds of armors on the walls and in the window.  You
+      see helmets, shields and chain mails.  To the north is the main street.
+      On the wall is a small note.
+      ~
+    Exits:
+      North: MainStreet2~
+      ~
+    Title: The Armory~
+    ~
+  EntranceHallGuildSwordsmen:
+    Description:-
+         The entrance hall to the Guild of Swordsmen.  A place where one has to be
+      careful not to say something wrong (or right).  To the east is the bar and to
+      the north is the main street.
+      ~
+    Exits:
+      East: BarSwordsmen~
+      North: MainStreet4~
+      ~
+    Title: The Entrance Hall To The Guild Of Swordsmen~
+    ~
+  BarSwordsmen:
+    Description:-
+         The bar of swordsmen, once upon a time beautifully furnished.  But now the
+      furniture is all around you in small pieces.  To the south is the yard, and
+      to the west is the entrance hall.
+      ~
+    Exits:
+      South: TournamentPracticeYard~
+      West: EntranceHallGuildSwordsmen~
+      ~
+    Title: The Bar Of Swordsmen~
+    ~
+  TournamentPracticeYard:
+    Description:-
+         This is the practice yard of the fighters.  To the north is the bar.
+      A well leads down into darkness.
+      ~
+    Exits:
+      North: BarSwordsmen~
+      ~
+    Title: The Tournament And Practice Yard~
+    ~
+  EasternEndPoorAlley:
+    Description:-
+         You are at the poor alley.  South of here is the Grubby Inn and to the
+      east you see common square.  The alley continues further west.
+      ~
+    Exits:
+      East: CommonSquare~
+      South: GrubbyInn~
+      West: PoorAlley~
+      ~
+    Title: The Eastern End Of Poor Alley~
+    ~
+  CommonSquare:
+    Description:-
+         The common square, people pass you, talking to each other.  To the west is
+      the poor alley and to the east is the dark alley.  To the north, this square
+      is connected to the market square.  From the south you notice a nasty smell.
+      ~
+    Exits:
+      East: DarkAlley~
+      North: MarketSquare~
+      South: Dump~
+      West: EasternEndPoorAlley~
+      ~
+    Title: The Common Square~
+    ~
+  DarkAlley:
+    Description:-
+         The dark alley, to the west is the common square and to the south is the
+      Guild of Thieves.  The alley continues east.
+      ~
+    Exits:
+      East: DarkAlleyLevee~
+      South: EntranceHallGuildThieves~
+      West: CommonSquare~
+      ~
+    Title: The Dark Alley~
+    ~
+  EntranceHallGuildThieves:
+    Description:-
+         The entrance hall to the thieves' and assassins' guild.  A place where you
+      can lose both your life and your money, if you are not careful.  To the north
+      is the dark alley and to the east is the thieves' bar.
+      ~
+    Exits:
+      East: ThievesBar~
+      North: DarkAlley~
+      ~
+    Title: The Entrance Hall To The Guild Of Thieves~
+    ~
+  ThievesBar:
+    Description:-
+         The bar of the thieves.  Once upon a time this place was beautifully
+      furnished, but now it seems almost empty.  To the south is the yard, and to
+      the west is the entrance hall.
+         (Maybe the furniture has been stolen?!)
+      ~
+    Exits:
+      South: SecretYard~
+      West: EntranceHallGuildThieves~
+      ~
+    Title: The Thieves' Bar~
+    ~
+  SecretYard:
+    Description:-
+         The secret practice yard of thieves and assassins.  To the north is the
+      bar.  A well leads down into darkness.
+      ~
+    Exits:
+      North: ThievesBar~
+      ~
+    Title: The Secret Yard~
+    ~
+  Dump:
+    Description:-
+         The dump, where the people from the city drop their garbage.  Through the
+      garbage you can see a large junction of pipes, looks like the entrance to the
+      sewer system.  North of here you see the common square.
+      ~
+    Exits:
+      North: CommonSquare~
+      ~
+    Title: The Dump~
+    ~
+  PetShop:
+    Description:-
+         The Pet Shop is a small crowded store, full of cages and animals of
+      various sizes.  There is a sign on the wall.
+      ~
+    Exits:
+      North: MainStreet3~
+      ~
+    Title: The Pet Shop~
+    ~
+  PetShopStore:
+    Description:-
+         This  is the small dark room in which the Pet shop keeps his pets.
+      It is vital that this room's virtual number is exactly one larger
+      than the Pet Shop number.
+      ~
+    Title: Pet Shop Store~
+    ~
+  MagicShop:
+    Description:-
+         Behind the counter you see various items, neatly placed in racks,
+      presumably most of them are magic.
+      ~
+    Exits:
+      South: MainStreet~
+      ~
+    Title: The Magic Shop~
+    ~
+  InsideWestGateMidgaard:
+    Description:-
+         You are by two small towers that have been built into the city wall and
+      connected with a footbridge across the heavy wooden gate.  Main Street leads
+      east and Wall Road leads south from here.
+      ~
+    Exits:
+      East: MainStreet~
+      South: WallRoad~
+      West: OutsideWestGateMidgaard~
+      ~
+    Title: Inside The West Gate Of Midgaard~
+    ~
+  InsideEastGateMidgaard:
+    Description:-
+         You are by two small towers that have been built into the city wall and
+      connected with a footbridge across the heavy wooden gate.  Main Street leads
+      west from here.  To the south you see the Water Shop.
+      ~
+    Exits:
+      East: OutsideEastGateMidgaard~
+      South: YeOldeWaterShoppe~
+      West: MainStreet4~
+      ~
+    Title: Inside The East Gate Of Midgaard~
+    ~
+  WallRoad:
+    Description:-
+         You are walking next to the western city wall.  The road continues further
+      south and the city gate is just north of here.
+      ~
+    Exits:
+      North: InsideWestGateMidgaard~
+      South: WallRoad2~
+      ~
+    Title: Wall Road~
+    ~
+  WallRoad2:
+    Description:-
+         You are walking next to the western city wall.  Wall Road continues further
+      north and south.  A small, poor alley leads east.
+      Some letters have been written on the wall here.
+      ~
+    Exits:
+      East: PoorAlley~
+      North: WallRoad~
+      South: WallRoad3~
+      ~
+    Title: Wall Road~
+    ~
+  PoorAlley:
+    Description:-
+         You are on Poor Alley, which continues further east.  You see the
+      city wall to the west.
+      ~
+    Exits:
+      East: EasternEndPoorAlley~
+      West: WallRoad2~
+      ~
+    Title: Poor Alley~
+    ~
+  DarkAlleyLevee:
+    Description:-
+         You are standing in the alley which continues east and west.  South of
+      here you see the levee.
+      ~
+    Exits:
+      East: EasternEndAlley~
+      South: Levee~
+      West: DarkAlley~
+      ~
+    Title: The Dark Alley At The Levee~
+    ~
+  EasternEndAlley:
+    Description:-
+         You are standing at the eastern end of the alley, the city wall is just
+      east, blocking any further movement.  A small warehouse is directly south of
+      here.
+      ~
+    Exits:
+      South: DesertedWarehouse~
+      West: DarkAlleyLevee~
+      ~
+    Title: The Eastern End Of The Alley~
+    ~
+  WallRoad3:
+    Description:-
+         You are standing on the road next to the western city wall, which
+      continues north.  South of here is a bridge across the river.
+      ~
+    Exits:
+      North: WallRoad2~
+      South: OnBridge~
+      ~
+    Title: Wall Road~
+    ~
+  GrubbyInn:
+    Description:-
+         You are inside the old Grubby Inn.  This place has not been cleaned for
+      several decades; vile smells make you dizzy.
+      ~
+    Exits:
+      North: EasternEndPoorAlley~
+      ~
+    Title: Grubby Inn~
+    ~
+  Levee:
+    Description:-
+         You are at the levee.  South of here you see the river gently flowing west.
+      The river bank is very low making it possible to enter the river.
+      ~
+    Exits:
+      North: DarkAlleyLevee~
+      South: OnRiver3~
+      ~
+    Title: The Levee~
+    ~
+  DesertedWarehouse:
+    Description:-
+         You are inside the warehouse.  The room is decorated with various old
+      items from ships.
+      ~
+    Exits:
+      North: EasternEndAlley~
+      ~
+    Title: The Deserted Warehouse~
+    ~
+  OnBridge:
+    Description:-
+         You are standing on the stone bridge crosses the river.  The bridge is
+      built out from the western city wall and the river flows west through an
+      opening in the wall ten feet below the bridge.
+      ~
+    Exits:
+      North: WallRoad3~
+      South: NorthwestEndConcourse~
+      ~
+    Title: On The Bridge~
+    ~
+  OutsideWestGateMidgaard:
+    Description:-
+         You are by two small towers that have been built into the city wall and
+      connected with a footbridge across the heavy wooden gate.  To the west you
+      can see the edge of a big forest.
+      ~
+    Exits:
+      East: InsideWestGateMidgaard~
+      ~
+    Title: Outside The West Gate Of Midgaard~
+    ~
+  OutsideEastGateMidgaard:
+    Description:-
+         You are by two small towers that have been built into the city wall and
+      connected with a footbridge across the heavy wooden gate.  To the east the
+      plains stretch out in the distance.
+      ~
+    Exits:
+      West: InsideEastGateMidgaard~
+      ~
+    Title: Outside The East Gate Of Midgaard~
+    ~
+  ByTempleAltar:
+    Description:-
+         You are by the temple altar in the northern end of the Temple of
+      Midgaard.  A huge altar made from white polished marble is standing
+      in front of you and behind it is a ten foot tall sitting statue of
+      Odin, the King of the Gods.
+         To the north, steps lead out the back of the temple towards the
+      countryside.
+      ~
+    Exits:
+      North: BehindTempleAltar~
+      South: TempleOfMidgaard~
+      ~
+    Title: By The Temple Altar~
+    ~
+  OdinsStore:
+    Description:-
+         This is the small dark room in which Odin keeps the player items that he
+      takes care of.  It is vital that this room's virtual number is exactly one
+      larger than the room by the temple altar.
+      ~
+    Title: Odin's Store~
+    ~
+  YeOldeWaterShoppe:
+    Description:-
+         You are standing in the center of a small wooden shop whose walls are
+      covered with racks upon racks of water jugs.  Several large barrels with
+      spigots are stacked in the corner.
+      ~
+    Exits:
+      North: InsideEastGateMidgaard~
+      ~
+    Title: Ye Olde Water Shoppe~
+    ~
+  BehindTempleAltar:
+    Description:-
+         You are on a dirt path leading away from the Temple Altar which is south
+      of here.  To the north, the path continues through the lush contryside of
+      Midgaard towards the Dragonhelm Mountains far off to the north.
+      ~
+    Exits:
+      North: GreatFieldMidgaard~
+      South: ByTempleAltar~
+      ~
+    Title: Behind The Temple Altar~
+    ~
+  GreatFieldMidgaard:
+    Description:-
+         You are walking on a wide dirt path through the lush, green, fresh
+      Midgaard countryside.  You can see to the horizon to the north, east,
+      and west; the busy city of Midgaard lies to the south.  All around you
+      is healthy green grass and an occasional large oak tree.  The sun feels
+      wonderful on your face and a pleasant wind blows through your hair.  Birds
+      chirp quietly to themselves and you can smell the faint scent of flowers
+      and freshly cut grass.  You feel like you could lie down in the grass and
+      stay here forever, surrounded by powerful beauty in all directions.
+         The path you are on continues north through the field and south back
+      to Midgaard.
+      ~
+    Exits:
+      North: GreatFieldMidgaard2~
+      South: BehindTempleAltar~
+      ~
+    Title: The Great Field Of Midgaard~
+    ~
+  GreatFieldMidgaard2:
+    Description:-
+         You are walking on a wide dirt path through the lush, green, fresh
+      Midgaard countryside.  You can see to the horizon to the north, east,
+      and west; the busy city of Midgaard lies to the south.  All around you
+      is healthy green grass and an occasional large oak tree.  The sun feels
+      wonderful on your face and a pleasant wind blows through your hair.  Birds
+      chirp quietly to themselves and you can smell the faint scent of flowers
+      and freshly cut grass.  You feel like you could lie down in the grass and
+      stay here forever, surrounded by powerful beauty in all directions.
+         There is a strange structure on the eastern side of the path.  A small
+      dirt path splits off of the main path and leads off to the west.
+      ~
+    Exits:
+      North: GreatFieldMidgaard3~
+      South: GreatFieldMidgaard~
+      West: DirtPath~
+      ~
+    Title: The Great Field Of Midgaard~
+    ~
+  PostOffice:
+    Description:-
+         You are in the central post office for Midgaard.  Piles of assorted mail
+      lay untouched in the corners, collecting cobwebs.  Several large crates have
+      been pried open by curious customs agents, and are now stacked along the west
+      wall, hiding plenty of 'WANTED' posters.
+      There is a sign posted on the wall here.
+      ~
+    Exits:
+      South: EntranceHallGruntingBoarInn~
+      ~
+    Title: The Post Office~
+    ~
+  MidgaardDonationRoom:
+    Description:-
+         You are in a small, undecorated room just off of the main temple.  There
+      are a couple of small wooden benches here where people occasionally sit
+      while they wait for items to appear.  The temple is to the west.
+      ~
+    Exits:
+      West: TempleOfMidgaard~
+      ~
+    Title: The Midgaard Donation Room~
+    ~
+  CryogenicCenter:
+    Description:-
+         You are standing in an impossible white sterile room with cylindrical
+      body-length canisters lined up against the walls.  The Reception is to the
+      south.
+      ~
+    Exits:
+      South: Reception~
+      ~
+    Title: The Cryogenic Center~
+    ~
+  GreatFieldMidgaard3:
+    Description:-
+         You are walking on a wide dirt path through the lush, green, fresh
+      Midgaard countryside.  You can see to the horizon to the north, east,
+      and west; the busy city of Midgaard lies to the south.  All around you
+      is healthy green grass and an occasional large oak tree.  The sun feels
+      wonderful on your face and a pleasant wind blows through your hair.  Birds
+      chirp quietly to themselves and you can smell the faint scent of flowers
+      and freshly cut grass.  You feel like you could lie down in the grass and
+      stay here forever, surrounded by powerful beauty in all directions.
+         The way north appears to be blocked by a large plot device and you cannot
+      see any way around it.
+      ~
+    Exits:
+      South: GreatFieldMidgaard2~
+      ~
+    Title: The Great Field Of Midgaard~
+    ~
+  DirtPath:
+    Description:-
+         You are walking along a narrow dirt path through the lush, green,
+      fresh Midgaard countryside.  You can see to the horizon to the north
+      and east; the busy city of Midgaard lies to the south.  All around
+      you is healthy green grass and an occasional large oak tree.  The sun
+      feels wonderful on your face and a pleasant wind blows through your
+      hair.  Birds chirp quietly to themselves and you can smell the faint
+      scent of flowers and freshly cut grass.  You feel like you could lie
+      down in the grass and stay here forever, surrounded by powerful beauty
+      in all directions.
+         There is a large rusty gate sitting in a stone archway just to the
+      west.
+      ~
+    Exits:
+      East: GreatFieldMidgaard2~
+      ~
+    Title: The Dirt Path~
+    ~
+  NorthwestEndConcourse:
+    Description:-
+         You are at the concourse, the city wall is just west.  A small promenade
+      goes east, and the bridge is just north of here.  The concourse continues
+      south along the city wall.
+      ~
+    Exits:
+      East: Promenade~
+      North: OnBridge~
+      South: OnConcourse~
+      ~
+    Title: The Northwest End Of The Concourse~
+    ~
+  Promenade:
+    Description:-
+         The river gently flows westwards just north of here.  The promenade
+      continues further east and to the west you see the city wall.  Park Road
+      leads south from here.
+      ~
+    Exits:
+      East: Promenade2~
+      South: ParkRoad5~
+      West: NorthwestEndConcourse~
+      ~
+    Title: The Promenade~
+    ~
+  Promenade2:
+    Description:-
+         The river gently flows westwards just north of here.  The promenade
+      continues both east and west.  South of here you see the entrance to
+      the park, and a small building seems to be just west of the entrance.
+      ~
+    Exits:
+      East: Promenade3~
+      South: ParkEntrance~
+      West: Promenade~
+      ~
+    Title: The Promenade~
+    ~
+  Promenade3:
+    Description:-
+         The river gently flows westwards just north of here.  The promenade
+      continues both east and west.  A small path leads south.  Looking across
+      the river you see the levee.
+      ~
+    Exits:
+      East: NortheastEndConcourse~
+      South: EmeraldAvenue5~
+      West: Promenade2~
+      ~
+    Title: The Promenade~
+    ~
+  NortheastEndConcourse:
+    Description:-
+         You are at the Concourse.  The city wall is just east and a small
+      promenade goes west.  Looking across the river you see a building that
+      resembles a warehouse.  The Concourse continues south along the city
+      wall.
+      ~
+    Exits:
+      South: OnConcourse4~
+      West: Promenade3~
+      ~
+    Title: The Northeast End Of The Concourse~
+    ~
+  ParkEntrance:
+    Description:-
+         You are standing just inside the small park of Midgaard.  To the north is
+      the promenade and a small path leads south into the park.  To your east is
+      the famous Park Cafe.
+      ~
+    Exits:
+      East: ParkCafe~
+      North: Promenade2~
+      South: SmallPathPark2~
+      ~
+    Title: The Park Entrance~
+    ~
+  ParkCafe:
+    Description:-
+         You are inside Park Cafe, a very cozy place with many tables and
+      seats where you can relax and enjoy the view.  To the east you can
+      see the entrance to the park.
+      ~
+    Exits:
+      West: ParkEntrance~
+      ~
+    Title: Park Cafe~
+    ~
+  SmallPathPark:
+    Description:-
+         You are walking along a small path through the park.  The path continues
+      south and east.
+      ~
+    Exits:
+      East: SmallPathPark2~
+      South: PathPark~
+      ~
+    Title: A Small Path In The Park~
+    ~
+  SmallPathPark2:
+    Description:-
+         You are standing on a small path inside the park.  The park entrance is
+      just north of here, and Park Cafe is just east of the entrance.  The path
+      leads further east and west.
+      ~
+    Exits:
+      East: SmallPathPark3~
+      North: ParkEntrance~
+      West: SmallPathPark~
+      ~
+    Title: A Small Path In The Park~
+    ~
+  SmallPathPark3:
+    Description:-
+         You are on a small path running through the park.  It continues west and
+      south and just north of here you see the southern wall of Park Cafe.
+      ~
+    Exits:
+      South: PathPark2~
+      West: SmallPathPark2~
+      ~
+    Title: A Small Path In The Park~
+    ~
+  CityguardHeadquarters:
+    Description:-
+         You are inside a tidy office.
+      ~
+    Exits:
+      East: ParkRoad~
+      ~
+    Title: Cityguard HeadQuarters~
+    ~
+  ParkRoad:
+    Description:-
+         The road continues north and south.  A building is just west of here, you
+      notice a sign on the door.  The park entrance is to the east.
+      ~
+    Exits:
+      East: WesternParkEntrance~
+      North: ParkRoad5~
+      South: ParkRoad2~
+      West: CityguardHeadquarters~
+      ~
+    Title: Park Road~
+    ~
+  WesternParkEntrance:
+    Description:-
+         You are standing at the western end of the park.  A small path leads east
+      into the park and going west through the entrance you will reach Park Road.
+      ~
+    Exits:
+      East: PathPark~
+      West: ParkRoad~
+      ~
+    Title: The Western Park Entrance~
+    ~
+  PathPark:
+    Description:-
+         You are in the park.  The paths lead north and west.  Westward is the
+      park entrance and to the east you see a small pond.
+      ~
+    Exits:
+      East: Pond~
+      North: SmallPathPark~
+      West: WesternParkEntrance~
+      ~
+    Title: A Path In The Park~
+    ~
+  Pond:
+    Description:-
+         You are swimming around in the pond, feeling rather stupid.  You can get
+      back on the path from the eastern and western end of the pond.
+      ~
+    Exits:
+      East: PathPark2~
+      West: PathPark~
+      ~
+    Title: The Pond~
+    ~
+  PathPark2:
+    Description:-
+         You are in the park.  The paths lead north and east.  Eastward is the
+      park entrance and to the west you see a small pond.
+      ~
+    Exits:
+      East: EasternParkEntrance~
+      North: SmallPathPark3~
+      West: Pond~
+      ~
+    Title: A Path In The Park~
+    ~
+  EasternParkEntrance:
+    Description:-
+         You are standing at the eastern end of the park.  A small path leads west
+      into the park.  Going east through the entrance you will reach Emerald
+      Avenue.
+      ~
+    Exits:
+      East: EmeraldAvenue~
+      West: PathPark2~
+      ~
+    Title: The Eastern Park Entrance~
+    ~
+  EmeraldAvenue:
+    Description:-
+         You are standing on the north end of Emerald Avenue.  To the north is the
+      promenade and to the west is the park entrance.  To the east is the not very
+      big Town Hall of Midgaard.
+      ~
+    Exits:
+      East: WaitingRoom~
+      North: EmeraldAvenue5~
+      South: EmeraldAvenue2~
+      West: EasternParkEntrance~
+      ~
+    Title: Emerald Avenue~
+    ~
+  ParkRoad2:
+    Description:-
+         You are on Park Road which leads north and south.
+      ~
+    Exits:
+      North: ParkRoad~
+      South: ParkRoad6~
+      ~
+    Title: Park Road~
+    ~
+  EmeraldAvenue2:
+    Description:-
+         You are standing at a bend on Emerald Avenue.  The road leads north and
+      west.
+      ~
+    Exits:
+      North: EmeraldAvenue~
+      West: EmeraldAvenue6~
+      ~
+    Title: Emerald Avenue~
+    ~
+  RoadCrossing:
+    Description:-
+         You are in the middle of the road cross.  Roads lead in all directions.
+      A huge black iron chain as thick as a tree trunk is fastened into the ground
+      at the center of the road cross.  Its other end leads directly upwards towards
+      the sky.
+      A road sign is here.
+      ~
+    Exits:
+      East: ParkRoad7~
+      North: EmeraldAvenue6~
+      South: EmeraldAvenue7~
+      West: ParkRoad6~
+      ~
+    Title: The Road Crossing~
+    ~
+  EmeraldAvenue3:
+    Description:-
+         You are standing at a bend on Emerald Avenue.  The road leads south and
+      east.
+      ~
+    Exits:
+      East: EmeraldAvenue7~
+      South: EmeraldAvenue4~
+      ~
+    Title: Emerald Avenue~
+    ~
+  ParkRoad3:
+    Description:-
+         You are on Park Road which leads south and north.  Elm Street is east of
+      here.
+      ~
+    Exits:
+      East: ElmStreet~
+      North: ParkRoad7~
+      South: ParkRoad4~
+      ~
+    Title: Park Road~
+    ~
+  ElmStreet:
+    Description:-
+         You are on Elm street.  Park Road is to the west and Elm Street continues
+      in eastward direction.
+      ~
+    Exits:
+      East: EndElmStreet~
+      West: ParkRoad3~
+      ~
+    Title: Elm Street~
+    ~
+  EndElmStreet:
+    Description:-
+         You are at the end of Elm Street.
+      ~
+    Exits:
+      West: ElmStreet~
+      ~
+    Title: The End Of Elm Street~
+    ~
+  EmeraldAvenue4:
+    Description:-
+         You are on Emerald Avenue which continues north.  The Concourse is south
+      of here.
+      ~
+    Exits:
+      North: EmeraldAvenue3~
+      South: OnConcourse2~
+      ~
+    Title: Emerald Avenue~
+    ~
+  ParkRoad4:
+    Description:-
+         You are on Park Road which continues north.  The Concourse is south of
+      here.
+      ~
+    Exits:
+      North: ParkRoad3~
+      South: OnConcourse3~
+      ~
+    Title: Park Road~
+    ~
+  OnConcourse:
+    Description:-
+         You are at the southwest corner of the city wall.  The Concourse leads
+      both north and east.
+      ~
+    Exits:
+      East: OnConcourse2~
+      North: NorthwestEndConcourse~
+      ~
+    Title: On The Concourse~
+    ~
+  OnConcourse2:
+    Description:-
+         The Concourse continues both east and west.  Emerald Avenue is north of
+      here.
+      ~
+    Exits:
+      East: OnConcourse3~
+      North: EmeraldAvenue4~
+      West: OnConcourse~
+      ~
+    Title: On The Concourse~
+    ~
+  OnConcourse3:
+    Description:-
+         The Concourse continues both east and west.  Park Road is north of here
+      and an iron grate leads south to the graveyard.
+      ~
+    Exits:
+      East: OnConcourse4~
+      North: ParkRoad4~
+      South: GravelRoadGraveyard~
+      West: OnConcourse2~
+      ~
+    Title: On The Concourse~
+    ~
+  OnConcourse4:
+    Description:-
+         You are at the southeast corner of the city wall.  The Concourse leads
+      both north and west.
+      ~
+    Exits:
+      North: NortheastEndConcourse~
+      West: OnConcourse3~
+      ~
+    Title: On The Concourse~
+    ~
+  ParkRoad5:
+    Description:-
+         You are at Park Road which continues north and south.
+      ~
+    Exits:
+      North: Promenade~
+      South: ParkRoad~
+      ~
+    Title: Park Road~
+    ~
+  EmeraldAvenue5:
+    Description:-
+         You are at Emerald Avenue which continues north and south.  Penny Lane leads
+      east from here.
+      ~
+    Exits:
+      East: PennyLane~
+      North: Promenade3~
+      South: EmeraldAvenue~
+      ~
+    Title: Emerald Avenue~
+    ~
+  EmeraldAvenue6:
+    Description:-
+         You are standing at a bend on Emerald Avenue.  To the east the road goes on
+      and to the south is the Road Crossing.
+      ~
+    Exits:
+      East: EmeraldAvenue2~
+      South: RoadCrossing~
+      ~
+    Title: Emerald Avenue~
+    ~
+  EmeraldAvenue7:
+    Description:-
+         You are standing at a bend on Emerald Avenue.  To the west the road goes on
+      and to the north is the Road Crossing.
+      ~
+    Exits:
+      North: RoadCrossing~
+      West: EmeraldAvenue3~
+      ~
+    Title: Emerald Avenue~
+    ~
+  ParkRoad6:
+    Description:-
+         You are at a bend on Park Road.  To the north the road goes on and to the
+      east is the Road Crossing.
+      ~
+    Exits:
+      East: RoadCrossing~
+      North: ParkRoad2~
+      ~
+    Title: Park Road~
+    ~
+  ParkRoad7:
+    Description:-
+         You are at a bend on Park Road.  To the south the road goes on and to the
+      west is the Road Crossing.
+      ~
+    Exits:
+      South: ParkRoad3~
+      West: RoadCrossing~
+      ~
+    Title: Park Road~
+    ~
+  WaitingRoom:
+    Description:-
+         You are standing in the waiting room at the town hall.  Wooden chairs stand
+      along the walls and a long desk with a typewriter is placed in the middle of
+      the room.
+      ~
+    Exits:
+      East: MayorsOffice~
+      West: EmeraldAvenue~
+      ~
+    Title: The Waiting Room~
+    ~
+  MayorsOffice:
+    Description:-
+         You are in the not very big office of the Mayor of Midgaard.  A large and
+      polished but completely empty desk is standing in front of an armchair that
+      looks so comfortable that it most of all resembles a bed with the head end
+      raised slightly.
+      ~
+    Exits:
+      West: WaitingRoom~
+      ~
+    Title: The Mayor's Office~
+    ~
+  PennyLane:
+    Description:-
+         You are on Penny Lane.  Emerald Avenue is to the west and Penny Lane
+      continues in eastward direction.
+      ~
+    Exits:
+      East: PennyLane2~
+      West: EmeraldAvenue5~
+      ~
+    Title: Penny Lane~
+    ~
+  PennyLane2:
+    Description:-
+         You are on Penny Lane.  The narrow road continues north and west.
+      ~
+    Exits:
+      North: EndPennyLane~
+      West: PennyLane~
+      ~
+    Title: Penny Lane~
+    ~
+  EndPennyLane:
+    Description:-
+         You are at the end of Penny Lane.  The only exit appears to be south.
+      ~
+    Exits:
+      South: PennyLane2~
+      ~
+    Title: The End Of Penny Lane~
+    ~
+  GravelRoadGraveyard:
+    Description:-
+         You are on a well-kept gravel road that leads north-south through the
+      graveyard.  On both sides of the road grow dark evergreen trees.  An iron
+      grate is to the north.
+      ~
+    Exits:
+      North: OnConcourse3~
+      South: GravelRoadGraveyard2~
+      ~
+    Title: A Gravel Road In The Graveyard~
+    ~
+  GravelRoadGraveyard2:
+    Description:-
+        You are on a well-kept gravel road that leads north-south through the
+      graveyard.  On both sides of the road grow dark evergreen trees.
+      ~
+    Exits:
+      North: GravelRoadGraveyard~
+      South: GravelRoadGraveyard3~
+      ~
+    Title: A Gravel Road In The Graveyard~
+    ~
+  GravelRoadGraveyard3:
+    Description:-
+        You are on a well-kept gravel road that leads north-south through the
+      graveyard.  On both sides of the road grow dark evergreen trees.
+      ~
+    Exits:
+      North: GravelRoadGraveyard2~
+      South: GravelRoadGraveyard4~
+      ~
+    Title: A Gravel Road In The Graveyard~
+    ~
+  GravelRoadGraveyard4:
+    Description:-
+        You are on a well-kept gravel road that leads north-south through the
+      graveyard.  On both sides of the road grow dark evergreen trees.
+      ~
+    Exits:
+      North: GravelRoadGraveyard3~
+      South: FrontChapel~
+      ~
+    Title: A Gravel Road In The Graveyard~
+    ~
+  FrontChapel:
+    Description:-
+         You are on an open space before a small chapel.  A gravel road leads north
+      through the graveyard and the chapel entrance is to the south.
+      ~
+    Exits:
+      North: GravelRoadGraveyard4~
+      South: InsideChapel~
+      ~
+    Title: In Front Of The Chapel~
+    ~
+  InsideChapel:
+    Description:-
+         You are in a small, dark chapel.  The dark brown glass in the tiny windows
+      do not let much light through.  A few rows of worn wooden benches stand here
+      and an ancient altar sits in the middle of the floor.
+      ~
+    Exits:
+      North: FrontChapel~
+      ~
+    Title: Inside The Chapel~
+    ~
+  UnderBridge:
+    Description:-
+         The arch under the bridge is covered by seaweed about a foot above the
+      surface of the river.  The water gently flows through an opening in the lower
+      part of the city wall.
+      ~
+    Exits:
+      East: OnRiver~
+      ~
+    Title: Under The Bridge~
+    ~
+  OnRiver:
+    Description:-
+         North of here you see the miserable buildings of Poor Alley.  The
+      river flows west towards the bridge.  The riverbanks are too steep to
+      climb.
+      ~
+    Exits:
+      East: OnRiver2~
+      West: UnderBridge~
+      ~
+    Title: On The River~
+    ~
+  OnRiver2:
+    Description:-
+         North of here you see the dump.  The river flows from east to west.  The
+      riverbanks are too steep to climb.
+      ~
+    Exits:
+      East: OnRiver3~
+      West: OnRiver~
+      ~
+    Title: On The River~
+    ~
+  OnRiver3:
+    Description:-
+         The levee is directly north of here.  The river flows in an east west
+      direction.
+      ~
+    Exits:
+      East: OnRiver4~
+      North: Levee~
+      West: OnRiver2~
+      ~
+    Title: On The River~
+    ~
+  OnRiver4:
+    Description:-
+         You see the warehouse on the northern riverbank.  East of here you see the
+      city wall.  The river flows west towards the levee.
+      ~
+    Exits:
+      East: OnRiver5~
+      West: OnRiver3~
+      ~
+    Title: On The River~
+    ~
+  OnRiver5:
+    Description:-
+         The river enters from a hole in the eastern city wall.  The hole has been
+      blocked by several vertically positioned iron bars set into the wall.
+      ~
+    Exits:
+      West: OnRiver4~
+      ~
+    Title: On The River~
+    ~
+  ~
+~

@@ -8,17 +8,25 @@
 
 #define _SCRATCH_INSTANCE_CPP_
 
+#include <scratch/color.hpp>
 #include <scratch/descriptor.hpp>
+#include <scratch/direction.hpp>
 #include <scratch/game.hpp>
 #include <scratch/instance.hpp>
 #include <scratch/logger.hpp>
-#include <scratch/parser.hpp>
 #include <scratch/player.hpp>
+#include <scratch/room.hpp>
+#include <scratch/room_exit_specials.hpp>
+#include <scratch/room_specials.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 
 namespace Scratch {
 namespace Core {
+
+// ScratchMUD types.
+using Color = Scratch::Net::Color;
+using Descriptor = Scratch::Net::Descriptor;
 
 //! Default constructor.
 Instance::Instance() noexcept :
@@ -30,8 +38,10 @@ Instance::Instance() noexcept :
 	name_(),
 	parent_(),
 	player_(),
+	roomSpecials_(),
 	weight_(0.0),
-	world_() {
+	world_(),
+	zone_() {
     // Nothing.
 }
 
@@ -46,8 +56,10 @@ Instance::Instance(const Instance& other) noexcept :
 	name_(other.name_),
 	parent_(),
 	player_(other.player_),
+	roomSpecials_(),
 	weight_(other.weight_),
-	world_() {
+	world_(),
+	zone_(other.zone_) {
     // Nothing.
 }
 
@@ -103,52 +115,30 @@ bool Instance::AddChild(const InstancePtr& instance) noexcept {
     return true;
 }
 
-//! Removes a child instance from this instance.
-//! \param instance the instance to remove
-void Instance::RemoveChild(const InstancePtr& instance) noexcept {
-    if (!instance || instance->parent_.lock().get() != this)
-	return;
-    contents_.erase(instance);
-    instance->parent_.reset();
-    const auto weight = -instance->GetTotalWeight();
-    this->AdjustContentsWeight(shared_from_this(), weight);
+//! Gets the parent room.
+//! \return the room-bearing ancestor, or \c nullptr
+InstancePtr Instance::GetParentRoom() const noexcept {
+    for (auto current = std::const_pointer_cast<Instance>(
+	    shared_from_this());
+	 current; current = current->GetParent()) {
+	if (current->GetRoom())
+	    return current;
+    }
+    return nullptr;
 }
 
-//! Removes this instance from its world object.
-void Instance::Remove() noexcept {
-    auto world = world_.lock();
-    if (world)
-	world->RemoveInstance(shared_from_this());
-}
-
-//! Finds an instance matching \p line.
+//! Finds an instance matching \p words.
 //! \param game the game state
-//! \param line the targeting line
+//! \param words the name words
+//! \param nth the 1-based ordinal
+//! \param count the requested count
 //! \return the matched instance, or \c nullptr
 InstancePtr Instance::Find(
 	const Game& game,
-	const String& line) const noexcept {
-    Parser parser;
-    if (!parser.Parse(line) ||
-	    parser.GetSize() != 1 ||
-	    parser.GetPhrase(0).GetCount() != 1)
-	return nullptr;
-    return this->Find(game, parser.GetPhrase(0));
-}
-
-//! Finds an instance matching \p phrase.
-//! \param game the game state
-//! \param phrase the targeting phrase
-//! \return the matched instance, or \c nullptr
-InstancePtr Instance::Find(
-	const Game& game,
-	const Parser::Phrase& phrase) const noexcept {
-    if (phrase.GetCount() != 1)
-	return nullptr;
-    const auto count = phrase.GetCount();
-    const auto nth = phrase.GetNth();
-    const auto& words = phrase.GetWords();
-    if (!nth || words.empty())
+	const std::vector<String>& words,
+	const unsigned nth,
+	const unsigned count) const noexcept {
+    if (count != 1 || !nth || words.empty())
 	return nullptr;
 
     auto seeker = std::const_pointer_cast<Instance>(this->shared_from_this());
@@ -197,6 +187,25 @@ DescriptorPtr Instance::GetDescriptor() noexcept {
     return d;
 }
 
+//! Gets the room prototype.
+//! \return the room, or \c nullptr
+RoomPtr Instance::GetRoom() const noexcept {
+    return roomSpecials_ ? roomSpecials_->GetRoom() :
+	RoomPtr();
+}
+
+//! Gets the qualified room name.
+String Instance::GetQualifiedRoomName() const noexcept {
+    auto room = this->GetRoom();
+    if (!room)
+	return String();
+    String qualified = room->GetQualifiedName();
+    auto world = world_.lock();
+    if (world && !world->GetId().empty())
+	qualified += '@' + world->GetId();
+    return qualified;
+}
+
 //! Matches \p name against this instance.
 //! \param name the name
 //! \param seeker the searching instance, or null
@@ -220,6 +229,89 @@ bool Instance::Matches(
     }
 
     return false;
+}
+
+namespace {
+
+//! Resolves a move destination.
+//! \param instance the moving instance
+//! \param direction the direction
+//! \return the destination room instance, or \c nullptr
+InstancePtr ResolveMoveDestination(
+	const Instance& instance,
+	const Direction::DirectionEnum direction) noexcept {
+    if (!Direction::IsDefined(direction))
+	return nullptr;
+
+    auto location = instance.GetParentRoom();
+    if (!location)
+	return nullptr;
+    auto specials = location->GetRoomSpecials();
+    if (!specials)
+	return nullptr;
+    auto exit = specials->GetExit(direction);
+    if (!exit || !exit->GetTarget())
+	return nullptr;
+    auto destination = exit->GetTarget();
+
+    auto sourceRoom = location->GetRoom();
+    auto destRoom = destination->GetRoom();
+    auto player = instance.GetPlayer();
+    if (destRoom && destRoom->GetImmortalBit() &&
+	    sourceRoom && !sourceRoom->GetImmortalBit() &&
+	    player && player->IsMortal())
+	return nullptr;
+
+    return destination;
+}
+
+} // namespace
+
+//! Returns whether this instance can move in \p direction.
+//! \param direction the direction
+//! \return \c true if the move can succeed
+bool Instance::CanMove(const Direction::DirectionEnum direction) const noexcept {
+    return ResolveMoveDestination(*this, direction) != nullptr;
+}
+
+//! Moves through an exit in \p direction.
+//! \param direction the direction
+//! \return \c true if the move succeeded
+bool Instance::Move(Direction::DirectionEnum direction) noexcept {
+    auto destination = ResolveMoveDestination(*this, direction);
+    if (!destination) {
+	if (Direction::IsDefined(direction) && this->GetParentRoom()) {
+	    auto descriptor = this->GetDescriptor();
+	    if (descriptor) {
+		descriptor->PrintFormat(
+		    "%sYou can't go %s from here!%s\r\n",
+		    descriptor->GetColor(Color::C_FAILED),
+		    Direction::ToString(direction).c_str(),
+		    descriptor->GetColor(Color::C_NORMAL));
+	    }
+	}
+	return false;
+    }
+
+    return destination->AddChild(shared_from_this());
+}
+
+//! Removes this instance from its world object.
+void Instance::Remove() noexcept {
+    auto world = world_.lock();
+    if (world)
+	world->RemoveInstance(shared_from_this());
+}
+
+//! Removes a child instance from this instance.
+//! \param instance the instance to remove
+void Instance::RemoveChild(const InstancePtr& instance) noexcept {
+    if (!instance || instance->parent_.lock().get() != this)
+	return;
+    contents_.erase(instance);
+    instance->parent_.reset();
+    const auto weight = -instance->GetTotalWeight();
+    this->AdjustContentsWeight(shared_from_this(), weight);
 }
 
 //! Sets the controlling descriptor.
