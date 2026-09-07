@@ -1,0 +1,7 @@
+Name: Burp~
+Social:
+  Found: ${S.Name} burp${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} burp${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} burp${:s} loudly.~
+  ~
+~

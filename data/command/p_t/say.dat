@@ -1,0 +1,9 @@
+Name: Say~
+Keywords: '~
+Action:-
+  if line == "" then
+    return
+  end
+  action("say", A.TO_ALL | A.NOREPEAT, "${S.Name} say${:s}, \"${D.Text}\"", actor, line)
+  ~
+~

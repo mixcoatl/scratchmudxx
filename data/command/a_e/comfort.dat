@@ -1,0 +1,7 @@
+Name: Comfort~
+Social:
+  Found: ${S.Name} comfort${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} comfort${:s} ${S.Reflexive}.~
+  NoArgument: ${S.Name} need${:s} comforting.~
+  ~
+~

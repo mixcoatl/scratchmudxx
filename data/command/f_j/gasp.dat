@@ -1,0 +1,7 @@
+Name: Gasp~
+Social:
+  Found: ${S.Name} gasp${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} gasp${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} gasp${:s}.~
+  ~
+~

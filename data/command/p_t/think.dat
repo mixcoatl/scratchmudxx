@@ -1,0 +1,7 @@
+Name: Think~
+Social:
+  Found: ${S.Name} ${S.Copula} thinking about ${D.Name}.~
+  FoundAuto: ${S.Name} ${S.Copula} thinking about ${S.Reflexive}.~
+  NoArgument: ${S.Name} ${S.Copula} thinking about something.~
+  ~
+~

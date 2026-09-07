@@ -1,0 +1,7 @@
+Name: Frown~
+Social:
+  Found: ${S.Name} frown${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} frown${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} frown${:s} darkly.~
+  ~
+~

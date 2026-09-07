@@ -1,0 +1,7 @@
+Name: Bleed~
+Social:
+  Found: ${S.Name} bleed${:s} all over ${D.Name}!~
+  FoundAuto: ${S.Name} bleed${:s} all over ${S.Reflexive}!~
+  NoArgument: ${S.Name} bleed${:s} all over the place!~
+  ~
+~

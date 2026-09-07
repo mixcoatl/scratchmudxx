@@ -1,0 +1,6 @@
+Name: Wave~
+Social:
+  Found: ${S.Name} wave${:s} to ${D.Name}.~
+  NoArgument: ${S.Name} wave${:s}.~
+  ~
+~

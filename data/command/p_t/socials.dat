@@ -1,0 +1,9 @@
+Name: Socials~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  require("command").list_commands(d, actor, Q, true)
+  ~
+~

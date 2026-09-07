@@ -1,0 +1,7 @@
+Name: Snicker~
+Social:
+  Found: ${S.Name} snicker${:s} quietly at ${D.Name}.~
+  FoundAuto: ${S.Name} snicker${:s} quietly to ${S.Reflexive}.~
+  NoArgument: ${S.Name} snicker${:s} quietly.~
+  ~
+~

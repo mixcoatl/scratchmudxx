@@ -1,0 +1,8 @@
+Name: Quit~
+Action:-
+  local d = get_descriptor_for(actor)
+  if d then
+    d:set_state("Lobby")
+  end
+  ~
+~

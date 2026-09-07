@@ -1,0 +1,6 @@
+Name: Fondle~
+Social:
+  Found: ${S.Name} fondle${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} fondle${:s} ${S.Reflexive}.~
+  ~
+~

@@ -1,0 +1,7 @@
+Name: Nod~
+Social:
+  Found: ${S.Name} nod${:s} to ${D.Name}.~
+  FoundAuto: ${S.Name} nod${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} nod${:s}.~
+  ~
+~

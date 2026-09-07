@@ -1,0 +1,6 @@
+Name: Flutter~
+Social:
+  Found: ${S.Name} flutter${:s} ${S.Determiner} eyelashes at ${D.Name}.~
+  NoArgument: ${S.Name} flutter${:s} ${S.Determiner} eyelashes seductively.~
+  ~
+~

@@ -1,0 +1,43 @@
+Name: Grant~
+Trust: Wizard~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  local who, trust_name = line:match("^%s*(%S+)%s+(%S+)")
+  if not who or not trust_name then
+    d:print_format("%sUsage: grant <user> <trust>%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local canonical = nil
+  for _, name in ipairs(get_trust_names()) do
+    if name:lower() == trust_name:lower() then
+      canonical = name
+      break
+    end
+  end
+  if not canonical then
+    d:print_format("%sUnknown trust.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  trust_name = canonical
+  local user = get_users():get(who)
+  if not user then
+    d:print_format("%sNo such user.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  local granter = d:get_user()
+  local granter_trust = "Player"
+  if granter then
+    granter_trust = granter:get_trust()
+  end
+  if not trust_allows(granter_trust, trust_name) then
+    d:print_format("%sInsufficient trust.%s\r\n", Q.FAILED, Q.NORMAL)
+    return
+  end
+  user:set_trust(trust_name)
+  get_users():save(user:get_name())
+  d:print_format("%sGranted %s trust to %s.%s\r\n", Q.OKAY, trust_name, user:get_name(), Q.NORMAL)
+  ~
+~

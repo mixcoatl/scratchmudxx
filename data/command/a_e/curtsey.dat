@@ -1,0 +1,7 @@
+Name: Curtsey~
+Social:
+  Found: ${S.Name} curtsey${:s} to ${D.Name}.~
+  FoundAuto: ${S.Name} curtsey${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} curtsey${:s} gracefully.~
+  ~
+~

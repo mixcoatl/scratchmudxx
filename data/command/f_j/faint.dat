@@ -1,0 +1,7 @@
+Name: Faint~
+Social:
+  Found: ${S.Name} faint${:s} at the sight of ${D.Name}.~
+  FoundAuto: ${S.Name} faint${:s} at the sight of ${S.Reflexive}.~
+  NoArgument: ${S.Name} faints${:s} dead away.~
+  ~
+~

@@ -1,0 +1,7 @@
+Name: Lol~
+Social:
+  Found: ${S.Name} laugh${:s} out loud at ${D.Name}.~
+  FoundAuto: ${S.Name} laugh${:s} out loud at ${S.Reflexive}.~
+  NoArgument: ${S.Name} laugh${:s} out loud.~
+  ~
+~

@@ -1,0 +1,7 @@
+Name: Point~
+Social:
+  Found: ${S.Name} point${:s} to ${D.Name}.~
+  FoundAuto: ${S.Name} point${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} point${:s}.~
+  ~
+~

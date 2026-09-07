@@ -1,0 +1,7 @@
+Name: Sneeze~
+Social:
+  Found: ${S.Name} sneeze${:s} on ${D.Name}.~
+  FoundAuto: ${S.Name} sneeze${:s} on ${S.Reflexive}.~
+  NoArgument: ${S.Name} sneeze${:s}.~
+  ~
+~

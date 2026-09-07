@@ -1,0 +1,6 @@
+Name: Grovel~
+Social:
+  Found: ${S.Name} grovel${:s} before ${D.Name}.~
+  NoArgument: ${S.Name} grovel${:s}.~
+  ~
+~

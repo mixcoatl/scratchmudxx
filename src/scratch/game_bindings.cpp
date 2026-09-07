@@ -16,9 +16,12 @@
 #include <scratch/scratch.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
+#include <scratch/world.hpp>
 
 namespace Scratch {
 namespace Scripting {
+
+using World = Scratch::Core::World;
 
 //! Handles lua broadcast.
 //! \param L the \c lua_State
@@ -107,13 +110,21 @@ static int DescriptorNamesProxy(lua_State* L) {
 //! Registers Game free functions on \p lua.
 //! \param lua the Lua facade
 void GameBindings::Register(Lua& lua) {
+    lua.Class<World>("Scratch.World").
+	Function("get_id", &World::GetId).
+	Function("get_instance", &World::GetInstance).
+	Function("get_instances", &World::GetInstances);
+
     lua.Function("get_config", &Game::GetConfig);
     lua.RawFunction("broadcast", BroadcastProxy);
     lua.RawFunction("crypt", CryptProxy);
+    lua.Function("get_commands", &Game::GetCommands);
     lua.Function("get_descriptor", &Game::GetDescriptor);
     lua.RawFunction("get_descriptor_names", DescriptorNamesProxy);
     lua.Function("get_states", &Game::GetStates);
     lua.Function("get_users", &Game::GetUsers);
+    lua.Function("get_world", &Game::GetWorld);
+    lua.Function("get_worlds", &Game::GetWorlds);
     lua.RawFunction("print", PrintProxy);
     lua.RawFunction("shutdown", ShutdownProxy);
 }

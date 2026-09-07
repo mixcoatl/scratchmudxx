@@ -1,0 +1,5 @@
+Name: Twiddle~
+Social:
+  NoArgument: ${S.Name} twiddle${:s} ${S.Determiner} thumbs.~
+  ~
+~

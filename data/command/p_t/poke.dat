@@ -1,0 +1,6 @@
+Name: Poke~
+Social:
+  Found: ${S.Name} poke${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} poke${:s} ${S.Reflexive}.~
+  ~
+~

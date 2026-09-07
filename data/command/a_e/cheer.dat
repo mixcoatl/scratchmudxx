@@ -1,0 +1,7 @@
+Name: Cheer~
+Social:
+  Found: ${S.Name} cheer${:s} for ${D.Name}.~
+  FoundAuto: ${S.Name} cheer${:s} for ${S.Reflexive}.~
+  NoArgument: ${S.Name} cheer${:s} loudly.~
+  ~
+~

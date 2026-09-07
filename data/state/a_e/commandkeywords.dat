@@ -1,0 +1,28 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Enter keywords (comma-separated)");
+    ~
+  Received:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    if line:match("%S+") == nil then
+      require("io").fail(d, Q, "Keywords entry cancelled.");
+      d:pop_state();
+      return;
+    end
+    local keywords = {};
+    for part in string.gmatch(line, "[^,]+") do
+      local word = part:match("^%s*(.-)%s*$");
+      if word ~~= "" then
+        keywords[#keywords + 1] = word;
+      end
+    end
+    edit:set_keywords(keywords);
+    d:pop_state();
+    ~
+  ~
+Name: CommandKeywords~
+~

@@ -1,0 +1,7 @@
+Name: Gag~
+Social:
+  Found: ${S.Name} gag${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} gag${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} gag${:s} uncontrollably.~
+  ~
+~

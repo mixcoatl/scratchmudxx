@@ -1,0 +1,7 @@
+Name: Dance~
+Social:
+  Found: ${S.Name} dance${:s} with ${D.Name}.~
+  FoundAuto: ${S.Name} dance${:s} with ${S.Reflexive}.~
+  NoArgument: ${S.Name} dance${:s}.~
+  ~
+~

@@ -15,6 +15,7 @@
 // Forward declarations.
 namespace Scratch {
 namespace Core {
+class Command;
 class Game;
 class State;
 class User;
@@ -36,6 +37,8 @@ using Socket = boost::asio::ip::tcp::socket;
 using StreamBuf = boost::asio::streambuf;
 
 // ScratchMUD types.
+using Command = Scratch::Core::Command;
+using CommandPtr = std::shared_ptr<Command>;
 using EditorPtr = std::shared_ptr<Editor>;
 using Game = Scratch::Core::Game;
 using MenuPtr = std::shared_ptr<Menu>;
@@ -114,14 +117,21 @@ public:
     //! Returns the color code.
     //! \param color the color
     const char *GetColor(const int color) const noexcept;
+
     //! Gets the color bit.
     //! \sa #SetColorBit(const bool)
     bool GetColorBit() const noexcept {
 	return colorBit_;
     }
 
-    //! Gets the repository key of the thing being edited, if any.
-    //! \remark Empty when the edit draft is new (not cloned from a named thing).
+    //! Gets the command being edited.
+    //! \sa #SetEditCommand(const CommandPtr&)
+    CommandPtr GetEditCommand() const noexcept {
+	return editCommand_;
+    }
+
+    //! Gets the original canonical key of the Thing draft.
+    //! \remark Empty when the draft is new. Kind is implied by the editor state.
     //! \sa #SetEditName(const String&)
     String GetEditName() const noexcept {
 	return editName_;
@@ -173,11 +183,8 @@ public:
     }
 
     //! Gets the connection state.
-    //! \remark Mirrors the front of the connection-state stack.
     //! \sa #SetState(const StatePtr&)
     //! \sa #SetStateByName(const String&)
-    //! \sa #PushState(const StatePtr&)
-    //! \sa #PopState()
     StatePtr GetState() const noexcept {
 	return state_;
     }
@@ -241,7 +248,14 @@ public:
 	colorBit_ = colorBit;
     }
 
-    //! Sets the repository key of the thing being edited.
+    //! Sets the command being edited.
+    //! \param editCommand the command draft being edited
+    //! \sa #GetEditCommand() const
+    void SetEditCommand(const CommandPtr& editCommand) {
+	editCommand_ = editCommand;
+    }
+
+    //! Sets the original canonical key of the Thing draft.
     //! \sa #GetEditName() const
     void SetEditName(const String& editName) {
 	editName_ = editName;
@@ -366,8 +380,13 @@ protected:
     //! \sa #SetColorBit(const bool)
     bool colorBit_;
 
-    //! The repository key of the thing being edited, if any.
-    //! \remark Empty when the edit draft is new (not cloned from a named thing).
+    //! The command being edited.
+    //! \sa #GetEditCommand() const
+    //! \sa #SetEditCommand(const CommandPtr&)
+    CommandPtr editCommand_;
+
+    //! The original canonical key of the Thing draft.
+    //! \remark Empty when the draft is new. Kind is implied by the editor state.
     //! \sa #GetEditName() const
     //! \sa #SetEditName(const String&)
     String editName_;

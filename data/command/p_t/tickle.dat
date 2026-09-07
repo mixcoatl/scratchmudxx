@@ -1,0 +1,7 @@
+Name: Tickle~
+Social:
+  Found: ${S.Name} tickle${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} tickle${:s} ${S.Reflexive}.~
+  NoArgument: ${S.Name} ${S.Copula} tickled pink!~
+  ~
+~

@@ -1,0 +1,6 @@
+Name: Strut~
+Social:
+  Found: ${S.Name} strut${:s} proudly for ${D.Name}.~
+  NoArgument: ${S.Name} strut${:s} proudly.~
+  ~
+~

@@ -1,0 +1,7 @@
+Name: Hug~
+Social:
+  Found: ${S.Name} hug${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} hug${:s} ${S.Reflexive}.~
+  NoArgument: ${S.Name} need${:s} a hug.~
+  ~
+~

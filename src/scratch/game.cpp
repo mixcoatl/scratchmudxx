@@ -8,6 +8,7 @@
 
 #define _SCRATCH_GAME_CPP_
 
+#include <scratch/command.hpp>
 #include <scratch/config.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
@@ -26,8 +27,13 @@ namespace Core {
 //! Default constructor.
 Game::Game() :
 	ioContext_(),
+	commands_(std::make_shared<CommandRepository>(
+		Scratch::Storage::MultiFileStorage<Command>(
+			"data", "command", ".dat"))),
+	commandsIndex_(),
 	config_(std::make_shared<Config>()),
 	descriptors_(),
+	worlds_(),
 	lua_(std::make_unique<Lua>(*this)),
 	scheduler_(ioContext_),
 	server_(),
@@ -39,7 +45,7 @@ Game::Game() :
 	users_(std::make_shared<UserRepository>(
 		Scratch::Storage::MultiFileStorage<User>(
 			"data", "user", ".dat"))) {
-    // Nothing.
+    worlds_[String()] = std::make_shared<World>();
 }
 
 
@@ -50,8 +56,12 @@ Game::~Game() noexcept {
     if (server_)
 	server_.reset();
     // Close Lua before states_ / users_ tear down.
-
     lua_.reset();
+}
+
+//! Gets the command repository.
+CommandRepositoryPtr Game::GetCommands() const noexcept {
+    return commands_;
 }
 
 //! Gets the host configuration.
@@ -59,9 +69,9 @@ ConfigPtr Game::GetConfig() const noexcept {
     return config_;
 }
 
-//! Searches for a descriptor.
-//! \param descriptorName the descriptor name of the descriptor to return
-//! \return the descriptor indicated by the specified descriptor name
+//! Gets a descriptor.
+//! \param descriptorName the descriptor name
+//! \return the descriptor, or \c nullptr
 DescriptorPtr Game::GetDescriptor(const String& descriptorName) noexcept {
     auto d = descriptors_.find(descriptorName);
     return d != std::end(descriptors_) ? d->second : nullptr;
@@ -76,6 +86,48 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
     return descriptorSet;
 }
 
+//! Gets an instance.
+//! \param instanceName the instance name
+//! \return the instance, or \c nullptr
+InstancePtr Game::GetInstance(const String& instanceName) const noexcept {
+    for (auto& world: this->GetWorlds()) {
+	if (!world)
+	    continue;
+	auto instance = world->GetInstance(instanceName);
+	if (instance)
+	    return instance;
+    }
+    return nullptr;
+}
+
+//! Gets the instances.
+InstancePtrSet Game::GetInstances() const noexcept {
+    InstancePtrSet instances;
+    for (auto& world: this->GetWorlds()) {
+	if (!world)
+	    continue;
+	for (auto& instance: world->GetInstances())
+	    instances.insert(instance);
+    }
+    return instances;
+}
+
+//! Gets a world object.
+//! \param worldId the world object identity
+//! \return the world object, or \c nullptr
+WorldPtr Game::GetWorld(const String& worldId) const noexcept {
+    auto it = worlds_.find(worldId);
+    return it != std::end(worlds_) ? it->second : nullptr;
+}
+
+//! Gets the world objects.
+std::set<WorldPtr> Game::GetWorlds() const noexcept {
+    std::set<WorldPtr> worlds;
+    for (auto& pair: worlds_)
+	worlds.insert(pair.second);
+    return worlds;
+}
+
 //! Gets the connection-state repository.
 StateRepositoryPtr Game::GetStates() const noexcept {
     return states_;
@@ -86,7 +138,7 @@ UserRepositoryPtr Game::GetUsers() const noexcept {
     return users_;
 }
 
-//! Applies Quiet and Prompt bits to descriptors in \p state.
+//! Applies Quiet and Prompt bits.
 //! \param state the connection state
 //! \sa #GetDescriptors() const
 //! \sa Descriptor::SetState(const StatePtr&)
@@ -105,12 +157,12 @@ void Game::ApplyStateBits(const StatePtr& state) noexcept {
     }
 }
 
-//! Returns the IO context.
+//! Gets the IO context.
 IoContext& Game::GetIoContext() noexcept {
     return ioContext_;
 }
 
-//! Gets the Lua state.
+//! Gets the Lua facade.
 Lua& Game::GetLua() noexcept {
     return *lua_;
 }
@@ -126,7 +178,7 @@ bool Game::GetShutdown() const noexcept {
     return shutdown_;
 }
 
-//! Constructs and returns a new descriptor.
+//! Constructs a descriptor.
 //! \param socket the Boost socket
 DescriptorPtr Game::MakeDescriptor(Socket&& socket) noexcept {
     // Create descriptor.
@@ -148,9 +200,8 @@ DescriptorPtr Game::MakeDescriptor(Socket&& socket) noexcept {
     return d;
 }
 
-//! Closes a descriptor if needed and removes it from the index.
+//! Erases a descriptor.
 //! \param descriptorName the descriptor name to erase
-//! \remark Safe to call for an already-closed or unknown name; idempotent.
 void Game::EraseDescriptor(const String& descriptorName) noexcept {
     auto it = descriptors_.find(descriptorName);
     if (it == std::end(descriptors_))
@@ -172,8 +223,8 @@ void Game::EraseDescriptor(const String& descriptorName) noexcept {
 
 //! Loads game repositories from disk.
 //! \throw std::runtime_error if a required repository cannot be loaded
-//! \sa #GetStates() const
-//! \sa #Run()
+    //! \sa #GetStates() const
+    //! \sa #Run()
 void Game::LoadRepositories() {
     if (!config_ || !config_->Load()) {
 	throw std::runtime_error("Couldn't load configuration.");
@@ -183,6 +234,10 @@ void Game::LoadRepositories() {
     } else if (!states_->Get(config_->GetBootstrapState())) {
 	throw std::runtime_error("Couldn't resolve bootstrap state.");
     }
+    if (!commands_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load command index.");
+    }
+    this->RebuildCommandIndex();
     if (!users_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load user index.");
     }
@@ -263,6 +318,7 @@ void Game::Shutdown() noexcept {
 
     // Maps; Close() defers EraseDescriptor via post.
     descriptors_.clear();
+    worlds_.clear();
     ioContext_.stop();
 }
 

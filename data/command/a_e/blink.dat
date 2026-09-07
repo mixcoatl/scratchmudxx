@@ -1,0 +1,7 @@
+Name: Blink~
+Social:
+  Found: ${S.Name} blink${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} blink${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} blink${:s} ${S.Determiner} eyes.~
+  ~
+~

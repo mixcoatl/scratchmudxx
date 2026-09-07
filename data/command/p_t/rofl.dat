@@ -1,0 +1,7 @@
+Name: Rofl~
+Social:
+  Found: ${S.Name} ${S.Copula} rolling on the floor laughing at ${D.Name}.~
+  FoundAuto: ${S.Name} ${S.Copula} rolling on the floor laughing at ${S.Reflexive}.~
+  NoArgument: ${S.Name} ${S.Copula} rolling on the floor laughing.~
+  ~
+~

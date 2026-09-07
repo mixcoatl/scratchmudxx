@@ -1,0 +1,7 @@
+Name: Snarl~
+Social:
+  Found: ${S.Name} snarl${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} snarl${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} snarl${:s}.~
+  ~
+~

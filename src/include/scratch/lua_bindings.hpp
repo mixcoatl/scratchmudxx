@@ -10,8 +10,10 @@
     #define _SCRATCH_LUA_BINDINGS_HPP_
 
 #include <boost/optional.hpp>
+#include <scratch/action.hpp>
 #include <scratch/color.hpp>
 #include <scratch/gender.hpp>
+#include <scratch/parser.hpp>
 #include <scratch/trust.hpp>
 #include <exception>
 #include <functional>
@@ -198,6 +200,26 @@ struct LuaValue<bool, void> {
 
     static void Push(lua_State* L, const bool value) {
 	lua_pushboolean(L, value);
+    }
+};
+
+
+//! Converts action parameters from Lua.
+template<>
+struct LuaValue<Scratch::Core::ActionParam, void> {
+    static Scratch::Core::ActionParam Check(
+	    lua_State* L,
+	    const int index) {
+	if (lua_isnoneornil(L, index))
+	    return Scratch::Core::ActionParam();
+	if (lua_isnumber(L, index))
+	    return Scratch::Core::ActionParam(lua_tonumber(L, index));
+	if (lua_isstring(L, index))
+	    return Scratch::Core::ActionParam(
+		Lua::CheckString(L, index));
+	luaL_argerror(
+	    L, index, "expected string, number, or nil");
+	return Scratch::Core::ActionParam();
     }
 };
 
@@ -2489,6 +2511,26 @@ public:
 
 template<typename ClassT>
 const char* ClassBinding<ClassT>::metaName_ = nullptr;
+
+//! Converts Parser::Phrase values to value-owned Lua userdata.
+template<>
+struct Detail::LuaValue<Scratch::Core::Parser::Phrase, void> {
+    static Scratch::Core::Parser::Phrase Check(
+	    lua_State* L,
+	    const int index) {
+	return *static_cast<Scratch::Core::Parser::Phrase*>(
+	    luaL_checkudata(L, index, "Scratch.ParserPhrase"));
+    }
+
+    static void Push(
+	    lua_State* L,
+	    Scratch::Core::Parser::Phrase value) {
+	void* memory = lua_newuserdata(
+	    L, sizeof(Scratch::Core::Parser::Phrase));
+	new (memory) Scratch::Core::Parser::Phrase(std::move(value));
+	luaL_setmetatable(L, "Scratch.ParserPhrase");
+    }
+};
 
 template<typename ClassT>
 ClassBinding<ClassT> Lua::Class(const char* name) {
