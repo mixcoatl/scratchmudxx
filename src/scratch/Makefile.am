@@ -17,6 +17,7 @@ __top_builddir__bin_scratch_SOURCES = \
 	logger.cpp \
 	main.cpp \
 	random.cpp \
+	scheduler.cpp \
 	server.cpp \
 	string.cpp
 
@@ -27,6 +28,7 @@ noinst_HEADERS = \
 	../include/scratch/game.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/random.hpp \
+	../include/scratch/scheduler.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
 	../include/scratch/string.hpp

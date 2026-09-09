@@ -9,6 +9,7 @@
 #ifndef _SCRATCH_GAME_HPP_
 #define _SCRATCH_GAME_HPP_
 
+#include <scratch/scheduler.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 
@@ -62,6 +63,9 @@ public:
     //! Gets the IO context.
     IoContext& GetIoContext() noexcept;
 
+    //! Gets the scheduler.
+    Scheduler& GetScheduler() noexcept;
+
     //! Gets the shutdown flag.
     //! \sa #SetShutdown(const bool)
     bool GetShutdown() const noexcept;
@@ -96,7 +100,13 @@ protected:
 
     //! The IO context.
     //! \sa #GetIoContext() const
+    //! \remark Must precede ASIO-dependent members (\ref scheduler_,
+    //!     \ref server_, \ref signals_) so it outlives them on teardown.
     IoContext ioContext_;
+
+    //! The scheduler.
+    //! \sa #GetScheduler()
+    Scheduler scheduler_;
 
     //! The server.
     ServerPtr server_;

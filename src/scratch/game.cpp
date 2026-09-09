@@ -12,6 +12,7 @@
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
 #include <scratch/logger.hpp>
+#include <scratch/scheduler.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/server.hpp>
 
@@ -23,6 +24,7 @@ Game::Game() :
 	config_(std::make_shared<Config>()),
 	descriptors_(),
 	ioContext_(),
+	scheduler_(ioContext_),
 	server_(),
 	shutdown_(false),
 	signals_(ioContext_) {
@@ -62,6 +64,11 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
 //! Returns the IO context.
 IoContext& Game::GetIoContext() noexcept {
     return ioContext_;
+}
+
+//! Gets the scheduler.
+Scheduler& Game::GetScheduler() noexcept {
+    return scheduler_;
 }
 
 //! Gets the shutdown flag.
@@ -149,6 +156,8 @@ void Game::SetShutdown(const bool shutdown) noexcept {
 //! Stops the acceptor, descriptors, and I/O context.
 //! \sa #SetShutdown(const bool)
 void Game::Shutdown() noexcept {
+    scheduler_.Shutdown();
+
     // Acceptor.
     if (server_)
 	server_->StopAcceptor();
