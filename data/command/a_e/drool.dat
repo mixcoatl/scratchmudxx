@@ -1,0 +1,7 @@
+Name: Drool~
+Social:
+  Found: ${S.Name} drool${:s} all over ${D.Name}.~
+  FoundAuto: ${S.Name} drool${:s} all over ${S.Reflexive}.~
+  NoArgument: ${S.Name} drool${:s} all over.~
+  ~
+~

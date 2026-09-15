@@ -1,0 +1,6 @@
+Name: Pat~
+Social:
+  Found: ${S.Name} pat${:s} ${D.Name} on the head.~
+  FoundAuto: ${S.Name} pat${:s} ${S.Reflexive} on the head.~
+  ~
+~

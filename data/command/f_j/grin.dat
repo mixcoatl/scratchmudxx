@@ -1,0 +1,7 @@
+Name: Grin~
+Social:
+  Found: ${S.Name} grin${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} grin${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} grin${:s}.~
+  ~
+~

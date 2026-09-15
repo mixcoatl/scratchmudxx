@@ -1,0 +1,7 @@
+Name: Sniff~
+Social:
+  Found: ${S.Name} sniff${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} sniff${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} sniff${:s} sadly.~
+  ~
+~

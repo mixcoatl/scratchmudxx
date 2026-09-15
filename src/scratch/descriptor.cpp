@@ -10,16 +10,17 @@
 
 #include <scratch/color.hpp>
 #include <scratch/color_bindings.hpp>
+#include <scratch/command.hpp>
 #include <scratch/config.hpp>
-#include <scratch/game.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor.hpp>
+#include <scratch/game.hpp>
 #include <scratch/logger.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/menu.hpp>
-#include <scratch/scratch.hpp>
 #include <scratch/protocol_telnet.hpp>
+#include <scratch/scratch.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file_multi.hpp>
 #include <scratch/string.hpp>
@@ -39,6 +40,8 @@ Descriptor::Descriptor(
 	Game& game,
 	Socket&& socket) :
 	colorBit_(true),
+	editCommand_(),
+	editName_(),
 	editState_(),
 	editString_(),
 	editUser_(),
@@ -112,16 +115,19 @@ void Descriptor::Close() noexcept {
     LOGGER_NETWORK() << "Descriptor " << name_ << " disconnected.";
 
     this->ClearEditor();
-    stateStack_.clear();
-    state_.reset();
 
     if (user_) {
 	user_->SetLastLogout(std::time(nullptr));
 	game_.GetUsers()->Save(user_->GetName());
     }
     user_.reset();
-    editUser_.reset();
+    editCommand_.reset();
+    editName_.clear();
+    editState_.reset();
     editString_.clear();
+    editUser_.reset();
+    stateStack_.clear();
+    state_.reset();
 
     // Close Boost socket. Outstanding async ops are cancelled and their
     // completion handlers are queued on IO context before close returns.

@@ -1,0 +1,7 @@
+Name: Raise~
+Social:
+  Found: ${S.Name} raise${:s} an eyebrow to ${D.Name}.~
+  FoundAuto: ${S.Name} raise${:s} an eyebrow to ${S.Reflexive}.~
+  NoArgument: ${S.Name} raise${:s} an eyebrow.~
+  ~
+~

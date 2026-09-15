@@ -1,0 +1,6 @@
+Name: Spank~
+Social:
+  Found: ${S.Name} spank${:s} ${D.Name} over ${S.Determiner} knee.~
+  NoArgument: ${S.Name} need${:s} a proper spanking.~
+  ~
+~

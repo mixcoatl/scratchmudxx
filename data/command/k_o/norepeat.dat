@@ -1,0 +1,16 @@
+Name: Norepeat~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  if actor:has_preference("NoRepeat") then
+    actor:erase_preference("NoRepeat")
+    d:print_format("%sNoRepeat off.%s\r\n", Q.OKAY, Q.NORMAL)
+  else
+    actor:add_preference("NoRepeat")
+    d:print_format("%sNoRepeat on.%s\r\n", Q.OKAY, Q.NORMAL)
+  end
+  get_users():save(actor:get_name())
+  ~
+~

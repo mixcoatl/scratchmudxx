@@ -1,0 +1,5 @@
+Name: Snore~
+Social:
+  NoArgument: ${S.Name} snore${:s} loudly.~
+  ~
+~

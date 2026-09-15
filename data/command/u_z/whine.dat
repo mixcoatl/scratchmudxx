@@ -1,0 +1,7 @@
+Name: Whine~
+Social:
+  Found: ${S.Name} whine${:s} pitifully to ${D.Name}.~
+  FoundAuto: ${S.Name} whine${:s} pitifully to ${S.Reflexive}.~
+  NoArgument: ${S.Name} whine${:s} pitifully.~
+  ~
+~

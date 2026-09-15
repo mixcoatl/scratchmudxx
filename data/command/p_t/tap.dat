@@ -1,0 +1,7 @@
+Name: Tap~
+Social:
+  Found: ${S.Name} tap${:s} ${D.Name} on the shoulder.~
+  FoundAuto: ${S.Name} ${S.Copula} all tapped out.~
+  NoArgument: ${S.Name} tap${:s} ${S.Determiner} foot impatiently.~
+  ~
+~

@@ -1,0 +1,7 @@
+Name: Accuse~
+Social:
+  Found: ${S.Name} think${:s} ${D.Name} did it.~
+  FoundAuto: ${S.Name} think${:s} ${S.Subject} did it.~
+  NoArgument: ${S.Name} make${:s} an accusation.~
+  ~
+~

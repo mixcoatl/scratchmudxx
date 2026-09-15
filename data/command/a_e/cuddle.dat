@@ -1,0 +1,6 @@
+Name: Cuddle~
+Social:
+  Found: ${S.Name} cuddle${:s} with ${D.Name}.~
+  NoArgument: ${S.Name} need${:s} a cuddle.~
+  ~
+~

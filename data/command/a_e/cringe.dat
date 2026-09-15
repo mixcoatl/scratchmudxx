@@ -1,0 +1,6 @@
+Name: Cringe~
+Social:
+  Found: ${S.Name} cringe${:s} away from ${D.Name}.~
+  NoArgument: ${S.Name} cringe${:s}.~
+  ~
+~

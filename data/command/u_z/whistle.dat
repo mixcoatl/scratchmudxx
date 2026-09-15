@@ -1,0 +1,7 @@
+Name: Whistle~
+Social:
+  Found: ${S.Name} whistle${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} whistle${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} whistle${:s}.~
+  ~
+~

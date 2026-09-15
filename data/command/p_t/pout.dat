@@ -1,0 +1,7 @@
+Name: Pout~
+Social:
+  Found: ${S.Name} pout${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} pout${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} stick${:s} out ${S.Determiner} lip and pout${:s}.~
+  ~
+~

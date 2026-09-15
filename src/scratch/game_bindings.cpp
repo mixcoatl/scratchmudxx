@@ -110,6 +110,7 @@ void GameBindings::Register(Lua& lua) {
     lua.Function("get_config", &Game::GetConfig);
     lua.RawFunction("broadcast", BroadcastProxy);
     lua.RawFunction("crypt", CryptProxy);
+    lua.Function("get_commands", &Game::GetCommands);
     lua.Function("get_descriptor", &Game::GetDescriptor);
     lua.RawFunction("get_descriptor_names", DescriptorNamesProxy);
     lua.Function("get_states", &Game::GetStates);

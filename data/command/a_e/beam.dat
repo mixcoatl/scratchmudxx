@@ -1,0 +1,7 @@
+Name: Beam~
+Social:
+  Found: ${S.Name} beam${:s} happily at ${D.Name}.~
+  FoundAuto: ${S.Name} beam${:s} happily to ${S.Reflexive}.~
+  NoArgument: ${S.Name} beam${:s} happily.~
+  ~
+~

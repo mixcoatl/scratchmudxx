@@ -1,0 +1,6 @@
+Name: Beg~
+Social:
+  Found: ${S.Name} beg${:s} ${D.Name} pitifully.~
+  NoArgument: ${S.Name} beg${:s} pitifully.~
+  ~
+~

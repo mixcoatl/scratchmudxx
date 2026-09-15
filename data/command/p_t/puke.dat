@@ -1,0 +1,7 @@
+Name: Puke~
+Social:
+  Found: ${S.Name} puke${:s} all over ${D.Name}.~
+  FoundAuto: ${S.Name} puke${:s} all over ${S.Reflexive}.~
+  NoArgument: ${S.Name} puke${:s} all over.~
+  ~
+~

@@ -1,0 +1,27 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Enter the command's name");
+    ~
+  Received:-
+    local edit = d:get_edit_command();
+    if not edit then
+      d:pop_state();
+    else
+      local name = line:match("%S+") or "";
+      local original = d:get_edit_name();
+      local existing = get_commands():get(name);
+      if name == "" then
+        require("io").fail(d, Q, "Name entry cancelled.");
+        d:pop_state();
+      elseif existing and (original == "" or original:lower() ~~= name:lower()) then
+        require("io").fail(d, Q, "That command name is already taken.");
+        d:set_state("CommandName");
+      else
+        edit:set_name(name);
+        d:pop_state();
+      end
+    end
+    ~
+  ~
+Name: CommandName~
+~

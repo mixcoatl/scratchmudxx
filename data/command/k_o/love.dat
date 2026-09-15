@@ -1,0 +1,7 @@
+Name: Love~
+Social:
+  Found: ${S.Name} love${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} love${:s} ${S.Reflexive}.~
+  NoArgument: ${S.Name} love${:s} everyone.~
+  ~
+~

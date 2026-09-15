@@ -1,0 +1,7 @@
+Name: Chuckle~
+Social:
+  Found: ${S.Name} chuckle${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} chuckle${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} chuckle${:s} politely.~
+  ~
+~

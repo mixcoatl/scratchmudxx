@@ -1,0 +1,6 @@
+Name: Squeeze~
+Social:
+  Found: ${S.Name} squeeze${:s} ${D.Name} fondly.~
+  FoundAuto: ${S.Name} squeeze${:s} ${S.Reflexive} fondly.~
+  ~
+~

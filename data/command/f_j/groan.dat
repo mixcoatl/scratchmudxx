@@ -1,0 +1,7 @@
+Name: Groan~
+Social:
+  Found: ${S.Name} groan${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} groan${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} groan${:s} loudly.~
+  ~
+~

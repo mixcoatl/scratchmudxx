@@ -1,0 +1,6 @@
+Name: Hop~
+Social:
+  Found: ${S.Name} hop${:s} at ${D.Name}.~
+  NoArgument: ${S.Name} hop${:s}.~
+  ~
+~

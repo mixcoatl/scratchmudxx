@@ -38,7 +38,7 @@ public:
 	lua_State* L,
 	const int index = 1);
 
-    //! Pushes a Descriptor userdata, or nil.
+    //! Pushes a Descriptor userdata, or nil, and assigns global \c Q.
     //! \param lua the Lua facade
     //! \param d the descriptor to push
     static void Push(

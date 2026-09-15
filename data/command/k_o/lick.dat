@@ -1,0 +1,7 @@
+Name: Lick~
+Social:
+  Found: ${S.Name} lick${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} lick${:s} ${S.Reflexive}.~
+  NoArgument: ${S.Name} lick${:s} ${S.Determiner} lips.~
+  ~
+~

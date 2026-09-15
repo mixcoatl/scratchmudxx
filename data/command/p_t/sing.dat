@@ -1,0 +1,7 @@
+Name: Sing~
+Social:
+  Found: ${S.Name} sing${:s} to ${D.Name}.~
+  FoundAuto: ${S.Name} sing${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} ha${ve:s} begun to sing.~
+  ~
+~

@@ -1,0 +1,7 @@
+Name: Shake~
+Social:
+  Found: ${S.Name} shake${:s} ${D.NamePossessive} hand.~
+  FoundAuto: ${S.Name} shake${:s} and quiver${:s} like a bowlful of jelly.~
+  NoArgument: ${S.Name} shake${:s} ${S.Determiner} head.~
+  ~
+~

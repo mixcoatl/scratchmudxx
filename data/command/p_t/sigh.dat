@@ -1,0 +1,7 @@
+Name: Sigh~
+Social:
+  Found: ${S.Name} sigh${:s} softly to ${D.Name}.~
+  FoundAuto: ${S.Name} sigh${:s} softly to ${S.Reflexive}.~
+  NoArgument: ${S.Name} sigh${:s} loudly.~
+  ~
+~

@@ -1,0 +1,7 @@
+Name: Moan~
+Social:
+  Found: ${S.Name} moan${:s} to ${D.Name}.~
+  FoundAuto: ${S.Name} moan${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} moan${:s}.~
+  ~
+~

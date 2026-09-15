@@ -26,6 +26,9 @@ class Data;
 namespace Scratch {
 namespace Core {
 
+// Forward declarations.
+class Game;
+
 // ScratchMUD types.
 using Color = Scratch::Net::Color;
 using Data = Scratch::Utility::Data;
@@ -49,6 +52,15 @@ public:
     //! \param other the \sa user to assign
     User& operator=(const User& other) noexcept;
 
+    //! Adds a permission.
+    //! \param permission the permission to add
+    //! \sa #ErasePermission(const String&)
+    //! \sa #HasPermission(const String&) const
+    //! \sa #SetPermissions(const StringSetCi&)
+    void AddPermission(const String& permission) {
+	permissions_.insert(permission);
+    }
+
     //! Adds a preference.
     //! \param preference the preference to add
     //! \sa #ErasePreference(const String&)
@@ -61,6 +73,15 @@ public:
     //! \sa #SetMetaColor(Color::ColorEnum, Color::ColorEnum)
     void ClearMetaColor(Color::ColorEnum meta) noexcept;
 
+    //! Erases a permission.
+    //! \param permission the permission to erase
+    //! \sa #AddPermission(const String&)
+    //! \sa #HasPermission(const String&) const
+    //! \sa #SetPermissions(const StringSetCi&)
+    void ErasePermission(const String& permission) {
+	permissions_.erase(permission);
+    }
+
     //! Erases a preference.
     //! \param preference the preference to erase
     //! \sa #AddPreference(const String&)
@@ -69,6 +90,14 @@ public:
     void ErasePreference(const String& preference) {
 	preferences_.erase(preference);
     }
+
+    //! Finds a thing by name.
+    //! \param game the game state
+    //! \param name the name token
+    //! \return the matched thing, or \c nullptr
+    ThingPtr Find(
+	const Game& game,
+	const String& name) const noexcept override;
 
     //! Gets the email address.
     //! \sa #SetEmail(const String&)
@@ -107,6 +136,12 @@ public:
 	return password_;
     }
 
+    //! Gets the permissions.
+    //! \sa #SetPermissions(const StringSetCi&)
+    StringSetCi GetPermissions() const noexcept {
+	return permissions_;
+    }
+
     //! Gets the preferences.
     //! \sa #SetPreferences(const StringSetCi&)
     StringSetCi GetPreferences() const noexcept {
@@ -117,6 +152,15 @@ public:
     //! \sa #SetTrust(Trust::TrustEnum)
     Trust::TrustEnum GetTrust() const noexcept {
 	return trust_;
+    }
+
+    //! Returns whether \p permission is present.
+    //! \param permission the permission to test
+    //! \sa #AddPermission(const String&)
+    //! \sa #ErasePermission(const String&)
+    //! \sa #GetPermissions() const
+    bool HasPermission(const String& permission) const noexcept {
+	return permissions_.find(permission) != permissions_.end();
     }
 
     //! Returns whether \p preference is present.
@@ -138,6 +182,12 @@ public:
     //! \param data the data node to read
     //! \sa #WriteData(const DataPtr&) const
     void ReadData(const DataPtr& data) noexcept;
+
+    //! Reads permissions from a data node.
+    //! \param data the Permissions data node to read
+    //! \sa #ReadData(const DataPtr&)
+    //! \sa #WritePermissionsData(const DataPtr&) const
+    void ReadPermissionsData(const DataPtr& data) noexcept;
 
     //! Reads preferences from a data node.
     //! \param data the Preferences data node to read
@@ -191,6 +241,13 @@ public:
     //! \sa #GetPassword() const
     bool SetPassword(const String& plain) noexcept;
 
+    //! Sets the permissions.
+    //! \param permissions the permissions to set
+    //! \sa #GetPermissions() const
+    void SetPermissions(const StringSetCi& permissions) {
+	permissions_ = permissions;
+    }
+
     //! Sets the preferences.
     //! \param preferences the preferences to set
     //! \sa #GetPreferences() const
@@ -215,6 +272,12 @@ public:
     //! \param data the data node to write
     //! \sa #ReadData(const DataPtr&)
     void WriteData(const DataPtr& data) const noexcept;
+
+    //! Writes permissions to a data node.
+    //! \param data the Permissions data node to write
+    //! \sa #ReadPermissionsData(const DataPtr&)
+    //! \sa #WriteData(const DataPtr&) const
+    void WritePermissionsData(const DataPtr& data) const noexcept;
 
     //! Writes preferences to a data node.
     //! \param data the Preferences data node to write
@@ -258,6 +321,11 @@ protected:
     //! \sa #GetPassword() const
     //! \sa #SetPassword(const String&)
     String password_;
+
+    //! The permissions.
+    //! \sa #GetPermissions() const
+    //! \sa #SetPermissions(const StringSetCi&)
+    StringSetCi permissions_;
 
     //! The preferences.
     //! \sa #GetPreferences() const

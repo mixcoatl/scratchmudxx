@@ -1,0 +1,6 @@
+Name: Nibble~
+Social:
+  Found: ${S.Name} nibble${:s} on ${D.Name}.~
+  FoundAuto: ${S.Name} nibble${:s} on ${S.Reflexive}.~
+  ~
+~

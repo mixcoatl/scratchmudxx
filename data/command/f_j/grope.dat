@@ -1,0 +1,7 @@
+Name: Grope~
+Social:
+  Found: ${S.Name} grope${:s} ${D.Name}.~
+  FoundAuto: ${S.Name} grope${:s} ${S.Reflexive}.~
+  NoArgument: ${S.Name} grope${:s} about.~
+  ~
+~

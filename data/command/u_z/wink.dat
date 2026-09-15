@@ -1,0 +1,7 @@
+Name: Wink~
+Social:
+  Found: ${S.Name} wink${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} wink${:s} at ${S.Reflexive}.~
+  NoArgument: ${S.Name} wink${:s}.~
+  ~
+~

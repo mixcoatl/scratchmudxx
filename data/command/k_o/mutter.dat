@@ -1,0 +1,7 @@
+Name: Mutter~
+Social:
+  Found: ${S.Name} mutter${:s} something about ${D.Name}.~
+  FoundAuto: ${S.Name} mutter${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} mutter${:s} something under ${S.Determiner} breath.~
+  ~
+~

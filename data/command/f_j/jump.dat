@@ -1,0 +1,6 @@
+Name: Jump~
+Social:
+  Found: ${S.Name} jump${:s} on ${D.Name}!~
+  NoArgument: ${S.Name} jump${:s} up and down!~
+  ~
+~

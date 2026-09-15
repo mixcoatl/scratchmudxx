@@ -1,0 +1,67 @@
+Name: State~
+Trust: Builder~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local phrases = parse(line, {"edit", "erase", "stat"})
+  if not phrases or #phrases ~~= 1 then
+    action("Failed", A.TO_CHAR, "Usage: state edit|erase|stat <name>.", actor)
+    return
+  end
+  local target_phrase = phrases[1]
+  local mode = target_phrase:get_delimiter():lower()
+  local words = target_phrase:get_words()
+  if (mode ~~= "edit" and mode ~~= "erase" and mode ~~= "stat")
+      or #words ~~= 1
+      or not target_phrase:is_single() then
+    action("Failed", A.TO_CHAR, "Usage: state edit|erase|stat <name>.", actor)
+    return
+  end
+  local name = words[1]
+  local target = get_states():get(name)
+  if mode == "edit" then
+    if target then
+      d:set_edit_state(target)
+    else
+      local edit = d:set_edit_state()
+      edit:set_name(name)
+    end
+    d:push_state("State")
+  elseif mode == "erase" then
+    local player = actor:get_player()
+    if not player or not trust_allows(player:get_trust(), "Wizard") then
+      action("Failed", A.TO_CHAR, "You're not allowed to erase ${D.Text}!", actor, name)
+      return
+    end
+    if not target then
+      action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
+      return
+    end
+    for _, dname in ipairs(get_descriptor_names()) do
+      local other = get_descriptor(dname)
+      if other then
+        local current = other:get_state()
+        if current and current:get_name():lower() == name:lower() then
+          action("Failed", A.TO_CHAR, "You can't erase ${D.Text} because it's presently in use.", actor, name)
+          return
+        end
+      end
+    end
+    get_states():erase(name)
+    action("Okay", A.TO_CHAR | A.NOREPEAT, "Erased ${D.Text}!", actor, name)
+  elseif mode == "stat" then
+    if not target then
+      action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
+      return
+    end
+    d:print_format("%sName:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
+    d:print_format("%sQuiet:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT, tostring(target:is_quiet()), Q.NORMAL)
+    d:print_format("%sPrompt:%s %s%s%s\r\n",
+      Q.PROMPT, Q.NORMAL, Q.TEXT, tostring(target:is_prompt()), Q.NORMAL)
+  end
+  ~
+~

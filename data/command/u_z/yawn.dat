@@ -1,0 +1,7 @@
+Name: Yawn~
+Social:
+  Found: ${S.Name} yawn${:s} at ${D.Name}.~
+  FoundAuto: ${S.Name} yawn${:s} to ${S.Reflexive}.~
+  NoArgument: ${S.Name} yawn${:s}.~
+  ~
+~

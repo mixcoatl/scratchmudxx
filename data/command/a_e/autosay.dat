@@ -1,0 +1,16 @@
+Name: Autosay~
+Action:-
+  local d = get_descriptor_for(actor)
+  if not d then
+    return
+  end
+  if actor:has_preference("AutoSay") then
+    actor:erase_preference("AutoSay")
+    d:print_format("%sAutoSay off.%s\r\n", Q.OKAY, Q.NORMAL)
+  else
+    actor:add_preference("AutoSay")
+    d:print_format("%sAutoSay on.%s\r\n", Q.OKAY, Q.NORMAL)
+  end
+  get_users():save(actor:get_name())
+  ~
+~

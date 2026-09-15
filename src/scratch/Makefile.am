@@ -11,8 +11,11 @@ __top_builddir__bin_scratch_LDADD = \
 	$(BOOST_SYSTEM_LIB) \
 	$(LUA_LIB)
 __top_builddir__bin_scratch_SOURCES = \
+	action.cpp \
 	color.cpp \
 	color_bindings.cpp \
+	command.cpp \
+	command_bindings.cpp \
 	config.cpp \
 	data.cpp \
 	descriptor.cpp \
@@ -20,6 +23,7 @@ __top_builddir__bin_scratch_SOURCES = \
 	editor.cpp \
 	editor_verbs.cpp \
 	game.cpp \
+	game_action.cpp \
 	game_bindings.cpp \
 	gender.cpp \
 	logger.cpp \
@@ -27,10 +31,12 @@ __top_builddir__bin_scratch_SOURCES = \
 	lua_bindings.cpp \
 	main.cpp \
 	menu.cpp \
+	parser.cpp \
 	protocol_telnet.cpp \
 	random.cpp \
 	scheduler.cpp \
 	server.cpp \
+	social.cpp \
 	state.cpp \
 	state_bindings.cpp \
 	string.cpp \
@@ -40,8 +46,11 @@ __top_builddir__bin_scratch_SOURCES = \
 	user_bindings.cpp
 
 noinst_HEADERS = \
+	../include/scratch/action.hpp \
 	../include/scratch/color.hpp \
 	../include/scratch/color_bindings.hpp \
+	../include/scratch/command.hpp \
+	../include/scratch/command_bindings.hpp \
 	../include/scratch/config.hpp \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
@@ -55,6 +64,7 @@ noinst_HEADERS = \
 	../include/scratch/lua.hpp \
 	../include/scratch/lua_bindings.hpp \
 	../include/scratch/menu.hpp \
+	../include/scratch/parser.hpp \
 	../include/scratch/protocol.hpp \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
@@ -62,6 +72,7 @@ noinst_HEADERS = \
 	../include/scratch/scheduler.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
+	../include/scratch/social.hpp \
 	../include/scratch/state.hpp \
 	../include/scratch/state_bindings.hpp \
 	../include/scratch/storage.hpp \
