@@ -16,7 +16,9 @@
 #include <scratch/repository.hpp>
 #include <scratch/scheduler.hpp>
 #include <scratch/scratch.hpp>
+#include <scratch/sector.hpp>
 #include <scratch/state.hpp>
+#include <scratch/storage_file.hpp>
 #include <scratch/string.hpp>
 #include <scratch/user.hpp>
 #include <scratch/world.hpp>
@@ -67,6 +69,9 @@ using ServerPtr = std::shared_ptr<Server>;
 using StateRepository = Scratch::Storage::Repository<
 	State, Scratch::Storage::MultiFileStorage<State>>;
 using StateRepositoryPtr = std::shared_ptr<StateRepository>;
+using SectorRepository = Scratch::Storage::Repository<
+	Sector, Scratch::Storage::FileStorage<Sector>>;
+using SectorRepositoryPtr = std::shared_ptr<SectorRepository>;
 using UserRepository = Scratch::Storage::Repository<
 	User, Scratch::Storage::MultiFileStorage<User>>;
 using UserRepositoryPtr = std::shared_ptr<UserRepository>;
@@ -180,6 +185,9 @@ public:
 
     //! Gets the scheduler.
     Scheduler& GetScheduler() noexcept;
+
+    SectorRepositoryPtr GetSectors() const noexcept;
+
 
     //! Gets the shutdown flag.
     //! \sa #SetShutdown(const bool)
@@ -307,6 +315,9 @@ protected:
     //! The scheduler.
     //! \sa #GetScheduler()
     Scheduler scheduler_;
+
+    SectorRepositoryPtr sectors_;
+
 
     //! The server.
     ServerPtr server_;

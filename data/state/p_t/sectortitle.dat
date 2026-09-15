@@ -1,0 +1,14 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Enter the sector title");
+    ~
+  Received:-
+    local edit = d:get_edit_sector();
+    if edit then
+      edit:set_title(line);
+    end
+    d:pop_state();
+    ~
+~
+Name: SectorTitle~
+~

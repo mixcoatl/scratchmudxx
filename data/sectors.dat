@@ -1,0 +1,76 @@
+City:
+  Movement:
+    Cost: 1~
+    ~
+  ~
+DeepWater:
+  Movement:
+    Cost: 1~
+    Type: Boat~
+    ~
+  Title: deep water~
+  ~
+Desert:
+  Movement:
+    Cost: 5~
+    ~
+  ~
+Field:
+  Movement:
+    Cost: 2~
+    ~
+  ~
+Flying:
+  Movement:
+    Cost: 1~
+    Type: Fly~
+    ~
+  ~
+Forest:
+  Movement:
+    Cost: 3~
+    ~
+  ~
+Hills:
+  Movement:
+    Cost: 4~
+    ~
+  ~
+Inside:
+  Movement:
+    Cost: 1~
+    ~
+  SectorBits:
+    Indoors: Yes~
+    ~
+  ~
+Mountains:
+  Movement:
+    Cost: 6~
+    ~
+  ~
+Swamp:
+  Movement:
+    Cost: 5~
+    ~
+  ~
+Underground:
+  Movement:
+    Cost: 6~
+    ~
+  ~
+Underwater:
+  Movement:
+    Cost: 5~
+    ~
+  SectorBits:
+    Unbreathable: Yes~
+    ~
+  ~
+Water:
+  Movement:
+    Cost: 4~
+    Type: Swim~
+    ~
+  ~
+~

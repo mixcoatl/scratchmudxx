@@ -18,6 +18,7 @@
 #include <scratch/player.hpp>
 #include <scratch/scheduler.hpp>
 #include <scratch/scratch.hpp>
+#include <scratch/sector.hpp>
 #include <scratch/server.hpp>
 #include <scratch/state.hpp>
 #include <scratch/storage_file.hpp>
@@ -43,6 +44,9 @@ Game::Game() :
 		Scratch::Storage::MultiFileStorage<Player>(
 			"data", "player", ".dat"))),
 	scheduler_(ioContext_),
+	sectors_(std::make_shared<SectorRepository>(
+		Scratch::Storage::FileStorage<Sector>(
+		    "data", "sectors", ".dat"))),
 	server_(),
 	shutdown_(false),
 	signals_(ioContext_),
@@ -197,6 +201,12 @@ Scheduler& Game::GetScheduler() noexcept {
     return scheduler_;
 }
 
+//! Gets the sector catalog repository.
+SectorRepositoryPtr Game::GetSectors() const noexcept {
+    return sectors_;
+}
+
+
 //! Gets the shutdown flag.
 //! \sa #SetShutdown(const bool)
 bool Game::GetShutdown() const noexcept {
@@ -267,6 +277,9 @@ void Game::LoadRepositories() {
     }
     if (!players_->LoadIndex()) {
 	throw std::runtime_error("Couldn't load player index.");
+    }
+    if (!sectors_->LoadIndex()) {
+	throw std::runtime_error("Couldn't load sector catalog.");
     }
 }
 

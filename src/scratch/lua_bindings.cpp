@@ -15,6 +15,8 @@
 #include <scratch/menu.hpp>
 #include <scratch/parser.hpp>
 #include <scratch/player_bindings.hpp>
+#include <scratch/movement.hpp>
+#include <scratch/sector.hpp>
 #include <scratch/preference.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/storage_file_multi.hpp>
@@ -34,6 +36,9 @@ using Instance = Scratch::Core::Instance;
 using Menu = Scratch::Net::Menu;
 using Parser = Scratch::Core::Parser;
 using PlayerRepository = Scratch::Core::PlayerRepository;
+using Movement = Scratch::Core::Movement;
+using Sector = Scratch::Core::Sector;
+using SectorRepository = Scratch::Core::SectorRepository;
 using Preference = Scratch::Core::Preference;
 using StateRepository = Scratch::Core::StateRepository;
 using Strings = Scratch::Algorithm::Strings;
@@ -149,6 +154,8 @@ void LuaBindings::Register(Lua& lua) {
     lua.Function("parse_gender", &Gender::ByName);
     lua.Function("parse_trust", &Trust::ByName);
     lua.Function("parse_preference", &Preference::ByName);
+    lua.Function("parse_movement", &Movement::ByName);
+    lua.Function("get_movement_names", &Detail::GetEnumNames<Movement>);
     lua.Function("get_color_names", GetColorNames);
     lua.Function(
 	"get_gender_names",
@@ -221,6 +228,36 @@ void LuaBindings::Register(Lua& lua) {
     lua.RawFunction("match_phrase", MatchPhraseProxy);
     lua.RawFunction("parse", ParseProxy);
     PlayerBindings::Register(lua);
+    lua.Class<Sector>("Scratch.Sector").
+	Function("get_created", &Sector::GetCreated).
+	Function("get_created_by", &Sector::GetCreatedBy).
+	Function("get_indoors_bit", &Sector::GetIndoorsBit).
+	Function("get_modified", &Sector::GetModified).
+	Function("get_modified_by", &Sector::GetModifiedBy).
+	Function("get_movement_cost", &Sector::GetMovementCost).
+	Function("get_movement_type", &Sector::GetMovementType).
+	Function("get_name", &Sector::GetName).
+	Function("get_title", &Sector::GetTitle).
+	Function("get_unbreathable_bit", &Sector::GetUnbreathableBit).
+	Function("set_created", &Sector::SetCreated).
+	Function("set_created_by", &Sector::SetCreatedBy).
+	Function("set_indoors_bit", &Sector::SetIndoorsBit).
+	Function("set_modified", &Sector::SetModified).
+	Function("set_modified_by", &Sector::SetModifiedBy).
+	Function("set_movement_cost", &Sector::SetMovementCost).
+	Function("set_movement_type", &Sector::SetMovementType).
+	Function("set_name", &Sector::SetName).
+	Function("set_title", &Sector::SetTitle).
+	Function("set_unbreathable_bit", &Sector::SetUnbreathableBit);
+    lua.Class<SectorRepository>("Scratch.SectorRepository").
+	Function("erase", &SectorRepository::Erase).
+	Function("get", &SectorRepository::Get).
+	Function("get_ids", &SectorRepository::GetIds).
+	Function("load", &SectorRepository::Load).
+	Function("load_index", &SectorRepository::LoadIndex).
+	Function("save", &SectorRepository::Save).
+	Function("save_index", &SectorRepository::SaveIndex).
+	Function("store", &SectorRepository::Store);
     lua.Class<PlayerRepository>(PlayerBindings::RepositoryMetaName).
 	Function("erase", &PlayerRepository::Erase).
 	Function("get", &PlayerRepository::Get).

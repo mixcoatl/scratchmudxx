@@ -27,6 +27,7 @@ __top_builddir__bin_scratch_SOURCES = \
 	game_bindings.cpp \
 	gender.cpp \
 	instance.cpp \
+	movement.cpp \
 	logger.cpp \
 	lua.cpp \
 	lua_bindings.cpp \
@@ -39,6 +40,7 @@ __top_builddir__bin_scratch_SOURCES = \
 	protocol_telnet.cpp \
 	random.cpp \
 	scheduler.cpp \
+	sector.cpp \
 	server.cpp \
 	social.cpp \
 	state.cpp \
@@ -66,6 +68,7 @@ noinst_HEADERS = \
 	../include/scratch/game_bindings.hpp \
 	../include/scratch/gender.hpp \
 	../include/scratch/instance.hpp \
+	../include/scratch/movement.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/lua.hpp \
 	../include/scratch/lua_bindings.hpp \
@@ -79,6 +82,7 @@ noinst_HEADERS = \
 	../include/scratch/random.hpp \
 	../include/scratch/repository.hpp \
 	../include/scratch/scheduler.hpp \
+	../include/scratch/sector.hpp \
 	../include/scratch/scratch.hpp \
 	../include/scratch/server.hpp \
 	../include/scratch/social.hpp \

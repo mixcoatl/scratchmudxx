@@ -1,0 +1,21 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Enter the sector name");
+    ~
+  Received:-
+    local edit = d:get_edit_sector();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local name = line:match("^%s*(.-)%s*$");
+    if name == "" then
+      d:pop_state();
+    else
+      edit:set_name(name);
+      d:pop_state();
+    end
+    ~
+~
+Name: SectorName~
+~

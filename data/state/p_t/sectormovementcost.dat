@@ -1,0 +1,22 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Enter the movement cost (0-255)");
+    ~
+  Received:-
+    local edit = d:get_edit_sector();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local cost = tonumber(line:match("^%s*(%d+)%s*$"));
+    if not cost or cost < 0 or cost > 255 then
+      require("io").fail(d, Q, "Movement cost must be 0-255.");
+      d:set_state("SectorMovementCost");
+      return;
+    end
+    edit:set_movement_cost(cost);
+    d:pop_state();
+    ~
+~
+Name: SectorMovementCost~
+~

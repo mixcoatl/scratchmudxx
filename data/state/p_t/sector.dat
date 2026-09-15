@@ -1,0 +1,78 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_sector();
+    if not edit then
+      require("io").fail(d, Q, "No Sector draft; returning.");
+      d:pop_state();
+      return;
+    end
+    local function yn(flag)
+      return flag and "Yes" or "No"
+    end
+    local movement = edit:get_movement_type();
+    if movement == "" then
+      movement = "None";
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Sector", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_field("1", "Name", edit:get_name(), "name");
+    m:add_field("2", "Title", edit:get_title(), "text", "<Empty>");
+    m:add_field("3", "Unbreathable", yn(edit:get_unbreathable_bit()), "yesno");
+    m:add_field("4", "Indoors", yn(edit:get_indoors_bit()), "yesno");
+    m:add_field("5", "Movement Cost", tostring(edit:get_movement_cost()));
+    m:add_field("6", "Movement Type", movement, "enum", "<None>");
+    m:add_choices();
+    m:add_item("q", "Save and quit.");
+    m:add_item("x", "Abort without saving.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_sector();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "1" then
+      d:push_state("SectorName");
+    elseif key == "2" then
+      d:push_state("SectorTitle");
+    elseif key == "3" then
+      edit:set_unbreathable_bit(not edit:get_unbreathable_bit());
+      d:set_state("Sector");
+    elseif key == "4" then
+      edit:set_indoors_bit(not edit:get_indoors_bit());
+      d:set_state("Sector");
+    elseif key == "5" then
+      d:push_state("SectorMovementCost");
+    elseif key == "6" then
+      d:push_state("SectorMovementType");
+    elseif key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        require("io").fail(d, Q, "Name is required before saving.");
+        d:set_state("Sector");
+      else
+        require("thing").set_audit_metadata(edit, d, d:get_edit_name() == "");
+        get_sectors():store(name, edit);
+        local original = d:get_edit_name();
+        if original ~~= "" and original:lower() ~~= name:lower() then
+          get_sectors():erase(original);
+        end
+        d:clear_edit_sector();
+        d:pop_state();
+      end
+    elseif key == "x" then
+      d:clear_edit_sector();
+      d:pop_state();
+    else
+      require("io").show_unknown_choice(d, Q, "Sector");
+    end
+    ~
+~
+Name: Sector~
+~

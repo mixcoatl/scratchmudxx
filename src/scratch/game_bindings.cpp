@@ -141,6 +141,7 @@ void GameBindings::Register(Lua& lua) {
     lua.Function("get_instance_for", &Game::GetInstanceFor);
     lua.RawFunction("erase_instance", EraseInstanceProxy);
     lua.Function("get_players", &Game::GetPlayers);
+    lua.Function("get_sectors", &Game::GetSectors);
     lua.Function("get_states", &Game::GetStates);
     lua.Function("get_users", &Game::GetUsers);
     lua.Function("get_world", &Game::GetWorld);

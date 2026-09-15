@@ -14,6 +14,7 @@
 #include <scratch/color.hpp>
 #include <scratch/gender.hpp>
 #include <scratch/instance.hpp>
+#include <scratch/movement.hpp>
 #include <scratch/parser.hpp>
 #include <scratch/preference.hpp>
 #include <scratch/trust.hpp>
@@ -137,6 +138,12 @@ struct LuaValue<Scratch::Net::Color::ColorEnum, void>:
 template<>
 struct LuaValue<Scratch::Core::Gender::GenderEnum, void>:
     LuaEnumValue<Scratch::Core::Gender> {};
+
+//! Converts Movement values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Movement::MovementEnum, void>:
+    LuaEnumValue<Scratch::Core::Movement> {};
+
 
 //! Converts Preference values to and from Lua strings.
 template<>
