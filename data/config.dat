@@ -1,22 +1,35 @@
 Colors:
+  Description: Silver~
   Emphasis: Lime~
   Enum: Purple~
+  Exit: Azure~
   Failed: Crimson~
   Key: Crimson~
+  Movement: Azure~
   Name: Pink~
+  Notice: Teal~
   Number: Teal~
   Okay: Teal~
   Percent: Crimson~
+  Peek: Azure~
   Prompt: Forest~
   Punctuation: Gray~
   Restricted: Pink~
   Say: Forest~
   Social: Purple~
   Text: Ochre~
+  Title: Aqua~
   YesNo: Purple~
   ~
 Game:
   BootstrapState: Login~
+  Rooms:
+    Immortal: GodSimplex:Board~
+    Mortal: Midgaard:TempleOfMidgaard~
+    ~
+  World:
+    GracePeriod: 5m~
+    ~
   ~
 Network:
   Port: 6767~

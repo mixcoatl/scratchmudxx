@@ -33,6 +33,7 @@ Game::Game() :
 	commandsIndex_(),
 	config_(std::make_shared<Config>()),
 	descriptors_(),
+	worlds_(),
 	lua_(std::make_unique<Lua>(*this)),
 	scheduler_(ioContext_),
 	server_(),
@@ -43,7 +44,9 @@ Game::Game() :
 			"data", "state", ".dat"))),
 	users_(std::make_shared<UserRepository>(
 		Scratch::Storage::MultiFileStorage<User>(
-			"data", "user", ".dat"))) {}
+			"data", "user", ".dat"))) {
+    worlds_[String()] = std::make_shared<World>();
+}
 
 
 //! Destructor.
@@ -81,6 +84,48 @@ std::set<DescriptorPtr> Game::GetDescriptors() const noexcept {
 	descriptorSet.insert(pair.second);
     }
     return descriptorSet;
+}
+
+//! Gets an instance.
+//! \param instanceName the instance name
+//! \return the instance, or \c nullptr
+InstancePtr Game::GetInstance(const String& instanceName) const noexcept {
+    for (auto& world: this->GetWorlds()) {
+	if (!world)
+	    continue;
+	auto instance = world->GetInstance(instanceName);
+	if (instance)
+	    return instance;
+    }
+    return nullptr;
+}
+
+//! Gets the instances.
+InstancePtrSet Game::GetInstances() const noexcept {
+    InstancePtrSet instances;
+    for (auto& world: this->GetWorlds()) {
+	if (!world)
+	    continue;
+	for (auto& instance: world->GetInstances())
+	    instances.insert(instance);
+    }
+    return instances;
+}
+
+//! Gets a world object.
+//! \param worldId the world object identity
+//! \return the world object, or \c nullptr
+WorldPtr Game::GetWorld(const String& worldId) const noexcept {
+    auto it = worlds_.find(worldId);
+    return it != std::end(worlds_) ? it->second : nullptr;
+}
+
+//! Gets the world objects.
+std::set<WorldPtr> Game::GetWorlds() const noexcept {
+    std::set<WorldPtr> worlds;
+    for (auto& pair: worlds_)
+	worlds.insert(pair.second);
+    return worlds;
 }
 
 //! Gets the connection-state repository.
@@ -304,7 +349,9 @@ void Game::Shutdown() noexcept {
 	d->Close();
 
     // Maps; Close() defers EraseDescriptor via post.
-    descriptors_.clear();    ioContext_.stop();
+    descriptors_.clear();
+    worlds_.clear();
+    ioContext_.stop();
 }
 
 //! Begins waiting for process termination signals.

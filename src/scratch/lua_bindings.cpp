@@ -10,6 +10,7 @@
 #include <scratch/editor.hpp>
 #include <scratch/game_bindings.hpp>
 #include <scratch/gender.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/lua_bindings.hpp>
 #include <scratch/menu.hpp>
 #include <scratch/parser.hpp>
@@ -27,6 +28,7 @@ using CommandRepository = Scratch::Core::CommandRepository;
 using Config = Scratch::Core::Config;
 using Editor = Scratch::Net::Editor;
 using Gender = Scratch::Core::Gender;
+using Instance = Scratch::Core::Instance;
 using Menu = Scratch::Net::Menu;
 using Parser = Scratch::Core::Parser;
 using StateRepository = Scratch::Core::StateRepository;
@@ -186,7 +188,20 @@ void LuaBindings::Register(Lua& lua) {
 	Function("get_text", &Editor::GetText).
 	Function("is_aborted", &Editor::IsAborted).
 	Function("is_saved", &Editor::IsSaved);
-    GameBindings::Register(lua);    lua.Class<Parser::Phrase>("Scratch.ParserPhrase").
+    GameBindings::Register(lua);
+    lua.Class<Instance>("Scratch.Instance").
+	Function("add_child", &Instance::AddChild).
+	Function("get_contents", &Instance::GetContents).
+	Function("get_contents_weight", &Instance::GetContentsWeight).
+	Function("get_name", &Instance::GetName).
+	Function("get_parent", &Instance::GetParent).
+	Function("get_total_weight", &Instance::GetTotalWeight).
+	Function("get_weight", &Instance::GetWeight).
+	Function("get_world", &Instance::GetWorld).
+	Function("remove", &Instance::Remove).
+	Function("remove_child", &Instance::RemoveChild).
+	Function("set_weight", &Instance::SetWeight);
+    lua.Class<Parser::Phrase>("Scratch.ParserPhrase").
 	Value().
 	Function("get_count", &Parser::Phrase::GetCount).
 	Function("get_delimiter", &Parser::Phrase::GetDelimiter).
