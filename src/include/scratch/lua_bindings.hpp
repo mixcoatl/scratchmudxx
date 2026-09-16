@@ -729,6 +729,28 @@ struct LuaReturn<void, TupleT> {
     }
 };
 
+//! Invokes a potentially throwing typed function with shared_ptr cleanup.
+//! Resets the shared pointer before longjmp on error.
+//! \param L the \c lua_State
+//! \param function the typed invocation
+//! \param ptr the shared pointer to reset on error
+template<bool IsNoexcept, typename FunctionT, typename SharedPtrT>
+static int SafeInvoke(
+	lua_State* L,
+	FunctionT function,
+	SharedPtrT& ptr,
+	std::integral_constant<bool, false>) {
+    try {
+	return function();
+    } catch (const std::exception& exception) {
+	ptr.reset();
+	return luaL_error(L, "%s", exception.what());
+    } catch (...) {
+	ptr.reset();
+	return luaL_error(L, "unknown C++ exception");
+    }
+}
+
 //! Invokes a potentially throwing typed function.
 //! \param L the \c lua_State
 //! \param function the typed invocation
@@ -790,7 +812,7 @@ struct MemberInvoker<
 	    const std::shared_ptr<ClassT>& object,
 	    typename Arguments::Values& arguments,
 	    std::index_sequence<Index...>) {
-	return InvokeResult(L, *object, arguments,
+	return InvokeResult(L, const_cast<std::shared_ptr<ClassT>&>(object), arguments,
 	    std::index_sequence<Index...>(),
 	    typename std::is_void<ReturnT>::type());
     }
@@ -811,24 +833,25 @@ struct MemberInvoker<
     template<std::size_t... Index>
     static int InvokeResult(
 	    lua_State* L,
-	    ClassT& object,
+	    std::shared_ptr<ClassT>& object,
 	    typename Arguments::Values& arguments,
 	    std::index_sequence<Index...>,
 	    std::true_type) {
 	return SafeInvoke<false>(
 	    L,
 	    [&]() {
-		CallMethod(L, object, arguments,
+		CallMethod(L, *object, arguments,
 		    std::index_sequence<Index...>());
 		return 0;
 	    },
+	    object,
 	    std::false_type());
     }
 
     template<std::size_t... Index>
     static int InvokeResult(
 	    lua_State* L,
-	    ClassT& object,
+	    std::shared_ptr<ClassT>& object,
 	    typename Arguments::Values& arguments,
 	    std::index_sequence<Index...>,
 	    std::false_type) {
@@ -836,10 +859,11 @@ struct MemberInvoker<
 	    L,
 	    [&]() {
 		auto value = CallMethod(
-		    L, object, arguments, std::index_sequence<Index...>());
+		    L, *object, arguments, std::index_sequence<Index...>());
 		LuaValue<ReturnT>::Push(L, std::move(value));
 		return 1;
 	    },
+	    object,
 	    std::false_type());
     }
 
