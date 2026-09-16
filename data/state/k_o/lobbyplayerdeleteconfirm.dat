@@ -1,0 +1,56 @@
+Hooks:
+  Focus:-
+    local user = require("user").ensure_user(d, Q);
+    if not user then
+      return;
+    end
+    local name = d:get_edit_string();
+    if name == "" then
+      d:set_state("Lobby");
+      return;
+    end
+    d:print_format(
+      "%sType %s%s%s to permanently delete this character:%s ",
+      Q.PROMPT, Q.NAME, name, Q.PROMPT, Q.NORMAL);
+    ~
+  Received:-
+    local user = require("user").ensure_user(d, Q);
+    if not user then
+      return;
+    end
+    local name = d:get_edit_string();
+    if name == "" then
+      d:set_state("Lobby");
+      return;
+    end
+    local word = line:match("%S+") or "";
+    if word == "" then
+      d:set_edit_string("");
+      d:set_state("Lobby");
+    elseif word:lower() == name:lower() then
+      if not user:has_player(name) then
+        require("io").fail(d, Q, "Unknown character.");
+        d:set_edit_string("");
+        d:set_state("Lobby");
+        return;
+      end
+      local player = get_players():get(name);
+      if player and get_instance_for(player) then
+        require("io").fail(d, Q, "That character is presently active.");
+        d:set_edit_string("");
+        d:set_state("Lobby");
+        return;
+      end
+      get_players():erase(name);
+      user:erase_player(name);
+      get_users():save(user:get_name());
+      d:set_edit_string("");
+      d:set_state("Lobby");
+    else
+      require("io").fail(d, Q, "Character name did not match.");
+      d:set_state("LobbyPlayerDeleteConfirm");
+    end
+    ~
+  ~
+Name: LobbyPlayerDeleteConfirm~
+~

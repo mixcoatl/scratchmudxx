@@ -1,0 +1,46 @@
+Hooks:
+  Focus:-
+    local user = require("user").ensure_user(d, Q);
+    if not user then
+      return;
+    end
+    local players = user:get_players() or {};
+    if #players == 0 then
+      d:set_state("Lobby");
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Delete Character");
+    m:add_choices();
+    for i, name in ipairs(players) do
+      m:add_item(tostring(i), name);
+    end
+    m:add_item("x", "Cancel.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local user = require("user").ensure_user(d, Q);
+    if not user then
+      return;
+    end
+    local players = user:get_players() or {};
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "x" then
+      d:set_edit_string("");
+      d:set_state("Lobby");
+      return;
+    end
+    local index = tonumber(key);
+    if not index or index < 1 or index > #players then
+      require("io").show_unknown_choice(d, Q, "LobbyPlayerDelete");
+      return;
+    end
+    d:set_edit_string(players[index]);
+    d:set_state("LobbyPlayerDeleteConfirm");
+    ~
+  ~
+Name: LobbyPlayerDelete~
+~

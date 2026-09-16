@@ -49,17 +49,6 @@ public:
     //! Registers Command and Social bindings.
     //! \param lua the Lua facade
     static void Register(Lua& lua);
-
-    //! Resolves Command userdata at \p index.
-    //! \param L the \c lua_State
-    //! \param index the stack index of the userdata
-    //! \return the command
-    static CommandPtr Check(lua_State* L, const int index = 1);
-
-    //! Pushes Command userdata.
-    //! \param lua the Lua facade
-    //! \param command the command
-    static void Push(Lua& lua, CommandPtr command);
 };
 //! \}
 

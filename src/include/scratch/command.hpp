@@ -34,13 +34,13 @@ namespace Scratch {
 namespace Core {
 
 // Forward declarations.
-class User;
+class Instance;
 
 // ScratchMUD types.
 using Data = Scratch::Utility::Data;
 using DataPtr = std::shared_ptr<Data>;
+using InstancePtr = std::shared_ptr<Instance>;
 using Trust = Scratch::Core::Trust;
-using UserPtr = std::shared_ptr<User>;
 
 //! The command class. \{
 class Command : public Thing {
@@ -60,9 +60,9 @@ public:
     Command& operator=(const Command& other) noexcept;
 
     //! Returns whether \p performer may run this command.
-    //! \param performer the performing user, or null for open commands only
+    //! \param performer the performing instance, or null for open commands only
     //! \sa #GetTrust() const
-    bool Allows(const UserPtr& performer) const noexcept;
+    bool Allows(const InstancePtr& performer) const noexcept;
 
     //! Gets the Action hook.
     //! \sa #SetAction(const String&)
@@ -87,6 +87,15 @@ public:
     Trust::TrustEnum GetTrust() const noexcept {
 	return trust_;
     }
+
+    //! Performs this command's social.
+    //! \param game the game state
+    //! \param actor the performing instance
+    //! \param line the remainder after the matched command word
+    void PerformSocial(
+	Game& game,
+	const InstancePtr& actor,
+	const String& line) const;
 
     //! Reads this command from a data node.
     //! \param data the data node to read

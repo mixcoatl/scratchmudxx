@@ -20,7 +20,7 @@ namespace Core {
 //! Default constructor.
 ActionParam::ActionParam() noexcept :
 	text_(),
-	thing_() {
+	instance_() {
     // Nothing.
 }
 
@@ -28,7 +28,7 @@ ActionParam::ActionParam() noexcept :
 //! \param other the \sa actionparam to copy
 ActionParam::ActionParam(const ActionParam& other) noexcept :
 	text_(other.text_),
-	thing_(other.thing_) {
+	instance_(other.instance_) {
     // Nothing.
 }
 
@@ -41,7 +41,7 @@ ActionParam::~ActionParam() noexcept {
 //! \param other the \sa actionparam to assign
 ActionParam& ActionParam::operator=(const ActionParam& other) noexcept {
     text_ = other.text_;
-    thing_ = other.thing_;
+    instance_ = other.instance_;
     return *this;
 }
 
@@ -49,7 +49,7 @@ ActionParam& ActionParam::operator=(const ActionParam& other) noexcept {
 //! \param text the text
 ActionParam::ActionParam(const char* text) noexcept :
 	text_(text ? text : ""),
-	thing_() {
+	instance_() {
     // Nothing.
 }
 
@@ -57,7 +57,7 @@ ActionParam::ActionParam(const char* text) noexcept :
 //! \param value the value
 ActionParam::ActionParam(const double value) :
 	text_(),
-	thing_() {
+	instance_() {
     std::ostringstream out;
     out << value;
     text_ = out.str();
@@ -67,15 +67,15 @@ ActionParam::ActionParam(const double value) :
 //! \param text the text
 ActionParam::ActionParam(const String& text) noexcept :
 	text_(text),
-	thing_() {
+	instance_() {
     // Nothing.
 }
 
-//! Constructs from thing.
-//! \param thing the thing
-ActionParam::ActionParam(const ThingPtr& thing) noexcept :
+//! Constructs from instance.
+//! \param instance the instance
+ActionParam::ActionParam(const InstancePtr& instance) noexcept :
 	text_(),
-	thing_(thing) {
+	instance_(instance) {
     // Nothing.
 }
 

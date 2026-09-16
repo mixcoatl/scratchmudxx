@@ -61,19 +61,19 @@ Hooks:
     else
       local index = tonumber(key);
       if index and index >= 1 and index <= #players then
-        local who = user:get_name();
+        local player = get_players():get(players[index]);
+        if not player then
+          io.fail(d, Q, "Missing player record.");
+          d:set_state("Lobby");
+          return
+        end
+        local who = player:get_name();
         d:print_format("%sWelcome to ScratchMUD, %s%s%s!%s\r\n",
           Q.PROMPT, Q.EMPHASIS, who, Q.PROMPT, Q.NORMAL);
         local last_logout = user:get_last_logout();
         if last_logout and last_logout > 0 then
           d:print_format("%sYour last visit ended %s%s%s.%s\r\n",
             Q.PROMPT, Q.EMPHASIS, os.date("%Y-%m-%d %H:%M:%S", last_logout), Q.PROMPT, Q.NORMAL);
-        end
-        local player = get_players():get(players[index]);
-        if not player then
-          io.fail(d, Q, "Missing player record.");
-          d:set_state("Lobby");
-          return
         end
         local inst = get_instance_for(player);
         if inst then

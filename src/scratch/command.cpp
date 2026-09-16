@@ -13,7 +13,9 @@
 #include <scratch/data.hpp>
 #include <scratch/descriptor.hpp>
 #include <scratch/game.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/parser.hpp>
+#include <scratch/player.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/social.hpp>
 #include <scratch/string.hpp>
@@ -23,6 +25,69 @@
 
 namespace Scratch {
 namespace Core {
+
+//! Performs this command's social.
+//! \param game the game state
+//! \param actor the performing instance
+//! \param line the remainder after the matched command word
+void Command::PerformSocial(
+	Game& game,
+	const InstancePtr& actor,
+	const String& line) const {
+    if (!actor || !social_)
+	return;
+
+    const auto printMiss = [&actor]() {
+	auto d = actor->GetDescriptor();
+	if (!d || d->Closed())
+	    return;
+	String out;
+	out += d->GetColor(Color::C_FAILED);
+	out += "You don't see them here.";
+	out += d->GetColor(Color::C_NORMAL);
+	out += "\r\n";
+	d->Print(out);
+    };
+
+    Parser parser;
+    if (!parser.Parse(line)) {
+	printMiss();
+	return;
+    }
+
+    String message;
+    ActionParam direct;
+    if (!parser.GetSize()) {
+	message = social_->GetNoArgument();
+    } else if (parser.GetSize() != 1) {
+	printMiss();
+	return;
+    } else {
+	const auto& phrase = parser.GetPhrase(0);
+	auto target = actor->Find(game, phrase);
+
+	if (!target) {
+	    printMiss();
+	    return;
+	} else if (target == actor) {
+	    message = social_->GetFoundAuto();
+	    if (message.empty())
+		message = social_->GetFound();
+	} else {
+	    message = social_->GetFound();
+	}
+	direct = ActionParam(target);
+    }
+    if (message.empty())
+	return;
+
+    game.Action(
+	Color::C_SOCIAL,
+	ACT_TOALL | ACT_NOREPEAT,
+	message,
+	ActionParam(actor),
+	direct);
+}
 
 // ScratchMUD types.
 using Strings = Scratch::Algorithm::Strings;
@@ -101,14 +166,17 @@ Command& Command::operator=(const Command& other) noexcept {
 //! Returns whether \p performer may run this command.
 //! \param performer the performing instance, or null for open commands only
 //! \sa #GetTrust() const
-bool Command::Allows(const UserPtr& performer) const noexcept {
+bool Command::Allows(const InstancePtr& performer) const noexcept {
     if (!Trust::IsDefined(trust_))
 	return true;
     if (!performer)
 	return false;
-    if (!Trust::IsDefined(performer->GetTrust()))
+    auto player = performer->GetPlayer();
+    if (!player)
 	return false;
-    return Trust::Allows(performer->GetTrust(), trust_);
+    if (!Trust::IsDefined(player->GetTrust()))
+	return false;
+    return Trust::Allows(player->GetTrust(), trust_);
 }
 
 //! Reads this command from a data node.

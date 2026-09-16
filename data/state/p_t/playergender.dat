@@ -1,0 +1,14 @@
+Hooks:
+  Focus:-
+    require("enum").list_enum_names(d, "Gender", get_gender_names)
+    ~
+  Received:-
+    require("enum").parse_enum_name(d, Q, line, "PlayerGender",
+      get_gender_names,
+      function() return d:get_edit_player() end,
+      function(edit, name) edit:set_gender(name) end,
+      false)
+    ~
+  ~
+Name: PlayerGender~
+~

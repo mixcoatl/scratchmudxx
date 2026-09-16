@@ -1,8 +1,11 @@
 Hooks:
   Received:-
-    local user = d:get_user();
-    if user then
-      dispatch_command(user, line);
+    local instance = d:get_character();
+    if instance then
+      if line:match("^%s*$") then
+        line = "look";
+      end
+      dispatch_command(instance, line);
     end
     ~
   ~

@@ -15,6 +15,7 @@
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/trust.hpp>
 #include <scratch/game.hpp>
+#include <scratch/instance.hpp>
 #include <scratch/lua.hpp>
 #include <scratch/repository.hpp>
 #include <scratch/scratch.hpp>
@@ -38,7 +39,10 @@ using ActionParam = Scratch::Core::ActionParam;
 using Color = Scratch::Net::Color;
 using CommandRepositoryPtr = Scratch::Core::CommandRepositoryPtr;
 using Trust = Scratch::Core::Trust;
+using Instance = Scratch::Core::Instance;
+using InstancePtr = Scratch::Core::InstancePtr;
 using WeakCommandPtr = std::weak_ptr<Command>;
+using WeakInstancePtr = std::weak_ptr<Instance>;
 using WeakSocialPtr = std::weak_ptr<Social>;
 
 CommandRepository& CommandBindings::CheckRepository(
@@ -50,15 +54,6 @@ CommandRepository& CommandBindings::CheckRepository(
 
 void CommandBindings::PushRepository(Lua& lua) {
     lua.PushUserdata(lua.GetGame().GetCommands(), RepositoryMetaName);
-}
-
-CommandPtr CommandBindings::Check(lua_State* L, const int index) {
-    return Lua::CheckWeakUserdata<Command>(
-	L, MetaName, "invalid command", index);
-}
-
-void CommandBindings::Push(Lua& lua, CommandPtr command) {
-    lua.PushUserdata(std::move(command), MetaName);
 }
 
 //! Sets a Command name.
@@ -108,6 +103,7 @@ void CommandBindings::Register(Lua& lua) {
 	Function("get_name", &Command::GetName).
 	Function("get_social", &Command::GetSocial).
 	Function("get_trust", &Command::GetTrust).
+	Function("perform_social", &Command::PerformSocial, Injected<Game>()).
 	Function("set_action", &Command::SetAction).
 	Function("set_created", &Command::SetCreated).
 	Function("set_created_by", &Command::SetCreatedBy).
@@ -127,6 +123,7 @@ void CommandBindings::Register(Lua& lua) {
     lua.Function("action", &Game::Action, Optional(), Optional(), Optional());
     lua.Function("dispatch_command", &Game::DispatchCommand);
     lua.Function("get_commands", &Game::GetCommands);
+    lua.Function("get_commands_index", &Game::GetCommandsIndex);
     lua.Function("run_command_hook", &Game::RunCommandHook);
     RegisterTargetsTable(lua);
 }
