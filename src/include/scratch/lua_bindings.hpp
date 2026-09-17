@@ -2139,6 +2139,52 @@ static int NonOwningGc(lua_State* L) {
 	L, ClassBinding<T>::MetaName());
 }
 
+//! Metamethod for value-owned userdata equality comparison.
+//! \param L the \c lua_State
+//! \return 1; pushes boolean result
+template<typename T>
+static int ValueEq(lua_State* L) {
+    const char* meta = ClassBinding<T>::MetaName();
+    if (lua_type(L, 1) != LUA_TUSERDATA ||
+	    lua_type(L, 2) != LUA_TUSERDATA) {
+	lua_pushboolean(L, 0);
+	return 1;
+    }
+    auto* const left = static_cast<T*>(luaL_testudata(L, 1, meta));
+    auto* const right = static_cast<T*>(luaL_testudata(L, 2, meta));
+    if (!left || !right) {
+	lua_pushboolean(L, 0);
+	return 1;
+    }
+    lua_pushboolean(L, left == right);
+    return 1;
+}
+
+//! Metamethod for weak_ptr userdata equality comparison.
+//! \param L the \c lua_State
+//! \return 1; pushes boolean result
+template<typename T>
+static int WeakPtrEq(lua_State* L) {
+    const char* meta = ClassBinding<T>::MetaName();
+    if (lua_type(L, 1) != LUA_TUSERDATA ||
+	    lua_type(L, 2) != LUA_TUSERDATA) {
+	lua_pushboolean(L, 0);
+	return 1;
+    }
+    auto* const left = static_cast<std::weak_ptr<T>*>(
+	luaL_testudata(L, 1, meta));
+    auto* const right = static_cast<std::weak_ptr<T>*>(
+	luaL_testudata(L, 2, meta));
+    if (!left || !right) {
+	lua_pushboolean(L, 0);
+	return 1;
+    }
+    const auto leftPtr = left->lock();
+    const auto rightPtr = right->lock();
+    lua_pushboolean(L, leftPtr && rightPtr && leftPtr == rightPtr);
+    return 1;
+}
+
 }; // namespace Detail
 
 //! Returns an injected-argument marker.
@@ -2175,11 +2221,13 @@ public:
 	lua_setfield(lua_.GetState(), -2, "__index");
 	lua_pop(lua_.GetState(), 1);
 	Set("__gc", &Detail::NonOwningGc<ClassT>);
+	Set("__eq", &Detail::WeakPtrEq<ClassT>);
     }
 
     //! Selects non-owning userdata.
     ClassBinding& NonOwning() {
 	Set("__gc", &Detail::NonOwningGc<ClassT>);
+	Set("__eq", &Detail::WeakPtrEq<ClassT>);
 	return *this;
     }
 
@@ -2187,6 +2235,7 @@ public:
     ClassBinding& Value() {
 	valueOwned_ = true;
 	Set("__gc", &Detail::ValueGc<ClassT>);
+	Set("__eq", &Detail::ValueEq<ClassT>);
 	return *this;
     }
 
