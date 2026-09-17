@@ -45,7 +45,7 @@ Game::Game() :
 	users_(std::make_shared<UserRepository>(
 		Scratch::Storage::MultiFileStorage<User>(
 			"data", "user", ".dat"))) {
-    worlds_[String()] = std::make_shared<World>();
+    worlds_[String()] = std::make_shared<World>(*this);
 }
 
 
@@ -372,6 +372,28 @@ void Game::InitSignals() {
 	LOGGER_MAIN() << "Received " << strsignal(signum) << " signal; shutting down.";
 	this->SetShutdown(true);
     });
+}
+
+//! Prunes a world object.
+//! \param world the world object
+//! \param force the force-prune bit
+//! \return \c true if pruned
+bool Game::PruneWorld(const WorldPtr& world, const bool force) noexcept {
+    if (!world || world->GetId().empty())
+	return false;
+    if (force)
+	return false;
+
+    const auto now = Scheduler::Task::Clock::now();
+    if (!world->GetPrune(now))
+	return false;
+    if (world->GetPrune(now).occupants > 0)
+	return false;
+
+    const auto worldId = world->GetId();
+    worlds_.erase(worldId);
+    LOGGER_WORLD() << "Pruned world " << worldId << '.';
+    return true;
 }
 
 }; // namespace Core

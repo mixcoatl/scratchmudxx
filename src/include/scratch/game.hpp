@@ -157,6 +157,9 @@ public:
     //! \return the world object, or \c nullptr
     WorldPtr GetWorld(const String& worldId) const noexcept;
 
+    //! Prunes a world object.
+    bool PruneWorld(const WorldPtr& world, const bool force) noexcept;
+
     //! Gets the world objects.
     std::set<WorldPtr> GetWorlds() const noexcept;
 
