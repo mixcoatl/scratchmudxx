@@ -2501,6 +2501,9 @@ public:
 	return metaName_;
     }
 
+    //! Metatable name set by #Lua::Class.
+    inline static const char* metaName_ = nullptr;
+
 private:
     template<typename SignatureT>
     void SetMethod(
@@ -2544,12 +2547,7 @@ private:
     Lua& lua_;
     const char* name_;
     bool valueOwned_;
-public:
-    static const char* metaName_;
 };
-
-template<typename ClassT>
-const char* ClassBinding<ClassT>::metaName_ = nullptr;
 
 template<typename ClassT>
 ClassBinding<ClassT> Lua::Class(const char* name) {
