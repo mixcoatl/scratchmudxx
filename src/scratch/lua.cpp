@@ -479,6 +479,7 @@ LuaResult Lua::Require(const String& moduleName) {
 	    source.data(),
 	    source.length(),
 	    moduleName.c_str());
+	source.clear();
 	if (result != LUA_OK)
 	    return lua_error(L);
 
