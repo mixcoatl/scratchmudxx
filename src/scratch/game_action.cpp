@@ -614,45 +614,5 @@ DescriptorPtr Game::GetDescriptorFor(const ThingPtr& thing) noexcept {
     return nullptr;
 }
 
-//! Rebuilds the keyword command index.
-//! \throw std::runtime_error on keyword conflicts
-//! \sa #GetCommandsIndex() const
-void Game::RebuildCommandIndex() {
-    commandsIndex_.clear();
-    if (!commands_)
-	return;
-
-    for (const auto& id: commands_->GetIds()) {
-	auto command = commands_->Get(id);
-	if (!command)
-	    continue;
-	const auto name = command->GetName();
-	if (name.empty())
-	    continue;
-	auto& slot = commandsIndex_[name];
-	if (slot && slot != command) {
-	    throw std::runtime_error(
-		    "Command index conflict on name: " + name);
-	}
-	slot = command;
-    }
-
-    for (const auto& id: commands_->GetIds()) {
-	auto command = commands_->Get(id);
-	if (!command)
-	    continue;
-	for (const auto& keyword: command->GetKeywords()) {
-	    if (keyword.empty())
-		continue;
-	    auto& slot = commandsIndex_[keyword];
-	    if (slot && slot != command) {
-		throw std::runtime_error(
-			"Command index conflict on keyword: " + keyword);
-	    }
-	    slot = command;
-	}
-    }
-}
-
 }; // namespace Core
 }; // namespace Scratch

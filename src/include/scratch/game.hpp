@@ -179,7 +179,7 @@ public:
 	const char **argv);
 
     //! Rebuilds the keyword command index.
-    //! \throw std::runtime_error on keyword conflicts
+    //! \remark Logs and skips conflicting keyword slots.
     //! \sa #GetCommandsIndex() const
     void RebuildCommandIndex();
 

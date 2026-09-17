@@ -199,6 +199,38 @@ void Game::LoadRepositories() {
 
 }
 
+//! Rebuilds the keyword command index.
+//! \remark Logs and skips conflicting keyword slots.
+//! \sa #GetCommandsIndex() const
+void Game::RebuildCommandIndex() {
+    commandsIndex_.clear();
+    if (!commands_)
+	return;
+
+    for (const auto& id: commands_->GetIds()) {
+	if (auto command = commands_->Get(id))
+	    commandsIndex_[id] = command;
+    }
+
+    for (const auto& id: commands_->GetIds()) {
+	auto command = commands_->Get(id);
+	if (!command)
+	    continue;
+	for (const auto& keyword: command->GetKeywords()) {
+	    if (keyword.empty())
+		continue;
+	    auto& slot = commandsIndex_[keyword];
+	    if (slot && slot != command) {
+		LOGGER_SYSTEM() << "Couldn't add keyword '" << keyword << "'" <<
+		    " for command '" << command->GetName() << "';" <<
+		    " reserved by command '" << slot->GetName() << "'.";
+		continue;
+	    }
+	    slot = command;
+	}
+    }
+}
+
 //! Parses command line arguments.
 //! \param argc the number of command line arguments
 //! \param argv an array containing the command line arguments
