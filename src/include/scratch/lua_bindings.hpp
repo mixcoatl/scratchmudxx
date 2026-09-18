@@ -12,8 +12,11 @@
 #include <boost/optional.hpp>
 #include <scratch/action.hpp>
 #include <scratch/color.hpp>
+#include <scratch/direction.hpp>
+#include <scratch/door.hpp>
 #include <scratch/gender.hpp>
 #include <scratch/instance.hpp>
+#include <scratch/lighting.hpp>
 #include <scratch/movement.hpp>
 #include <scratch/parser.hpp>
 #include <scratch/preference.hpp>
@@ -134,6 +137,31 @@ template<>
 struct LuaValue<Scratch::Net::Color::ColorEnum, void>:
     LuaEnumValue<Scratch::Net::Color> {};
 
+//! Converts Direction values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Direction::DirectionEnum, void> {
+    static Scratch::Core::Direction::DirectionEnum Check(
+	    lua_State* L,
+	    const int index) {
+	const auto name = Lua::CheckString(L, index);
+	const auto value = Scratch::Core::Direction::ByName(name);
+	if (!Scratch::Core::Direction::IsDefined(value))
+	    luaL_argerror(L, index, "unknown enum value");
+	return value;
+    }
+
+    static void Push(
+	    lua_State* L,
+	    const Scratch::Core::Direction::DirectionEnum value) {
+	if (!Scratch::Core::Direction::IsDefined(value)) {
+	    lua_pushnil(L);
+	    return;
+	}
+	Lua::CheckLua(L).PushString(
+	    Scratch::Core::Direction::ToString(value));
+    }
+};
+
 //! Converts Gender values to and from Lua strings.
 template<>
 struct LuaValue<Scratch::Core::Gender::GenderEnum, void>:
@@ -144,6 +172,15 @@ template<>
 struct LuaValue<Scratch::Core::Movement::MovementEnum, void>:
     LuaEnumValue<Scratch::Core::Movement> {};
 
+//! Converts Door values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Door::DoorEnum, void>:
+    LuaEnumValue<Scratch::Core::Door> {};
+
+//! Converts Lighting values to and from Lua strings.
+template<>
+struct LuaValue<Scratch::Core::Lighting::LightingEnum, void>:
+    LuaEnumValue<Scratch::Core::Lighting> {};
 
 //! Converts Preference values to and from Lua strings.
 template<>

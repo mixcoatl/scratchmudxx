@@ -1,0 +1,6 @@
+Name: Close~
+Action:-
+  local exit = require("exit")
+  exit.close_door(actor, command, line, Q)
+  ~
+~

@@ -1,0 +1,100 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_room();
+    if not edit then
+      require("io").fail(d, Q, "No Room draft; returning.");
+      d:pop_state();
+      return;
+    end
+    local function yn(flag)
+      return flag and "Yes" or "No"
+    end
+    local function indoors_label(value)
+      if value == nil then
+        return "Inherit"
+      end
+      return value and "Yes" or "No"
+    end
+    local lighting = edit:get_lighting();
+    if lighting == "" then
+      lighting = "Natural";
+    end
+    local limit = edit:get_occupant_limit();
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Room", edit:get_name(), "name", "<New>");
+    m:add_choices();
+    m:add_field("1", "Name", edit:get_name());
+    m:add_field("2", "Title", edit:get_title(), "text", "<Empty>");
+    m:add_block("3", "Description", edit:get_description());
+    m:add_item("4", "Edit exit.");
+    m:add_field("5", "Sector", edit:get_sector(), "text", "<Empty>");
+    m:add_field("6", "Lighting", lighting, "enum", "<Natural>");
+    m:add_field("7", "Indoors", indoors_label(edit:get_override_indoors()), "enum", "<Inherit>");
+    m:add_field("8", "Private", yn(edit:get_private_bit()), "yesno");
+    m:add_field("9", "Occupant Limit", limit and tostring(limit) or "", "text", "<Unlimited>");
+    m:add_field("a", "Immortal", yn(edit:get_immortal_bit()), "yesno");
+    m:add_choices();
+    m:add_item("q", "Save room.");
+    m:add_item("x", "Abort room.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    local zone = d:get_edit_zone();
+    if not edit or not zone then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "1" then
+      d:push_state("RoomName");
+    elseif key == "2" then
+      d:push_state("RoomTitle");
+    elseif key == "3" then
+      d:push_state("RoomDescription");
+    elseif key == "4" then
+      d:push_state("ExitDirection");
+    elseif key == "5" then
+      d:push_state("RoomSector");
+    elseif key == "6" then
+      d:push_state("RoomLighting");
+    elseif key == "7" then
+      d:push_state("RoomIndoors");
+    elseif key == "8" then
+      edit:set_private_bit(not edit:get_private_bit());
+      d:set_state("Room");
+    elseif key == "9" then
+      d:push_state("RoomOccupantLimit");
+    elseif key == "a" then
+      edit:set_immortal_bit(not edit:get_immortal_bit());
+      d:set_state("Room");
+    elseif key == "q" then
+      local name = edit:get_name();
+      if name == "" then
+        require("io").fail(d, Q, "Name is required before saving.");
+        d:set_state("Room");
+      else
+        local old = d:get_edit_name();
+        zone:store_room(name, edit);
+        if old ~~= "" and old:lower() ~~= name:lower() then
+          zone:erase_room(old);
+        end
+        get_zones():store(zone:get_name(), zone);
+        d:clear_edit_room();
+        d:clear_edit_zone();
+        d:pop_state();
+      end
+    elseif key == "x" then
+      d:clear_edit_room();
+      d:clear_edit_zone();
+      d:pop_state();
+    else
+      d:set_state("Room");
+    end
+    ~
+~
+Name: Room~
+~

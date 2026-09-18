@@ -1,0 +1,31 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    require("io").prompt(d, Q, "Occupant Limit");
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    if line == "" then
+      edit:set_occupant_limit(nil);
+    else
+      local limit = tonumber(line);
+      if not limit or limit < 0 or limit > 255 then
+        require("io").fail(d, Q, "Enter 0-255 or leave blank for unlimited.");
+        d:set_state("RoomOccupantLimit");
+        return;
+      end
+      edit:set_occupant_limit(limit);
+    end
+    d:set_state("Room");
+    ~
+~
+Name: RoomOccupantLimit~
+~

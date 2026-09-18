@@ -1,0 +1,46 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Indoors", edit:get_name(), "name", "<New>");
+    m:add_named_choices("Indoors");
+    m:add_item("1", "Inherit from sector.");
+    m:add_item("2", "Yes.");
+    m:add_item("3", "No.");
+    m:add_choices();
+    m:add_item("x", "Return.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "x" then
+      d:pop_state();
+      return;
+    end
+    if key == "1" then
+      edit:set_override_indoors(nil);
+    elseif key == "2" then
+      edit:set_override_indoors(true);
+    elseif key == "3" then
+      edit:set_override_indoors(false);
+    else
+      require("io").show_unknown_choice(d, Q, "RoomIndoors");
+      return;
+    end
+    d:set_state("Room");
+    ~
+~
+Name: RoomIndoors~
+~

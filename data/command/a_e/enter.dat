@@ -1,0 +1,6 @@
+Name: Enter~
+Action:-
+  local movement = require("movement")
+  movement.enter(actor, command, line, Q)
+  ~
+~

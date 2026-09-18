@@ -1,0 +1,21 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    require("io").prompt(d, Q, "Sector");
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    edit:set_sector(line);
+    d:set_state("Room");
+    ~
+~
+Name: RoomSector~
+~

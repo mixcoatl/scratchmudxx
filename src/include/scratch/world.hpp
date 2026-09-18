@@ -102,10 +102,26 @@ public:
     //! \return the prune snapshot
     PruneInfo GetPrune(const Scheduler::Task::TimePoint& now) const noexcept;
 
+    //! Gets a live room instance.
+    //! \param qualifiedName the qualified room name
+    //! \return the live room instance, or \c nullptr
+    //! \sa #GetInstances() const
+    InstancePtr GetRoomInstance(const String& qualifiedName) const noexcept;
+
+    //! Gets the source zone name.
+    //! \sa #SetSourceZone(const String&)
+    String GetSourceZone() const noexcept {
+	return sourceZone_;
+    }
+
     //! Gets the game state.
     Game& GetGame() noexcept {
 	return game_;
     }
+
+    //! Links room exits within this world.
+    //! \sa Game::LinkWorlds()
+    void LinkRoomExits() noexcept;
 
     //! Removes an instance.
     //! \param instance the instance to remove
@@ -117,6 +133,13 @@ public:
     //! \sa #ClearPruneDeadline()
     void SetPruneDeadline(const Scheduler::Task::TimePoint& deadline) noexcept {
 	pruneDeadline_ = deadline;
+    }
+
+    //! Sets the source zone name.
+    //! \param sourceZone the zone name
+    //! \sa #GetSourceZone() const
+    void SetSourceZone(const String& sourceZone) noexcept {
+	sourceZone_ = sourceZone;
     }
 
 protected:
@@ -144,6 +167,9 @@ protected:
 
     //! The prune task.
     Scheduler::TaskPtr pruneTask_;
+
+    //! The source zone name.
+    String sourceZone_;
 };
 //! \}
 

@@ -1,4 +1,5 @@
 Colors:
+  Daytime: Amber~
   Description: Silver~
   Emphasis: Lime~
   Enum: Purple~
@@ -7,6 +8,7 @@ Colors:
   Key: Crimson~
   Movement: Azure~
   Name: Pink~
+  Nighttime: Azure~
   Notice: Teal~
   Number: Teal~
   Okay: Teal~

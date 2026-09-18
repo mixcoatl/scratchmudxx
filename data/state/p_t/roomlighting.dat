@@ -1,0 +1,54 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Lighting", edit:get_name(), "name", "<New>");
+    m:add_named_choices("Lighting");
+    local names = get_lighting_names();
+    for i, name in ipairs(names) do
+      m:add_item(tostring(i), name);
+    end
+    m:add_choices();
+    m:add_item("x", "Return.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "x" then
+      d:pop_state();
+      return;
+    end
+    if not key then
+      if line:match("%S+") then
+        require("io").show_unknown_choice(d, Q, "RoomLighting");
+      else
+        d:pop_state();
+      end
+      return;
+    end
+    local names = get_lighting_names();
+    local n = tonumber(key);
+    local lighting = n and names[n];
+    if lighting then
+      edit:set_lighting(lighting);
+    else
+      require("io").show_unknown_choice(d, Q, "RoomLighting");
+      return;
+    end
+    d:set_state("RoomLighting");
+    ~
+~
+Name: RoomLighting~
+~

@@ -11,7 +11,12 @@
 #include <scratch/config.hpp>
 #include <scratch/game.hpp>
 #include <scratch/instance.hpp>
+#include <scratch/room.hpp>
+#include <scratch/room_exit_specials.hpp>
+#include <scratch/room_specials.hpp>
 #include <scratch/world.hpp>
+#include <scratch/zone.hpp>
+
 namespace Scratch {
 namespace Core {
 
@@ -27,7 +32,8 @@ World::World(Game& game, const String& id) noexcept :
 	id_(id),
 	instances_(),
 	pruneDeadline_(),
-	pruneTask_() {
+	pruneTask_(),
+	sourceZone_() {
     // Nothing.
 }
 
@@ -92,8 +98,8 @@ InstancePtrSet World::GetInstances() const noexcept {
 PruneInfo World::GetPrune(const Task::TimePoint& now) const noexcept {
     PruneInfo info;
     info.protected_ = this->GetId().empty();
-	for (const auto& instance: instances_) {
-	if (instance)
+    for (const auto& instance: instances_) {
+	if (instance && instance->GetPlayer() && instance->GetDescriptor())
 	    ++info.occupants;
     }
     if (info.protected_ || info.occupants > 0 || !pruneDeadline_)
@@ -104,6 +110,53 @@ PruneInfo World::GetPrune(const Task::TimePoint& now) const noexcept {
     info.graceRemaining = remaining > Task::Duration::zero() ?
 	remaining : Task::Duration::zero();
     return info;
+}
+
+//! Gets a live room instance.
+//! \param qualifiedName the qualified room name
+//! \return the live room instance, or \c nullptr
+InstancePtr World::GetRoomInstance(const String& qualifiedName) const noexcept {
+    if (qualifiedName.empty())
+	return nullptr;
+    for (const auto& instance: instances_) {
+	auto room = instance->GetRoom();
+	if (room && !Strings::CompareCi(room->GetQualifiedName(), qualifiedName))
+	    return instance;
+    }
+    return nullptr;
+}
+
+//! Links room exits within this world.
+//! \sa Game::LinkWorlds()
+void World::LinkRoomExits() noexcept {
+    StringMapCi<InstancePtr> rooms;
+    for (const auto& instance: instances_) {
+	auto room = instance->GetRoom();
+	if (room)
+	    rooms[room->GetQualifiedName()] = instance;
+    }
+    for (const auto& instance: instances_) {
+	auto room = instance->GetRoom();
+	auto specials = instance->GetRoomSpecials();
+	if (!room || !specials)
+	    continue;
+	auto zone = room->GetZone();
+	for (const auto& pair: specials->GetExits()) {
+	    auto exit = pair.second;
+	    auto definition = exit->GetDefinition();
+	    if (!definition)
+		continue;
+	    auto target = definition->GetTarget();
+	    if (target.empty())
+		continue;
+	    auto targetRoom = game_.GetRoomInZone(target, zone);
+	    if (!targetRoom)
+		continue;
+	    auto found = rooms.find(targetRoom->GetQualifiedName());
+	    if (found != std::end(rooms))
+		exit->SetTarget(found->second);
+	}
+    }
 }
 
 //! Removes an instance.

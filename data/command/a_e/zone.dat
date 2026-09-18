@@ -1,0 +1,50 @@
+Name: Zone~
+Trust: Builder~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local io = require("io")
+  local synopsis = "zone edit|erase|stat <zone>"
+  local phrases = parse(line, {"edit", "erase", "stat"})
+  if not phrases or #phrases ~~= 1 then
+    io.usage(d, Q, synopsis)
+    return
+  end
+  local target_phrase = phrases[1]
+  local mode = target_phrase:get_delimiter():lower()
+  local words = target_phrase:get_words()
+  if (mode ~~= "edit" and mode ~~= "erase" and mode ~~= "stat")
+      or #words ~~= 1
+      or not target_phrase:is_single() then
+    io.usage(d, Q, synopsis)
+    return
+  end
+  local name = words[1]
+  local target = get_zones():get(name)
+  if mode == "edit" then
+    if target then
+      d:set_edit_zone(target)
+    else
+      local edit = d:set_edit_zone(nil)
+      edit:set_name(name)
+    end
+    d:push_state("Zone")
+  elseif mode == "erase" then
+    if not target then
+      action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
+      return
+    end
+    get_zones():erase(name)
+    action("Okay", A.TO_CHAR | A.NOREPEAT, "Erased ${D.Text}!", actor, name)
+  elseif mode == "stat" then
+    if not target then
+      action("Failed", A.TO_CHAR, "You can't seem to find ${D.Text}!", actor, name)
+      return
+    end
+    d:print_format("%sName%s:%s %s%s%s\r\n",
+      Q.PROMPT, Q.PUNCTUATION, Q.NORMAL, Q.TEXT, target:get_name(), Q.NORMAL)
+  end
+  ~
+~

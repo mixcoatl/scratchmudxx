@@ -9,6 +9,7 @@
 #ifndef _SCRATCH_ACTION_HPP_
 #define _SCRATCH_ACTION_HPP_
 
+#include <scratch/direction.hpp>
 #include <scratch/instance.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
@@ -72,6 +73,10 @@ public:
     InstancePtr GetInstance() const noexcept {
 	return instance_;
     }
+
+    //! Parses text as a direction.
+    //! \return the direction, or \c D_UNDEFINED
+    Direction::DirectionEnum ToDirection() const noexcept;
 
 private:
     //! The text.

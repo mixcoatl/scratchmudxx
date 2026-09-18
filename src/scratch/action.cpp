@@ -9,6 +9,7 @@
 #define _SCRATCH_ACTION_CPP_
 
 #include <scratch/action.hpp>
+#include <scratch/direction.hpp>
 #include <scratch/scratch.hpp>
 #include <scratch/string.hpp>
 
@@ -77,6 +78,16 @@ ActionParam::ActionParam(const InstancePtr& instance) noexcept :
 	text_(),
 	instance_(instance) {
     // Nothing.
+}
+
+//! Parses text as a direction.
+//! \return the direction, or \c D_UNDEFINED
+//! \sa Direction::ByName(const String&)
+Direction::DirectionEnum ActionParam::ToDirection() const noexcept {
+    if (instance_)
+	return Direction::D_UNDEFINED;
+    const auto value = Direction::ByName(text_);
+    return Direction::IsDefined(value) ? value : Direction::D_UNDEFINED;
 }
 
 }; // namespace Core

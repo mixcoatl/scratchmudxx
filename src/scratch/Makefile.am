@@ -20,6 +20,12 @@ __top_builddir__bin_scratch_SOURCES = \
 	data.cpp \
 	descriptor.cpp \
 	descriptor_bindings.cpp \
+	direction.cpp \
+	door.cpp \
+	room.cpp \
+	room_exit.cpp \
+	room_exit_specials.cpp \
+	room_specials.cpp \
 	editor.cpp \
 	editor_verbs.cpp \
 	game.cpp \
@@ -27,12 +33,13 @@ __top_builddir__bin_scratch_SOURCES = \
 	game_bindings.cpp \
 	gender.cpp \
 	instance.cpp \
-	movement.cpp \
+	lighting.cpp \
 	logger.cpp \
 	lua.cpp \
 	lua_bindings.cpp \
 	main.cpp \
 	menu.cpp \
+	movement.cpp \
 	parser.cpp \
 	player.cpp \
 	player_bindings.cpp \
@@ -50,7 +57,8 @@ __top_builddir__bin_scratch_SOURCES = \
 	trust.cpp \
 	user.cpp \
 	user_bindings.cpp \
-	world.cpp
+	world.cpp \
+	zone.cpp
 
 noinst_HEADERS = \
 	../include/scratch/action.hpp \
@@ -62,17 +70,20 @@ noinst_HEADERS = \
 	../include/scratch/data.hpp \
 	../include/scratch/descriptor.hpp \
 	../include/scratch/descriptor_bindings.hpp \
+	../include/scratch/direction.hpp \
+	../include/scratch/door.hpp \
 	../include/scratch/editor.hpp \
 	../include/scratch/editor_verbs.hpp \
 	../include/scratch/game.hpp \
 	../include/scratch/game_bindings.hpp \
 	../include/scratch/gender.hpp \
 	../include/scratch/instance.hpp \
-	../include/scratch/movement.hpp \
+	../include/scratch/lighting.hpp \
 	../include/scratch/logger.hpp \
 	../include/scratch/lua.hpp \
 	../include/scratch/lua_bindings.hpp \
 	../include/scratch/menu.hpp \
+	../include/scratch/movement.hpp \
 	../include/scratch/parser.hpp \
 	../include/scratch/player.hpp \
 	../include/scratch/player_bindings.hpp \
@@ -81,9 +92,13 @@ noinst_HEADERS = \
 	../include/scratch/protocol_telnet.hpp \
 	../include/scratch/random.hpp \
 	../include/scratch/repository.hpp \
+	../include/scratch/room.hpp \
+	../include/scratch/room_exit.hpp \
+	../include/scratch/room_exit_specials.hpp \
+	../include/scratch/room_specials.hpp \
 	../include/scratch/scheduler.hpp \
-	../include/scratch/sector.hpp \
 	../include/scratch/scratch.hpp \
+	../include/scratch/sector.hpp \
 	../include/scratch/server.hpp \
 	../include/scratch/social.hpp \
 	../include/scratch/state.hpp \
@@ -97,4 +112,5 @@ noinst_HEADERS = \
 	../include/scratch/trust.hpp \
 	../include/scratch/user.hpp \
 	../include/scratch/user_bindings.hpp \
-	../include/scratch/world.hpp
+	../include/scratch/world.hpp \
+	../include/scratch/zone.hpp

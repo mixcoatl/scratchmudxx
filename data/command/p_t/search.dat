@@ -1,0 +1,6 @@
+Name: Search~
+Action:-
+  local search = require("search")
+  search.search(actor, line, Q)
+  ~
+~

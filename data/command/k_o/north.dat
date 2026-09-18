@@ -1,0 +1,7 @@
+Name: North~
+Keywords: n~
+Action:-
+  local movement = require("movement")
+  movement.move_direction(actor, command:get_name(), Q)
+  ~
+~

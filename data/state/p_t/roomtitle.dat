@@ -1,0 +1,14 @@
+Hooks:
+  Focus:-
+    require("io").prompt(d, Q, "Enter the room title");
+    ~
+  Received:-
+    local edit = d:get_edit_room();
+    if edit then
+      edit:set_title(line);
+    end
+    d:set_state("Room");
+    ~
+~
+Name: RoomTitle~
+~

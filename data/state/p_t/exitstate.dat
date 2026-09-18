@@ -1,0 +1,54 @@
+Hooks:
+  Focus:-
+    local edit = d:get_edit_exit();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    d:clear_menu();
+    local m = d:ensure_menu();
+    m:set_title("Door State");
+    m:add_named_choices("Door State");
+    local names = get_door_names();
+    for i, name in ipairs(names) do
+      m:add_item(tostring(i), name);
+    end
+    m:add_choices();
+    m:add_item("x", "Return.");
+    m:set_prompt("Enter choice");
+    d:print_menu();
+    ~
+  Received:-
+    local edit = d:get_edit_exit();
+    if not edit then
+      d:pop_state();
+      return;
+    end
+    local m = d:get_menu();
+    local key = m:match_key(line);
+    if key == "x" then
+      d:pop_state();
+      return;
+    end
+    if not key then
+      if line:match("%S+") then
+        require("io").show_unknown_choice(d, Q, "ExitState");
+      else
+        d:pop_state();
+      end
+      return;
+    end
+    local names = get_door_names();
+    local n = tonumber(key);
+    local door = n and names[n];
+    if door then
+      edit:set_door_state(door);
+    else
+      require("io").show_unknown_choice(d, Q, "ExitState");
+      return;
+    end
+    d:set_state("ExitState");
+    ~
+~
+Name: ExitState~
+~

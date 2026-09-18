@@ -1,0 +1,11 @@
+Name: Look~
+Keywords: l~
+Action:-
+  local d = actor:get_descriptor()
+  if not d then
+    return
+  end
+  local room = require("room")
+  room.look(d, Q, actor, line)
+  ~
+~

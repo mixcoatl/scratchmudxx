@@ -1,0 +1,6 @@
+Name: Leave~
+Action:-
+  local movement = require("movement")
+  movement.leave(actor, command, line, Q)
+  ~
+~

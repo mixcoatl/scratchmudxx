@@ -3,26 +3,30 @@
 //! \par Copyright
 //! Copyright (C) 1999-2026 scratchmud.org
 //! All rights reserved.
+//!
+//! \author Geoffrey Davis (gdavis@scratchmud.org)
 
 #include <scratch/command_bindings.hpp>
 #include <scratch/config.hpp>
 #include <scratch/descriptor_bindings.hpp>
 #include <scratch/editor.hpp>
 #include <scratch/game_bindings.hpp>
-#include <scratch/gender.hpp>
 #include <scratch/instance.hpp>
 #include <scratch/lua_bindings.hpp>
 #include <scratch/menu.hpp>
+#include <scratch/movement.hpp>
 #include <scratch/parser.hpp>
 #include <scratch/player_bindings.hpp>
-#include <scratch/movement.hpp>
+#include <scratch/room.hpp>
+#include <scratch/room_exit.hpp>
+#include <scratch/room_exit_specials.hpp>
+#include <scratch/room_specials.hpp>
 #include <scratch/sector.hpp>
-#include <scratch/preference.hpp>
 #include <scratch/state_bindings.hpp>
 #include <scratch/storage_file_multi.hpp>
-#include <scratch/string.hpp>
-#include <scratch/trust.hpp>
 #include <scratch/user_bindings.hpp>
+#include <scratch/zone.hpp>
+#include <scratch/string.hpp>
 
 namespace Scratch {
 namespace Scripting {
@@ -30,22 +34,38 @@ namespace Scripting {
 using Color = Scratch::Net::Color;
 using CommandRepository = Scratch::Core::CommandRepository;
 using Config = Scratch::Core::Config;
+using Direction = Scratch::Core::Direction;
+using Door = Scratch::Core::Door;
 using Editor = Scratch::Net::Editor;
+using Game = Scratch::Core::Game;
 using Gender = Scratch::Core::Gender;
 using Instance = Scratch::Core::Instance;
+using InstancePtr = Scratch::Core::InstancePtr;
+using Lighting = Scratch::Core::Lighting;
 using Menu = Scratch::Net::Menu;
+using Movement = Scratch::Core::Movement;
 using Parser = Scratch::Core::Parser;
 using PlayerRepository = Scratch::Core::PlayerRepository;
-using Movement = Scratch::Core::Movement;
-using Sector = Scratch::Core::Sector;
-using SectorRepository = Scratch::Core::SectorRepository;
 using Preference = Scratch::Core::Preference;
+using Room = Scratch::Core::Room;
+using RoomExit = Scratch::Core::RoomExit;
+using RoomExitSpecials = Scratch::Core::RoomExitSpecials;
+using RoomSpecials = Scratch::Core::RoomSpecials;
+using Sector = Scratch::Core::Sector;
+using SectorPtr = Scratch::Core::SectorPtr;
+using SectorRepository = Scratch::Core::SectorRepository;
 using StateRepository = Scratch::Core::StateRepository;
 using Strings = Scratch::Algorithm::Strings;
+using Thing = Scratch::Core::Thing;
 using Trust = Scratch::Core::Trust;
+using WorldPtr = Scratch::Core::WorldPtr;
 using UserRepository = Scratch::Core::UserRepository;
+using Zone = Scratch::Core::Zone;
+using ZonePtr = std::shared_ptr<Zone>;
+using ZoneRepository = Scratch::Core::ZoneRepository;
 
 //! Handles StateRepository:erase(name).
+//! \param L the \c lua_State
 static int StateRepositoryErase(lua_State* L) {
     if (lua_gettop(L) != 2)
 	return luaL_error(L, "erase expects 1 argument");
@@ -62,6 +82,7 @@ static int StateRepositoryErase(lua_State* L) {
 }
 
 //! Returns the real color names.
+//! \return the color names
 static std::vector<String> GetColorNames() {
     std::vector<String> names;
     Color::ForEach(
@@ -75,6 +96,7 @@ static std::vector<String> GetColorNames() {
 }
 
 //! Returns the metacolor names.
+//! \return the metacolor names
 static std::vector<String> GetMetaColorNames() {
     std::vector<String> names;
     Color::ForEach(
@@ -86,6 +108,7 @@ static std::vector<String> GetMetaColorNames() {
 }
 
 //! Handles lua match_phrase(phrases, delimiter [, ordinal]).
+//! \param L the \c lua_State
 static int MatchPhraseProxy(lua_State* L) {
     const int argc = lua_gettop(L);
     if (argc != 2 && argc != 3)
@@ -115,6 +138,7 @@ static int MatchPhraseProxy(lua_State* L) {
 }
 
 //! Handles lua parse(line [, delimiters]).
+//! \param L the \c lua_State
 static int ParseProxy(lua_State* L) {
     const int argc = lua_gettop(L);
     if (argc != 1 && argc != 2)
@@ -150,17 +174,28 @@ static int ParseProxy(lua_State* L) {
     }
 }
 
+//! Registers cross-domain Lua bindings on \p lua.
+//! \param lua the Lua facade
 void LuaBindings::Register(Lua& lua) {
+    lua.Function("parse_color", &Color::ByName);
+    lua.Function("parse_direction", &Direction::ByName);
+    lua.Function("parse_door", &Door::ByName);
     lua.Function("parse_gender", &Gender::ByName);
-    lua.Function("parse_trust", &Trust::ByName);
-    lua.Function("parse_preference", &Preference::ByName);
+    lua.Function("parse_lighting", &Lighting::ByName);
     lua.Function("parse_movement", &Movement::ByName);
-    lua.Function("get_movement_names", &Detail::GetEnumNames<Movement>);
+    lua.Function("parse_preference", &Preference::ByName);
+    lua.Function("parse_trust", &Trust::ByName);
     lua.Function("get_color_names", GetColorNames);
+    lua.Function("get_door_names", &Detail::GetEnumNames<Door>);
     lua.Function(
 	"get_gender_names",
 	&Detail::GetEnumNames<Gender>);
+    lua.Function("get_lighting_names", &Detail::GetEnumNames<Lighting>);
     lua.Function("get_metacolor_names", GetMetaColorNames);
+    lua.Function("get_movement_names", &Detail::GetEnumNames<Movement>);
+    lua.Function(
+	"get_opposite_direction",
+	&Direction::Opposite);
     CommandBindings::Register(lua);
     lua.Class<CommandRepository>(CommandBindings::RepositoryMetaName).
 	Function("erase", &CommandRepository::Erase).
@@ -174,6 +209,8 @@ void LuaBindings::Register(Lua& lua) {
     lua.Class<Config>("Scratch.Config").
 	Function("get_address", &Config::GetAddress).
 	Function("get_bootstrap_state", &Config::GetBootstrapState).
+	Function("get_entry_room", &Config::GetEntryRoom).
+	Function("get_entry_rooms", &Config::GetEntryRooms).
 	Function("get_metacolor", &Config::GetMetaColorProxy).
 	Function("get_metacolors", &Config::GetMetaColors).
 	Function("get_port", &Config::GetPort);
@@ -203,17 +240,26 @@ void LuaBindings::Register(Lua& lua) {
     GameBindings::Register(lua);
     lua.Class<Instance>("Scratch.Instance").
 	Function("add_child", &Instance::AddChild).
+	Function("can_move", &Instance::CanMove).
 	Function("get_contents", &Instance::GetContents).
 	Function("get_contents_weight", &Instance::GetContentsWeight).
 	Function("get_descriptor", &Instance::GetDescriptor).
+	Function("find", &Instance::Find, Injected<Game>(), Optional(1u), Optional(1u)).
 	Function("get_gender", &Instance::GetGender).
 	Function("get_name", &Instance::GetName).
 	Function("get_parent", &Instance::GetParent).
+	Function("get_parent_room", &Instance::GetParentRoom).
 	Function("get_player", &Instance::GetPlayer).
+	Function("get_qualified_room_name", &Instance::GetQualifiedRoomName).
+	Function("get_room", &Instance::GetRoom).
+	Function("get_room_specials", &Instance::GetRoomSpecials).
 	Function("get_total_weight", &Instance::GetTotalWeight).
 	Function("get_weight", &Instance::GetWeight).
 	Function("get_world", &Instance::GetWorld).
+	Function("get_zone", &Instance::GetZone).
 	Function("matches", &Instance::Matches, Optional()).
+	Function("move", &Instance::Move).
+	Function("move_to", &Instance::MoveTo).
 	Function("remove", &Instance::Remove).
 	Function("remove_child", &Instance::RemoveChild).
 	Function("set_gender", &Instance::SetGender).
@@ -228,6 +274,60 @@ void LuaBindings::Register(Lua& lua) {
     lua.RawFunction("match_phrase", MatchPhraseProxy);
     lua.RawFunction("parse", ParseProxy);
     PlayerBindings::Register(lua);
+    lua.Class<PlayerRepository>(PlayerBindings::RepositoryMetaName).
+	Function("erase", &PlayerRepository::Erase).
+	Function("get", &PlayerRepository::Get).
+	Function("get_ids", &PlayerRepository::GetIds).
+	Function("load", &PlayerRepository::Load).
+	Function("load_index", &PlayerRepository::LoadIndex).
+	Function("save", &PlayerRepository::Save).
+	Function("save_index", &PlayerRepository::SaveIndex).
+	Function("store", &PlayerRepository::Store);
+    lua.Function("get_preference_names", &Detail::GetEnumNames<Preference>);
+    lua.Class<RoomExit>("Scratch.RoomExit").
+	Function("get_direction", &RoomExit::GetDirection).
+	Function("get_door_state", &RoomExit::GetDoorState).
+	Function("get_secret_bit", &RoomExit::GetSecretBit).
+	Function("get_target", &RoomExit::GetTarget).
+	Function("get_title", &RoomExit::GetTitle).
+	Function("set_door_state", &RoomExit::SetDoorState).
+	Function("set_secret_bit", &RoomExit::SetSecretBit).
+	Function("set_target", &RoomExit::SetTarget).
+	Function("set_title", &RoomExit::SetTitle);
+    lua.Class<RoomExitSpecials>("Scratch.RoomExitSpecials").
+	Function("blocks_passage", &RoomExitSpecials::BlocksPassage).
+	Function("get_definition", &RoomExitSpecials::GetDefinition).
+	Function("get_direction", &RoomExitSpecials::GetDirection).
+	Function("get_door_state", &RoomExitSpecials::GetDoorState).
+	Function("get_opposite", &RoomExitSpecials::GetOpposite).
+	Function("get_secret_bit", &RoomExitSpecials::GetSecretBit).
+	Function("get_target", &RoomExitSpecials::GetTarget).
+	Function("set_door_state", &RoomExitSpecials::SetDoorState).
+	Function("set_secret_bit", &RoomExitSpecials::SetSecretBit);
+    lua.Class<Room>("Scratch.Room").
+	Function("get_description", &Room::GetDescription).
+	Function("get_exit", &Room::GetExit).
+	Function("get_exits", &Room::GetExits).
+	Function("get_immortal_bit", &Room::GetImmortalBit).
+	Function("get_lighting", &Room::GetLighting).
+	Function("get_name", &Thing::GetName).
+	Function("get_occupant_limit", &Room::GetOccupantLimit).
+	Function("get_override_indoors", &Room::GetOverrideIndoors).
+	Function("get_private_bit", &Room::GetPrivateBit).
+	Function("get_qualified_name", &Room::GetQualifiedName).
+	Function("get_sector", &Room::GetSector).
+	Function("get_title", &Room::GetTitle).
+	Function("materialize_into", &Room::MaterializeInto).
+	Function("set_description", &Room::SetDescription).
+	Function("set_exit", &Room::SetExit).
+	Function("set_immortal_bit", &Room::SetImmortalBit).
+	Function("set_lighting", &Room::SetLighting).
+	Function("set_name", &Room::SetName).
+	Function("set_occupant_limit", &Room::SetOccupantLimit).
+	Function("set_override_indoors", &Room::SetOverrideIndoors).
+	Function("set_private_bit", &Room::SetPrivateBit).
+	Function("set_sector", &Room::SetSector).
+	Function("set_title", &Room::SetTitle);
     lua.Class<Sector>("Scratch.Sector").
 	Function("get_created", &Sector::GetCreated).
 	Function("get_created_by", &Sector::GetCreatedBy).
@@ -258,16 +358,12 @@ void LuaBindings::Register(Lua& lua) {
 	Function("save", &SectorRepository::Save).
 	Function("save_index", &SectorRepository::SaveIndex).
 	Function("store", &SectorRepository::Store);
-    lua.Class<PlayerRepository>(PlayerBindings::RepositoryMetaName).
-	Function("erase", &PlayerRepository::Erase).
-	Function("get", &PlayerRepository::Get).
-	Function("get_ids", &PlayerRepository::GetIds).
-	Function("load", &PlayerRepository::Load).
-	Function("load_index", &PlayerRepository::LoadIndex).
-	Function("save", &PlayerRepository::Save).
-	Function("save_index", &PlayerRepository::SaveIndex).
-	Function("store", &PlayerRepository::Store);
-    lua.Function("get_preference_names", &Detail::GetEnumNames<Preference>);
+    lua.Class<RoomSpecials>("Scratch.RoomSpecials").
+	Function("get_exit", &RoomSpecials::GetExit).
+	Function("get_exits", &RoomSpecials::GetExits).
+	Function("get_indoors", &RoomSpecials::GetIndoors).
+	Function("get_room", &RoomSpecials::GetRoom).
+	Function("get_sector", &RoomSpecials::GetSector);
     StateBindings::Register(lua);
     lua.Class<StateRepository>(StateBindings::RepositoryMetaName).
 	RawFunction("erase", StateRepositoryErase).
@@ -290,6 +386,24 @@ void LuaBindings::Register(Lua& lua) {
 	Function("save", &UserRepository::Save).
 	Function("save_index", &UserRepository::SaveIndex).
 	Function("store", &UserRepository::Store);
+    lua.Class<Zone>("Scratch.Zone").
+	Function("create_room", &Zone::CreateRoom).
+	Function("erase_room", &Zone::EraseRoom).
+	Function("get_name", &Zone::GetName).
+	Function("get_room", &Zone::GetRoom).
+	Function("get_room_names", &Zone::GetRoomNames).
+	Function("materialize_into", &Zone::MaterializeInto).
+	Function("set_name", &Zone::SetName).
+	Function("store_room", &Zone::StoreRoom);
+    lua.Class<ZoneRepository>("Scratch.ZoneRepository").
+	Function("erase", &ZoneRepository::Erase).
+	Function("get", &ZoneRepository::Get).
+	Function("get_ids", &ZoneRepository::GetIds).
+	Function("load", &ZoneRepository::Load).
+	Function("load_index", &ZoneRepository::LoadIndex).
+	Function("save", &ZoneRepository::Save).
+	Function("save_index", &ZoneRepository::SaveIndex).
+	Function("store", &ZoneRepository::Store);
 }
 
 }; // namespace Scripting

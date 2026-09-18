@@ -64,9 +64,9 @@ void Command::PerformSocial(
 	return;
     } else {
 	const auto& phrase = parser.GetPhrase(0);
-	auto target = actor->Find(game, phrase);
+	auto target = actor->Find(game, phrase.GetWords(), phrase.GetNth(), phrase.GetCount());
 
-	if (!target) {
+	if (!target || target->GetParentRoom() != actor->GetParentRoom()) {
 	    printMiss();
 	    return;
 	} else if (target == actor) {

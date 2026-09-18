@@ -1,0 +1,6 @@
+Name: Open~
+Action:-
+  local exit = require("exit")
+  exit.open_door(actor, command, line, Q)
+  ~
+~
